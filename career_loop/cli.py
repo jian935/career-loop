@@ -9,6 +9,7 @@ from pathlib import Path
 
 from . import calibrate as calib_mod
 from . import matching
+from . import recommend as rec_mod
 from . import store
 from .eval import load_dataset, run_eval
 
@@ -154,6 +155,42 @@ def cmd_eval(args) -> int:
     return 0
 
 
+def cmd_recommend(args) -> int:
+    from pathlib import Path
+
+    profile = _read(args.profile)
+    jd_dir = Path(args.jds)
+    if not jd_dir.is_dir():
+        print(f"目录不存在：{args.jds}"); return 1
+    jds = []
+    for f in sorted(jd_dir.glob("*.md")):
+        text = f.read_text(encoding="utf-8")
+        jds.append((matching.extract_title(text), text))
+    if not jds:
+        print("目录里没有 .md JD 文件"); return 1
+
+    ranked = rec_mod.recommend(profile, jds)
+    print(f"你的经历 × {len(jds)} 个 JD，按匹配分排序：")
+    for i, r in enumerate(ranked[:args.top], 1):
+        print(f"  {i}. {r.score:>5}%  {r.title}")
+
+    lev = rec_mod.gap_leverage(profile, jds, args.threshold)
+    print(f"\n补上这些能力，能让你跨过 {args.threshold:.0f}% 线的 JD 数量最多（性价比最高缺口）：")
+    shown = 0
+    for item in lev:
+        if item["gained"] == 0:
+            continue
+        shown += 1
+        if shown > args.top:
+            break
+        print(f"  + {item['label']}：可多解锁 {item['gained']} 个 JD")
+        for t in item["jds"][:3]:
+            print(f"      · {t}")
+    if shown == 0:
+        print("  （当前没有「补一项就能跨线」的缺口，缺口已较均衡。）")
+    return 0
+
+
 def cmd_dashboard(args) -> int:
     try:
         import streamlit  # noqa: F401
@@ -217,6 +254,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("dashboard", help="启动 Streamlit 看板")
 
+    rc = sub.add_parser("recommend", help="人→JD：给一批 JD 排序，并算补什么最划算")
+    rc.add_argument("--profile", required=True)
+    rc.add_argument("--jds", required=True, help="放多个 JD .md 的目录")
+    rc.add_argument("--threshold", type=float, default=70.0)
+    rc.add_argument("--top", type=int, default=5)
+
     return p
 
 
@@ -231,7 +274,7 @@ def main(argv: list[str] | None = None) -> int:
         "init": cmd_init, "add-profile": cmd_add_profile, "add-jd": cmd_add_jd,
         "match": cmd_match, "apply": cmd_apply, "status": cmd_status,
         "log": cmd_log, "calibrate": cmd_calibrate, "eval": cmd_eval,
-        "dashboard": cmd_dashboard,
+        "dashboard": cmd_dashboard, "recommend": cmd_recommend,
     }
     return handlers[args.command](args)
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from career_loop import calibrate, matching, store
+from career_loop import calibrate, matching, recommend, store
 from career_loop.eval import load_dataset, run_eval
 
 
@@ -82,6 +82,39 @@ class TestStore(unittest.TestCase):
             rows = store.list_applications(db)
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0]["status"], "interview")
+
+
+class TestRecommend(unittest.TestCase):
+    def test_recommend_ranks_descending(self):
+        profile = "用 Python 写了后端服务，做过数据分析看板。"
+        jds = [
+            ("后端开发工程师", "要求精通 Python，熟悉 Web 框架与数据库。"),
+            ("AI 产品经理", "要求熟悉大模型原理，会提示词工程，能做数据分析。"),
+            ("Agent 开发", "要求会用 Agent 框架，掌握函数调用，有 RAG 经验。"),
+        ]
+        ranked = recommend.recommend(profile, jds)
+        self.assertEqual(len(ranked), 3)
+        self.assertGreaterEqual(ranked[0].score, ranked[1].score)
+        self.assertGreaterEqual(ranked[1].score, ranked[2].score)
+
+    def test_leverage_detects_one_cap_away(self):
+        # Agent 框架是核心硬门槛(3分)，Python 了解(2分)，total=5；
+        # profile 缺 agent -> base 40%，补上 agent -> 100%，跨过 60 线。
+        profile = "熟悉 Python，做过数据分析。"
+        jds = [("Agent 核心岗", "任职要求：\n1. 精通 Agent 框架。\n2. 了解 Python。")]
+        lev = recommend.gap_leverage(profile, jds, threshold=60.0)
+        agent_item = next((x for x in lev if x["key"] == "agent"), None)
+        self.assertIsNotNone(agent_item)
+        self.assertEqual(agent_item["gained"], 1)
+
+    def test_leverage_zero_when_already_over_threshold(self):
+        # 已经全部满足，补哪一项都不会有边际收益。
+        profile = "精通 Agent 框架，会用 Python。"
+        jds = [("Agent 核心岗", "任职要求：\n1. 精通 Agent 框架。\n2. 了解 Python。")]
+        lev = recommend.gap_leverage(profile, jds, threshold=70.0)
+        agent_item = next((x for x in lev if x["key"] == "agent"), None)
+        self.assertIsNotNone(agent_item)
+        self.assertEqual(agent_item["gained"], 0)
 
 
 if __name__ == "__main__":

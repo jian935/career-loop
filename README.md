@@ -50,6 +50,7 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 - **缺口排序**：按 `权重 × 缺口严重度` 排序，避免高权重硬伤被平均分掩盖。
 - **评测集（eval）**：`data/eval_sample.jsonl` 共 42 条（14 能力 × 具备/部分/缺失），`run_eval` 给规则基线打分，作为逻辑回归锁。
 - **校准（calibrate）**：Pearson 相关系数 r + 20 分桶正反馈率，判断匹配分是否真能预测结果。
+- **双向匹配（recommend）**：给定一份经历 + 一批 JD，给 JD 排序，并算出「补哪一项能力最划算（能解锁最多岗位）」——直接回答「下一步该做什么项目」。
 - **本地存储**：SQLite 存候选人 / JD / 投递记录，零外部依赖。
 - **看板（可选）**：有 `streamlit` 时一条命令起可视化，无数据时读演示数据。
 
@@ -75,7 +76,7 @@ pip install streamlit
 
 ```bash
 career-loop match \
-  --jd examples/jd_backend_pm.md \
+  --jd examples/jds/jd_backend_pm.md \
   --profile examples/profile_me.md \
   --out report.md --json
 ```
@@ -129,7 +130,7 @@ career-loop calibrate --data data/demo_applications.jsonl
 ```bash
 career-loop init                              # 建本地库（默认 ~/.career_loop/loop.db）
 career-loop add-profile --name 我 --file examples/profile_me.md
-career-loop add-jd      --file examples/jd_backend_pm.md
+career-loop add-jd      --file examples/jds/jd_backend_pm.md
 # 记下打印出的 id，比如 profile=1, jd=1
 career-loop apply --jd-id 1 --profile-id 1    # 记录一次投递，自动算预测匹配分
 career-loop status                            # 看所有投递
@@ -137,7 +138,33 @@ career-loop log --app-id 1 --status interview # 回流真实结果
 career-loop calibrate                         # 用真实数据重新校准
 ```
 
-### 5) 看板（可选）
+### 5) 人→JD：我该优先投什么、补什么（双向匹配）
+
+```bash
+career-loop recommend \
+  --profile examples/profile_me.md \
+  --jds examples/jds \
+  --threshold 70 --top 5
+```
+
+输出两件事：
+
+```
+你的经历 × 3 个 JD，按匹配分排序：
+  1.  88.5%  后端开发工程师（校招）
+  2.  75.0%  AI 产品经理（校招 / 培养计划）
+  3.  61.4%  Agent 应用开发工程师（实习 / 校招）
+
+补上这些能力，能让你跨过 70% 线的 JD 数量最多（性价比最高缺口）：
+  + Agent / 智能体：可多解锁 1 个 JD
+      · Agent 应用开发工程师（实习 / 校招）
+  + 函数调用 / 工具调用：可多解锁 1 个 JD
+      · Agent 应用开发工程师（实习 / 校招）
+```
+
+第二块就是「下一步该做什么项目」的答案：把 Agent / 函数调用补到能拿出手，就能多够着一个岗位。
+
+### 6) 看板（可选）
 
 ```bash
 career-loop dashboard        # 没有真实数据时读 data/demo_applications.jsonl 演示
@@ -173,14 +200,17 @@ career-loop/
 │   ├── store.py         # SQLite 存储：候选人 / JD / 投递记录
 │   ├── calibrate.py     # Pearson 校准 + 分桶 + 结论
 │   ├── eval.py          # 标注评测集加载 + 跑分
-│   ├── cli.py           # 命令行入口（init/add-profile/add-jd/match/apply/status/log/calibrate/eval/dashboard）
+│   ├── recommend.py     # 双向匹配：人→JD 排序 + 缺口性价比
+│   ├── cli.py           # 命令行入口（init/add-profile/add-jd/match/apply/status/log/calibrate/eval/recommend/dashboard）
 │   └── dashboard.py     # Streamlit 看板（可选依赖）
 ├── data/
 │   ├── eval_sample.jsonl        # 42 条标注评测集（回归锁）
 │   └── demo_applications.jsonl  # 29 条合成演示数据（校准演示）
-├── examples/            # 示例 JD 与经历
+├── examples/
+│   ├── profile_me.md            # 示例经历
+│   └── jds/                     # 示例 JD 池（多份）
 ├── gen_eval.py          # 生成评测集的脚本
-└── tests/              # 8 个单元测试（匹配 / 校准 / 存储）
+└── tests/              # 11 个单元测试（匹配 / 校准 / 存储 / 推荐）
 ```
 
 ---
@@ -207,7 +237,8 @@ career-loop/
 ## 路线图（W1 已完成，W2–W8 进行中）
 
 - ✅ **W1 — 核心闭环**：匹配引擎 + 规则基线 + 评测集锁 + 校准数学（本仓库）。
-- 🔜 **W2 — 经历库结构化 + 双向匹配**：不仅 JD→人，还要人→JD（告诉我「我最适合投哪类岗」）。
+- ✅ **W2（进行中）— 双向匹配**：`recommend` 命令已落地（人→JD 排序 + 缺口性价比分析）；经历库结构化（多 profile / 多 JD 池）骨架已具备，待接真实采集。
+- 🔜 **W3 — JD 采集**：支持手贴 / 半结构化导入，自动抽岗位要求。
 - 🔜 **W3 — JD 采集**：支持手贴 / 半结构化导入，自动抽岗位要求。
 - 🔜 **W4 — 每日投递清单 + 跟踪看板增强**：按校准后的匹配分排优先级，每天该投哪些一目了然。
 - 🔜 **W5 — 真实回流 50 条 + 校准上墙**：把校准结果做成 README / 看板里的常驻模块。
