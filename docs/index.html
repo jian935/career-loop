@@ -152,6 +152,21 @@
     box-shadow:0 0 14px rgba(34,211,238,.45)}
   .empty{color:var(--muted);font-size:12.5px;padding:8px 0}
 
+  .interns{margin-top:18px}
+  .sec-head{display:flex;align-items:baseline;gap:10px;margin:0 0 10px;flex-wrap:wrap}
+  .sec-head h2{font-size:14px;margin:0;letter-spacing:-.01em}
+  .sec-head span{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+  .intern-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:720px){.intern-list{grid-template-columns:1fr}}
+  .intern{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
+    border-radius:10px;background:rgba(255,255,255,.02)}
+  .intern.goal{border-color:rgba(124,92,255,.4);background:rgba(124,92,255,.06)}
+  .intern .rank{font:700 12px var(--mono);color:var(--muted);width:16px;flex:none}
+  .intern .t{font-weight:600;font-size:13px}
+  .intern .sc{font:800 13px var(--mono);color:var(--emerald);margin-left:auto}
+  .intern .gap{font-size:11px;color:var(--muted);font-family:var(--mono);white-space:nowrap}
+  @media(max-width:520px){.intern .gap{display:none}}
+
   .foot{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:26px 24px 64px;
     display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap;
     color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
@@ -235,6 +250,10 @@
       </section>
     </div>
   </div>
+  <section class="interns">
+    <div class="sec-head"><h2>实习方向推荐</h2><span>目标：AI 产品 · 先看目标契合，再看匹配分</span></div>
+    <div class="intern-list" id="interns"></div>
+  </section>
 </main>
 
 <footer class="foot">
@@ -405,14 +424,21 @@ function weightOf(section,line){
   if(section==="job") return 2;
   return STRONG.some(w=>line.includes(w)) ? 3 : 2;
 }
+function looksLikeTitle(line){
+  const s=line.replace(/^[#*【】\s]+|[#*【】\s]+$/g,"");
+  if(s.length>30) return false;
+  if(/[。；;！？]/.test(s)) return false;
+  return !["负责","要求","熟悉","掌握","具备","能够","参与","独立","优先","经验","熟练","了解","精通","使用","会"].some(v=>s.includes(v));
+}
 function parseJD(text){
   const lines=text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
-  const req={}; let section="must";
+  const req={}; let section="must"; let first=true;
   for(const raw of lines){
-    if(raw.startsWith("#")) continue;
-    if(raw.startsWith("【") && raw.length<24) continue;
+    if(raw.startsWith("#")){ first=false; continue; }
+    if(raw.startsWith("【") && raw.length<24){ first=false; continue; }
     const sec=detectSection(raw);
-    if(sec){ section=sec; continue; }
+    if(sec){ section=sec; first=false; continue; }
+    if(first){ first=false; if(looksLikeTitle(raw)) continue; }
     if(raw.length<6) continue;
     const hits=hitsOf(raw);
     const w=weightOf(section,raw);
@@ -604,6 +630,69 @@ const SAMPLES=[
   {jd:SAMPLE_B_JD, profile:SAMPLE_PROFILE},
   {jd:SAMPLE_FIN_JD, profile:SAMPLE_FIN_PROFILE}
 ];
+const INTERN_PRESETS=[
+  {title:"AI 产品经理实习生（AIGC）", tags:["ai"], jd:`AI 产品经理实习生（AIGC）
+岗位职责
+- 参与 AIGC 产品的需求调研、竞品分析与 PRD 撰写
+- 跟进提示词模板与模型效果评测
+任职要求
+1. 熟悉大模型能力边界，有提示词工程实践
+2. 能做用户访谈与数据分析`},
+  {title:"AI 解决方案/售前实习生", tags:["ai"], jd:`AI 解决方案实习生
+任职要求
+1. 具备较强的沟通与方案表达能力
+2. 了解大模型应用与 Agent 场景
+3. 能独立对接客户需求`},
+  {title:"AI 产品运营实习生", tags:["ai"], jd:`AI 产品运营实习生
+任职要求
+1. 熟悉小红书、抖音等内容平台
+2. 会写文案，能做数据复盘
+3. 有社群或创作者运营经验优先`},
+  {title:"数据分析实习生", tags:["data"], jd:`数据分析实习生
+任职要求
+1. 熟练使用 SQL 做数据查询与清洗
+2. 能搭建看板，定义漏斗与转化率指标
+3. 有 A/B 测试或业务复盘经验优先`},
+  {title:"产品经理实习生（工具/内容）", tags:["product"], jd:`产品经理实习生
+任职要求
+1. 熟练使用墨刀、Axure 等原型工具
+2. 具备用户调研与竞品分析能力
+3. 沟通协作能力强，能推动跨团队落地`},
+  {title:"创作者运营实习生", tags:["creator"], jd:`创作者运营实习生
+任职要求
+1. 熟悉米画师、画加等接单平台生态
+2. 具备良好的沟通与用户洞察能力
+3. 能写运营文案，做数据复盘`},
+  {title:"商业分析实习生", tags:["data"], jd:`商业分析实习生
+任职要求
+1. 熟练使用 Excel，会 SQL 优先
+2. 具备数据分析与业务理解能力
+3. 逻辑清晰，沟通表达好`}
+];
+function rankInternships(text){
+  return INTERN_PRESETS.map(p=>{
+    const r=compute(p.jd,text);
+    const g=r.ups[0];
+    return {title:p.title, tags:p.tags, score:r.base,
+      goal:p.tags.includes("ai"),
+      gap:g?("补："+g.req.label+" +"+g.delta.toFixed(1)):"无缺口"};
+  }).sort((a,b)=>(Number(b.goal)-Number(a.goal))||(b.score-a.score));
+}
+function renderInternships(text){
+  const box=el("interns"); if(!box) return;
+  box.innerHTML="";
+  rankInternships(text).slice(0,6).forEach((r,i)=>{
+    const d=document.createElement("div");
+    d.className="intern"+(r.goal?" goal":"");
+    const rank=document.createElement("span"); rank.className="rank"; rank.textContent=String(i+1);
+    const t=document.createElement("span"); t.className="t"; t.textContent=r.title;
+    const sc=document.createElement("span"); sc.className="sc"; sc.textContent=r.score.toFixed(1)+"%";
+    const gap=document.createElement("span"); gap.className="gap"; gap.textContent=r.gap;
+    d.append(rank,t,sc,gap);
+    box.appendChild(d);
+  });
+}
+
 let sampleIdx=0;
 function loadSample(i){
   el("jd").value=SAMPLES[i].jd;
@@ -614,6 +703,7 @@ function run(){
   const jd=el("jd").value.trim(), p=el("profile").value.trim();
   if(!jd){ el("score").textContent="--"; el("matrix").innerHTML=""; el("uplift").innerHTML=""; return; }
   render(compute(jd,p));
+  renderInternships(p);
 }
 let timer=null;
 function debounceRun(){

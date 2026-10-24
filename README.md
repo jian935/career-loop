@@ -160,6 +160,7 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 - **校准（calibrate）**：Pearson 相关系数 r + 20 分桶正反馈率，判断匹配分是否真能预测结果。
 - **双向匹配（recommend）**：给定一份经历 + 一批 JD，给 JD 排序，并算出「补哪一项能力最划算（能解锁最多岗位）」——直接回答「下一步该做什么项目」。
 - **反事实解释（whatif）**：假设把某一项补到「已具备」，匹配分能从多少涨到多少——把「补哪项最划算」变成一个具体数字，而不是一句建议。
+- **实习方向推荐（intern）**：内置 10 个实习方向，按「目标契合 + 匹配分」排序，并按届别生成时间线（日常实习 → 暑期实习 → 秋招 → 春招）。
 - **JD 采集与需求热力（collect / demand）**：`collect` 批量导入目录里的原始 JD（清理「一键投递 / 邮箱 / 手机号 / 链接」等噪声、按标题去重）；`demand` 跨整批 JD 汇总能力需求热力，并可结合你的经历算出「补哪一项性价比最高」。
 - **本地存储**：SQLite 存候选人 / JD / 投递记录，零外部依赖。
 - **看板（可选）**：有 `streamlit` 时一条命令起可视化，无数据时读演示数据。
@@ -311,7 +312,24 @@ career-loop demand --profile examples/profile_me.md
 
 加上 `--profile` 后，它会额外给出「你目前的覆盖度 × 需求权重」的补能力优先级——这就是「下一步做什么项目」的排序答案。
 
-### 7) 看板（可选）
+### 7) 实习方向推荐（按届别）
+
+```bash
+career-loop intern --profile examples/profile_me.md --goal ai --cohort 2028 --top 6
+```
+
+按「目标契合 + 匹配分」排序（目标方向优先，不只看分数），并给出该届别的时间线：
+
+```
+  1.  80.0%  AI 产品经理实习生（AIGC）   目标✓  最大缺口：工程落地与部署 +10.0
+  2.  68.4%  AI 解决方案/售前实习生      目标✓  最大缺口：客户/用户导向 +15.8
+  ...
+日常实习   2026.10 – 2027.01  拿到第一段真实交付  ← 当前阶段
+暑期实习   2027.06 – 2027.08  争取转正 / return
+秋招       2027.08 – 2027.11  2028 届秋招
+```
+
+### 8) 看板（可选）
 
 ```bash
 career-loop dashboard        # 没有真实数据时读 data/demo_applications.jsonl 演示
@@ -356,9 +374,10 @@ career-loop/
 │   ├── eval.py          # 标注评测集加载 + 跑分
 │   ├── recommend.py     # 双向匹配：人→JD 排序 + 缺口性价比
 │   ├── collect.py       # W3：批量采集原始 JD + 需求热力 / 补能力优先级
-│   ├── cli.py           # 命令行入口（init / add-* / match / whatif / apply / status / log / calibrate / eval / recommend / collect / demand / dashboard）
+│   ├── internship.py    # 实习方向推荐：目标契合排序 + 届别时间线
+│   ├── cli.py           # 命令行入口（init / add-* / match / whatif / apply / status / log / calibrate / eval / recommend / collect / demand / intern / dashboard）
 │   ├── dashboard.py     # Streamlit 看板（可选依赖）
-│   └── tests/           # 22 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / CLI 路由）
+│   └── tests/           # 28 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / CLI 路由）
 ├── docs/                # 免安装网页 demo（index.html）＋ 截图 / 动图 / 演示视频，可挂 GitHub Pages
 ├── data/
 │   ├── eval_sample.jsonl        # 42 条标注评测集（回归锁）
@@ -374,8 +393,8 @@ career-loop/
 
 ## 质量与自检
 
-- **22 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 非 AI 岗位泛化，以及 CLI 的 `--db` 路由（防止命令串库）。
-- **28 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态）。
+- **28 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 非 AI 岗位泛化 / 实习推荐，以及 CLI 的 `--db` 路由（防止命令串库）。
+- **30 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态）。
 - 一条命令复现：`python -m unittest discover -s career_loop/tests`。
 
 ---

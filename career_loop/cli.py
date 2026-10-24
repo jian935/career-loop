@@ -9,6 +9,7 @@ from pathlib import Path
 
 from . import calibrate as calib_mod
 from . import collect as collect_mod
+from . import internship as intern_mod
 from . import matching
 from . import recommend as rec_mod
 from . import store
@@ -232,6 +233,30 @@ def cmd_dashboard(args) -> int:
     return subprocess.run([sys.executable, "-m", "streamlit", "run", str(path)], env=env).returncode
 
 
+def cmd_intern(args) -> int:
+    profile = _read(args.profile)
+    presets = intern_mod.load_presets(args.presets)
+    results = intern_mod.rank(profile, presets, args.goal)
+    print(f"目标方向：{args.goal or '未指定'}  ·  共 {len(results)} 个方向")
+    print("按「目标契合 + 匹配分」排序：\n")
+    for i, r in enumerate(results[:args.top], 1):
+        mark = "✓" if r.goal_match else "—"
+        gap = f"{r.top_gap} +{r.top_gain}" if r.top_gap else "无缺口"
+        print(f"  {i}. {r.score:>5}%  {r.title:<24} 目标{mark}  最大缺口：{gap}")
+    if args.cohort:
+        print(f"\n{args.cohort} 届时间线：")
+        for p in intern_mod.timeline(args.cohort):
+            cur = "  ← 当前阶段" if p["current"] else ""
+            print(f"  {p['phase']:<8} {p['start']} – {p['end']}  {p['goal']}{cur}")
+    if args.report:
+        Path(args.report).write_text(
+            intern_mod.render_markdown(results, args.goal, args.cohort, Path(args.profile).stem),
+            encoding="utf-8",
+        )
+        print(f"\n报告已写入 {args.report}")
+    return 0
+
+
 def cmd_whatif(args) -> int:
     text = _read(args.jd)
     profile = _read(args.profile)
@@ -343,6 +368,14 @@ def build_parser() -> argparse.ArgumentParser:
     wi.add_argument("--profile", required=True)
     wi.add_argument("--top", type=int, default=5)
 
+    it = sub.add_parser("intern", help="实习方向推荐：目标契合 + 匹配分，可算届别时间线")
+    it.add_argument("--profile", required=True)
+    it.add_argument("--goal", default=None, help="目标方向标签，如 ai / data / product")
+    it.add_argument("--cohort", type=int, default=None, help="毕业年份，如 2028")
+    it.add_argument("--top", type=int, default=6)
+    it.add_argument("--presets", default=None, help="自定义实习岗位 JSONL（默认用内置 10 个方向）")
+    it.add_argument("--report", default=None)
+
     cc = sub.add_parser("collect", help="W3：批量采集目录里的原始 JD 并入库（自动去重）")
     cc.add_argument("--dir", required=True, help="放原始 JD（.md/.txt）的目录")
     cc.add_argument("--report", default=None, help="可选：把需求热力报告写到这个 md 文件")
@@ -373,6 +406,7 @@ def main(argv: list[str] | None = None) -> int:
         "log": cmd_log, "calibrate": cmd_calibrate, "eval": cmd_eval,
         "dashboard": cmd_dashboard, "recommend": cmd_recommend,
         "collect": cmd_collect, "demand": cmd_demand, "whatif": cmd_whatif,
+        "intern": cmd_intern,
     }
     return handlers[args.command](args)
 

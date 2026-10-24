@@ -4,6 +4,22 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-10-24
+
+### Added
+- `intern` command: 10 built-in internship directions, ranked by
+  (goal match, weighted score), plus a cohort timeline
+  (daily internship -> summer -> autumn recruiting -> spring).
+- Browser demo: an internship direction panel that updates with the profile.
+- `--presets` to use your own internship JSONL.
+
+### Fixed
+- A JD's first line (job title without `#`) was parsed as a requirement,
+  producing noise like "补：产品经理实习生".
+
+### Changed
+- 28 unit tests, 30 end-to-end CLI checks.
+
 ## [0.4.0] - 2026-10-24
 
 ### Added

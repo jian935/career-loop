@@ -80,6 +80,8 @@ def main() -> int:
          "--threshold", "70"], contains=["按匹配分排序", "性价比最高缺口"], name="recommend")
     run(["whatif", "--jd", "examples/jds/jd_agent_dev.md",
          "--profile", "examples/profile_me.md"], contains=["当前匹配度", "最划算"], name="whatif")
+    run(["intern", "--profile", "examples/profile_me.md", "--goal", "ai", "--cohort", "2028"],
+        contains=["目标方向", "届时间线"], name="intern")
 
     run(["collect", "--dir", "examples/raw_jds", "--report", str(tmp / "demand.md")],
         contains="采集完成", name="collect")

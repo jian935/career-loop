@@ -63,10 +63,23 @@ def _detect_section(line: str) -> str | None:
     return None
 
 
+def _looks_like_title(line: str) -> bool:
+    """JD 第一行常常是岗位名（没有 # 号），不能当成要求。"""
+    s = line.strip(" #*【】")
+    if len(s) > 30:
+        return False
+    if any(p in s for p in "。；;！？"):
+        return False
+    verbs = ("负责", "要求", "熟悉", "掌握", "具备", "能够", "参与", "独立",
+             "优先", "经验", "熟练", "了解", "精通", "使用", "会")
+    return not any(v in s for v in verbs)
+
+
 def _split_sections(text: str) -> list[tuple[str, str]]:
     """把 JD 切成 (section, line) 列表。"""
     out: list[tuple[str, str]] = []
     current = "must"
+    first = True
     for raw in text.splitlines():
         line = raw.strip()
         if not line:
@@ -76,7 +89,12 @@ def _split_sections(text: str) -> list[tuple[str, str]]:
         marker = _detect_section(line)
         if marker:
             current = marker
+            first = False
             continue
+        if first:
+            first = False
+            if _looks_like_title(line):
+                continue
         if len(line) < 6:
             continue  # 导航行/编号残片
         out.append((current, line))

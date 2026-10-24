@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from career_loop import calibrate, collect, matching, recommend, store
+from career_loop import calibrate, collect, internship, matching, recommend, store
 from career_loop.eval import load_dataset, run_eval
 
 
@@ -243,6 +243,26 @@ class TestRealWorldRegressions(unittest.TestCase):
         reqs = [matching.Requirement("ds_ux", "交互/UX", 2, "must")]
         res = matching.match_by_rules(reqs, "输出流程图、墨刀原型、完整PRD。")
         self.assertEqual(res["ds_ux"].status, "full")
+
+
+class TestInternship(unittest.TestCase):
+    def test_goal_ranks_matching_direction_first(self):
+        prof = ("工商管理本科，做过 AIGC 画师工具，访谈 20+ 画师，"
+                "用 ComfyUI 和提示词，写过 PRD 和原型。")
+        res = internship.rank(prof, goal="ai")
+        self.assertTrue(res[0].goal_match)
+        self.assertTrue(all(r.goal_match for r in res[:3]))
+
+    def test_timeline_for_2028(self):
+        from datetime import date
+        tl = internship.timeline(2028, today=date(2026, 10, 1))
+        self.assertEqual(tl[0]["start"], "2026.10")
+        self.assertTrue(tl[0]["current"])
+        self.assertEqual(tl[-1]["start"], "2028.03")
+        self.assertEqual(len(tl), 5)
+
+    def test_presets_available(self):
+        self.assertGreaterEqual(len(internship.load_presets()), 8)
 
 
 class TestCliDbRouting(unittest.TestCase):
