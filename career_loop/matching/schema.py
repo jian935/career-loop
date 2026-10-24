@@ -96,7 +96,7 @@ TAXONOMY: dict[str, dict] = {
     },
     "engineering": {
         "label": "工程落地与部署",
-        "kw": ["后端", "api", "部署", "docker", "数据库", "服务", "上线", "工程"],
+        "kw": ["后端", "api", "部署", "docker", "数据库", "服务", "上线", "工程化", "工程落地", "工程能力", "工程实践"],
         "fix": "把项目做成一条命令能起（Dockerfile + README），让别人能复现。",
     },
     "communication": {
@@ -151,7 +151,7 @@ DOMAIN_PACKS: dict[str, dict] = {
     },
     "design": {
         "ds_visual": {"label": "视觉设计", "kw": ["视觉", "平面", "海报", "banner", "排版", "ui", "审美", "vi", "封面"]},
-        "ds_ux": {"label": "交互/UX", "kw": ["交互", "ux", "用户体验", "信息架构", "原型图"]},
+        "ds_ux": {"label": "交互/UX", "kw": ["交互", "ux", "用户体验", "信息架构", "原型", "线框图", "交互逻辑"]},
         "ds_tools": {"label": "设计工具", "kw": ["figma", "sketch", "c4d", "blender", "illustrator", "ps"]},
     },
     "operations": {
@@ -208,7 +208,7 @@ DOMAIN_PACKS: dict[str, dict] = {
         "adm_office": {"label": "行政后勤", "kw": ["行政", "办公用品", "固定资产", "会议组织", "后勤", "前台", "员工活动"]},
     },
     "ecommerce": {
-        "ec_shop": {"label": "电商运营", "kw": ["店铺", "gmv", "天猫", "抖音小店", "直播", "详情页", "转化率"]},
+        "ec_shop": {"label": "电商运营", "kw": ["店铺", "gmv", "天猫", "抖音小店", "直播", "详情页", "电商转化率"]},
     },
     "tourism": {
         "tour_hotel": {"label": "旅游/酒店", "kw": ["酒店", "客房", "预订", "旅游", "导游", "前台接待"]},

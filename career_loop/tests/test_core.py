@@ -222,6 +222,29 @@ class TestGeneralization(unittest.TestCase):
         self.assertTrue({"fin_tax", "fin_software"} <= keys, keys)
 
 
+class TestRealWorldRegressions(unittest.TestCase):
+    """真实简历/真实 JD 暴露过的误判，锁死。"""
+
+    def test_prompt_engineering_is_not_deployment(self):
+        jd = "任职要求：\n1. 熟练使用提示词工程，能独立把模型调到一个可用的状态。"
+        reqs, _ = matching.extract_requirements(jd)
+        keys = {r.key for r in reqs}
+        self.assertIn("prompt_eng", keys)
+        self.assertNotIn("engineering", keys)
+
+    def test_conversion_rate_is_not_ecommerce(self):
+        jd = "任职要求：\n1. 能搭建基础看板、定义漏斗与转化率指标。"
+        reqs, _ = matching.extract_requirements(jd)
+        keys = {r.key for r in reqs}
+        self.assertIn("data_analysis", keys)
+        self.assertNotIn("ec_shop", keys)
+
+    def test_prototype_counts_as_ux(self):
+        reqs = [matching.Requirement("ds_ux", "交互/UX", 2, "must")]
+        res = matching.match_by_rules(reqs, "输出流程图、墨刀原型、完整PRD。")
+        self.assertEqual(res["ds_ux"].status, "full")
+
+
 class TestCliDbRouting(unittest.TestCase):
     """锁住 CLI 一定要把 --db 透传给 store，别串到默认库。"""
 
