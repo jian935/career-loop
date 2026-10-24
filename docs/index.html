@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>career-loop · 先看清你差在哪</title>
+<meta name="description" content="粘贴岗位描述和你的经历，10 秒得到匹配分、缺口清单，以及补哪一项分数涨最多。">
+<style>
+  :root{
+    --bg:#f5f6fa; --card:#ffffff; --ink:#151823; --sub:#5b6172;
+    --line:#e4e7ef; --brand:#4f46e5; --brand-2:#6366f1;
+    --ok:#059669; --warn:#d97706; --bad:#e11d48;
+    --ok-bg:#ecfdf5; --warn-bg:#fffbeb; --bad-bg:#fff1f2;
+    --shadow:0 1px 2px rgba(20,24,40,.04), 0 8px 24px rgba(20,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px; margin:0 auto; padding:40px 20px 56px}
+  .topnav{display:flex; align-items:center; justify-content:space-between; margin-bottom:34px}
+  .brand{
+    display:inline-flex; align-items:center; gap:10px;
+    font-weight:700; letter-spacing:.2px; color:var(--brand); font-size:15px;
+  }
+  .star{
+    display:inline-flex; align-items:center; gap:6px; text-decoration:none;
+    font-size:13px; font-weight:600; color:var(--ink); background:#fff;
+    border:1px solid var(--line); border-radius:999px; padding:8px 14px;
+    box-shadow:var(--shadow); transition:border-color .15s, color .15s;
+  }
+  .star:hover{border-color:var(--brand); color:var(--brand)}
+  header.hero{text-align:center; margin-bottom:28px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
+  h1{font-size:34px; line-height:1.25; margin:14px 0 10px; letter-spacing:-.5px}
+  .lead{margin:0 auto; max-width:640px; color:var(--sub); font-size:15.5px; line-height:1.7}
+  .badges{margin-top:16px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  .badge{
+    font-size:12px; color:var(--sub); background:#fff; border:1px solid var(--line);
+    padding:5px 11px; border-radius:999px;
+  }
+  .grid{display:grid; grid-template-columns:1.05fr .95fr; gap:20px; margin-top:26px}
+  @media (max-width:860px){ .grid{grid-template-columns:1fr} h1{font-size:27px} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); padding:20px}
+  h2{font-size:14px; margin:0 0 6px; letter-spacing:.3px; color:var(--sub); font-weight:600}
+  label{display:block; font-size:13px; font-weight:600; margin:16px 0 7px}
+  label:first-child{margin-top:2px}
+  textarea{
+    width:100%; min-height:150px; resize:vertical; padding:12px 13px;
+    border:1px solid var(--line); border-radius:11px; background:#fbfbfe;
+    font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,"PingFang SC",monospace;
+    color:var(--ink); outline:none; transition:border-color .15s, box-shadow .15s;
+  }
+  textarea:focus{border-color:var(--brand-2); box-shadow:0 0 0 3px rgba(99,102,241,.12); background:#fff}
+  .actions{display:flex; gap:10px; margin-top:16px}
+  button{
+    cursor:pointer; border:0; border-radius:10px; padding:11px 18px;
+    font-size:14px; font-weight:600; background:var(--brand); color:#fff;
+    transition:transform .08s, background .15s;
+  }
+  button:hover{background:var(--brand-2)}
+  button:active{transform:translateY(1px)}
+  button.ghost{background:#fff; color:var(--brand); border:1px solid var(--line)}
+  button.ghost:hover{background:#f4f4ff}
+  .hint{margin:12px 0 0; font-size:12px; color:#8a90a2}
+
+  .scorebox{display:flex; align-items:baseline; gap:12px; padding-bottom:14px; border-bottom:1px dashed var(--line)}
+  .score{font-size:60px; font-weight:800; line-height:1; letter-spacing:-2px; color:var(--brand)}
+  .score.ok{color:var(--ok)} .score.warn{color:var(--warn)} .score.bad{color:var(--bad)}
+  .scorelabel{font-size:13px; color:var(--sub); font-weight:600}
+  .scorehint{margin-left:auto; font-size:12px; color:#8a90a2}
+
+  .matrix{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:16px 0 6px}
+  @media (max-width:520px){ .matrix{grid-template-columns:1fr} }
+  .chip{
+    display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:9px;
+    font-size:12.5px; border:1px solid transparent; line-height:1.35;
+  }
+  .chip .name{font-weight:600}
+  .chip .st{margin-left:auto; font-size:11px; font-weight:700; white-space:nowrap}
+  .chip.full{background:var(--ok-bg); border-color:#c7f0dd} .chip.full .st{color:var(--ok)}
+  .chip.partial{background:var(--warn-bg); border-color:#fde9bd} .chip.partial .st{color:var(--warn)}
+  .chip.missing{background:var(--bad-bg); border-color:#ffd3dc} .chip.missing .st{color:var(--bad)}
+
+  h3{font-size:14px; margin:20px 0 10px; letter-spacing:.2px}
+  .uplift{list-style:none; margin:0; padding:0}
+  .uplift li{padding:10px 0; border-bottom:1px solid #f0f1f6}
+  .uplift li:last-child{border-bottom:0}
+  .u-head{display:flex; align-items:baseline; gap:8px; font-size:13px}
+  .u-name{font-weight:650}
+  .u-delta{margin-left:auto; color:var(--ok); font-weight:800; font-variant-numeric:tabular-nums}
+  .u-sub{font-size:11.5px; color:var(--sub); margin-top:4px}
+  .bar{height:6px; border-radius:999px; background:#eef0f7; margin-top:7px; overflow:hidden}
+  .bar > i{display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#6366f1,#22c55e)}
+  .empty{color:#8a90a2; font-size:13px; padding:10px 0}
+  footer{margin-top:26px; text-align:center; font-size:12.5px; color:#8a90a2; line-height:1.8}
+  footer a{color:var(--brand); text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav">
+    <div class="brand"><span class="dot"></span>career-loop</div>
+    <a class="star" href="https://github.com/&lt;your-name&gt;/career-loop" target="_blank" rel="noopener">★ Star on GitHub</a>
+  </div>
+  <header class="hero">
+    <h1>先别投。先看清你到底差在哪。</h1>
+    <p class="lead">粘贴一份 JD 和你的经历，10 秒得到加权匹配分、逐项缺口，以及「补哪一项分数涨最多」。全部在你的浏览器里算，不上传。</p>
+    <div class="badges">
+      <span class="badge">免安装</span>
+      <span class="badge">本地计算</span>
+      <span class="badge">14 维能力词表</span>
+      <span class="badge">反事实解释</span>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>输入</h2>
+      <label for="jd">岗位描述（JD）</label>
+      <textarea id="jd" spellcheck="false"></textarea>
+      <label for="profile">你的经历</label>
+      <textarea id="profile" spellcheck="false"></textarea>
+      <div class="actions">
+        <button id="run">开始匹配</button>
+        <button id="sample" class="ghost">换个示例</button>
+      </div>
+      <p class="hint">数据只在你本机浏览器计算；刷新即清空。</p>
+    </section>
+
+    <section class="card">
+      <div class="scorebox">
+        <div class="score" id="score">--</div>
+        <div>
+          <div class="scorelabel">加权匹配度</div>
+          <div class="scorehint" id="mode">规则基线</div>
+        </div>
+      </div>
+      <div class="matrix" id="matrix"></div>
+      <h3>最划算的补强</h3>
+      <ul class="uplift" id="uplift"></ul>
+    </section>
+  </main>
+
+  <footer>
+    浏览器版为简化规则引擎（零依赖、可离线）；完整版含 LLM 可选语义匹配、42 条标注评测集、Pearson 校准闭环。<br>
+    源码与评测集：<a href="https://github.com/&lt;your-name&gt;/career-loop" target="_blank" rel="noopener">github.com/&lt;your-name&gt;/career-loop</a>
+  </footer>
+</div>
+
+<script>
+const TAXONOMY = {
+  python:{label:"Python 工程能力", kw:["python","pandas","fastapi","flask"]},
+  llm_basics:{label:"大模型原理与边界", kw:["大模型","llm","gpt","transformer","微调","token","上下文窗口"]},
+  prompt_eng:{label:"提示词工程", kw:["提示词","prompt","提示工程","系统提示"]},
+  rag:{label:"RAG / 检索增强", kw:["rag","检索增强","知识库","向量","embedding","召回","重排","rerank"]},
+  agent:{label:"Agent / 智能体", kw:["agent","智能体","工作流","多智能体","编排","tool use"]},
+  function_calling:{label:"函数调用 / 工具调用", kw:["函数调用","function calling","工具调用","mcp","tool calling","封装成工具","api 调用"]},
+  framework:{label:"Agent 框架使用", kw:["langchain","langgraph","dify","coze","crewai","n8n","autogen","扣子","框架"]},
+  coding_tools:{label:"AI 编程工具", kw:["claude code","cursor","copilot","codex","windsurf","trae","编程工具","ai 编程"]},
+  product_sense:{label:"需求洞察与产品设计", kw:["需求","用户洞察","产品设计","交互逻辑","prd","用户调研","访谈","场景设计"]},
+  data_analysis:{label:"数据分析与指标体系", kw:["数据分析","指标","漏斗","转化率","留存","sql","看板","归因","复盘"]},
+  eval:{label:"效果评估体系", kw:["评估","评测","指标","效果","ab test","abtest","回归","badcase"]},
+  engineering:{label:"工程落地与部署", kw:["后端","api","部署","docker","数据库","服务","上线","工程"]},
+  communication:{label:"跨团队沟通协作", kw:["沟通","协作","跨部门","对齐","表达","推动"]},
+  domain:{label:"业务/行业理解", kw:["业务","场景","行业","流程","痛点","岗位","流失","留存点","成本结构"]}
+};
+const ACTION=["做","实现","搭建","开发","写","上线","设计","优化","负责","跑通","落地","迭代","维护","主导","参与","评测","标注","梳理","标出","定","记录","画","配置","封装","搭","报","跑","输出","录","整理","建","分析","对比","统计","定位"];
+const NEG=["没有","未","尚未","只做过","只在自己","仅","缺少","谈不上","没做","没统计","感觉还行","demo","玩具","简单","粗略","没实际"];
+const STRONG_NEG=["没用过","没做过","从没","完全没有","毫无","从不","没碰过","没接触","不了解"];
+const STRONG=["精通","独立","主导","深入","熟练","扎实","丰富"];
+const SECTIONS=[
+  {name:"job", markers:["岗位职责","工作职责","工作内容","职位描述","你将","职责"]},
+  {name:"must", markers:["任职要求","岗位要求","任职资格","基础要求","要求"]},
+  {name:"nice", markers:["优先条件","加分项","优先","bonus"]}
+];
+const BULLET=/^\s*(?:[-*+•]|\d+[.、)]|[（(]\d+[)）])\s*/;
+const ST_LABEL={full:"已具备", partial:"部分", missing:"缺失"};
+
+function stripLine(s){
+  return s.replace(BULLET,"").replace(/\s+/g," ").trim();
+}
+function detectSection(line){
+  const s=line.replace(/[#*【】\[\]：:\s]/g,"");
+  if(s.length>30) return null;
+  for(const sec of SECTIONS){
+    for(const m of sec.markers){
+      if(s.includes(m)){
+        const left=s.split(m).join("").trim();
+        if(left.length<=4) return sec.name;
+      }
+    }
+  }
+  return null;
+}
+function hitsOf(line){
+  const low=line.toLowerCase(), out=[];
+  for(const k in TAXONOMY){
+    let mx=0;
+    for(const kw of TAXONOMY[k].kw){ if(low.includes(kw.toLowerCase())) mx=Math.max(mx,kw.length); }
+    if(mx>0) out.push({key:k,maxLen:mx});
+  }
+  return out;
+}
+function weightOf(section,line){
+  if(section==="nice") return 1;
+  if(section==="job") return 2;
+  return STRONG.some(w=>line.includes(w)) ? 3 : 2;
+}
+function parseJD(text){
+  const lines=text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  const req={}; let section="must";
+  for(const raw of lines){
+    if(raw.startsWith("#")) continue;
+    if(raw.startsWith("【") && raw.length<24) continue;
+    const sec=detectSection(raw);
+    if(sec){ section=sec; continue; }
+    if(raw.length<6) continue;
+    const hits=hitsOf(raw);
+    if(!hits.length) continue;
+    const w=weightOf(section,raw);
+    for(const h of hits){
+      const prev=req[h.key];
+      if(!prev || w>prev.weight) req[h.key]={key:h.key,label:TAXONOMY[h.key].label,weight:w,quote:raw.slice(0,90)};
+    }
+  }
+  return Object.keys(req).map(k=>req[k]);
+}
+function parseProfile(text){
+  const lines=text.split(/\n+/).map(s=>s.trim()).filter(Boolean)
+    .filter(l=>!l.startsWith("#"))
+    .map(stripLine).filter(l=>l.length>=6);
+  const owned={};
+  for(const line of lines){
+    const hits=hitsOf(line);
+    if(!hits.length) continue;
+    const top=Math.max.apply(null,hits.map(h=>h.maxLen));
+    for(const h of hits){
+      if(h.maxLen<2 || h.maxLen<top-1) continue;
+      (owned[h.key]=owned[h.key]||[]).push(line);
+    }
+  }
+  return owned;
+}
+function statusOf(key,owned){
+  const cs=owned[key]||[];
+  if(!cs.length) return {status:"missing",evidence:""};
+  if(cs.some(l=>STRONG_NEG.some(s=>l.includes(s)))) return {status:"missing",evidence:cs[0]};
+  for(const l of cs){
+    if(ACTION.some(a=>l.includes(a))) return {status: NEG.some(n=>l.includes(n))?"partial":"full", evidence:l};
+  }
+  return {status:"partial", evidence:cs[0]};
+}
+function scoreOf(reqs,matches){
+  let tot=0,got=0;
+  for(const r of reqs){
+    tot+=r.weight;
+    const st=(matches[r.key]||{}).status||"missing";
+    got += r.weight * (st==="full"?1:(st==="partial"?0.5:0));
+  }
+  return tot ? Math.round(got/tot*1000)/10 : 0;
+}
+function compute(jdText, profileText){
+  const reqs=parseJD(jdText), owned=parseProfile(profileText);
+  const matches={};
+  for(const r of reqs) matches[r.key]=statusOf(r.key,owned);
+  const base=scoreOf(reqs,matches);
+  const ups=[];
+  for(const r of reqs){
+    if(matches[r.key].status==="full") continue;
+    const sim=Object.assign({},matches,{[r.key]:{status:"full"}});
+    const ns=scoreOf(reqs,sim);
+    if(ns>base) ups.push({req:r,status:matches[r.key].status,delta:Math.round((ns-base)*10)/10,newScore:ns});
+  }
+  ups.sort((a,b)=>b.delta-a.delta);
+  return {reqs,matches,base,ups};
+}
+function el(id){return document.getElementById(id);}
+function render(res){
+  const s=el("score");
+  s.textContent=res.base.toFixed(1)+"%";
+  s.className="score "+(res.base>=70?"ok":res.base>=50?"warn":"bad");
+
+  const m=el("matrix"); m.innerHTML="";
+  if(!res.reqs.length){ m.innerHTML='<div class="empty">JD 里没有识别到能力要求，试试更具体的岗位描述。</div>'; }
+  const sorted=res.reqs.slice().sort((a,b)=>b.weight-a.weight);
+  for(const r of sorted){
+    const st=res.matches[r.key].status;
+    const d=document.createElement("div");
+    d.className="chip "+st;
+    d.title=(res.matches[r.key].evidence||r.quote||"").trim();
+    d.innerHTML='<span class="name">'+r.label+'</span><span class="st">'+ST_LABEL[st]+'</span>';
+    m.appendChild(d);
+  }
+
+  const u=el("uplift"); u.innerHTML="";
+  if(!res.ups.length){
+    u.innerHTML='<li class="empty">已全部覆盖，没有可提升的项。换个更难的岗位试试？</li>';
+    return;
+  }
+  const max=res.ups[0].delta||1;
+  for(const it of res.ups.slice(0,5)){
+    const li=document.createElement("li");
+    li.innerHTML=
+      '<div class="u-head"><span class="u-name">'+it.req.label+'</span>'+
+      '<span class="u-delta">+'+it.delta.toFixed(1)+'</span></div>'+
+      '<div class="u-sub">当前 '+res.base.toFixed(1)+'% → 补到「已具备」后 '+it.newScore.toFixed(1)+'%（原状态：'+ST_LABEL[it.status]+'）</div>'+
+      '<div class="bar"><i style="width:'+Math.max(6,it.delta/max*100)+'%"></i></div>';
+    u.appendChild(li);
+  }
+}
+
+const SAMPLE_A_JD=`AI 产品经理（大模型方向）
+
+岗位职责
+- 负责大模型产品的需求设计与落地，把业务问题翻译成 Agent 方案
+- 用数据分析驱动迭代，搭建产品的效果评估体系
+
+任职要求
+1. 熟悉大模型原理与边界，会做提示词工程
+2. 有 RAG 或 Agent 项目经验，了解 LangChain 等框架
+3. 能用 SQL 和看板做数据分析，定义指标体系
+4. 具备跨团队沟通协作能力，能推动项目上线`;
+
+const SAMPLE_B_JD=`Agent 应用开发工程师
+
+岗位要求
+1. 精通 Agent 框架（LangGraph / Dify / Coze 任选），做过多智能体编排
+2. 掌握函数调用 / 工具调用（MCP、API 封装），重视参数校验和失败重试
+3. 有 RAG 经验，关注召回与重排
+4. 用 Python 写过后端服务，能 Docker 部署上线`;
+
+const SAMPLE_PROFILE=`某双一流高校 计算机科学与技术 本科，2027 届
+
+项目经历
+- 用 Flask 写了后端，MySQL 存数据，Docker 部署到学生机，最高同时在线 200 人
+- 拉了 12 个同学做用户访谈，发现发布商品要填 8 个字段是最大流失点，改版后发布完成率从 41% 提升到 78%
+- 用 DeepSeek API 做了提示词工程，把课件整理成知识库
+- 用 LangChain 搭了简单的检索问答，但没有做向量检索，是按标题切块关键词匹配
+- 没有做任何评测，也没统计有多少人用
+
+技能
+- Python、SQL、Flask、Git
+- 会用 Cursor 写代码，用过 Coze 搭过一个客服机器人 demo`;
+
+let sampleIdx=0;
+const sampleJDs=[SAMPLE_A_JD,SAMPLE_B_JD];
+function loadSample(i){
+  el("jd").value=sampleJDs[i];
+  el("profile").value=SAMPLE_PROFILE;
+  run();
+}
+function run(){
+  const jd=el("jd").value.trim(), p=el("profile").value.trim();
+  if(!jd){ el("score").textContent="--"; el("matrix").innerHTML=""; el("uplift").innerHTML=""; return; }
+  render(compute(jd,p));
+}
+let timer=null;
+function debounceRun(){
+  clearTimeout(timer);
+  timer=setTimeout(run,260);
+}
+
+el("run").addEventListener("click",run);
+el("sample").addEventListener("click",()=>{ sampleIdx=(sampleIdx+1)%sampleJDs.length; loadSample(sampleIdx); });
+el("jd").addEventListener("input",debounceRun);
+el("profile").addEventListener("input",debounceRun);
+loadSample(0);
+</script>
+</body>
+</html>

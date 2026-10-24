@@ -211,6 +211,28 @@ def cmd_dashboard(args) -> int:
     return subprocess.run([sys.executable, "-m", "streamlit", "run", str(path)], env=env).returncode
 
 
+def cmd_whatif(args) -> int:
+    text = _read(args.jd)
+    profile = _read(args.profile)
+    reqs, mode = matching.extract_requirements(text)
+    matches, used = matching.match(reqs, profile)
+    base, rows = matching.counterfactual(reqs, matches)
+    print(f"当前匹配度 {base}%  ·  模式 {used}")
+    print("\n补上哪一项最划算（假设补到「已具备」，按涨幅排序）：")
+    label = {"full": "已具备", "partial": "部分", "missing": "缺失"}
+    shown = 0
+    for req, status, delta, new in rows:
+        if delta <= 0:
+            continue
+        shown += 1
+        if shown > args.top:
+            break
+        print(f"  {req.label:<14} [{label.get(status, status)}]  {base}% → {new}%  (+{delta})")
+    if shown == 0:
+        print("  （已全部覆盖，没有可提升的项。）")
+    return 0
+
+
 def cmd_collect(args) -> int:
     if not Path(args.dir).is_dir():
         print(f"目录不存在：{args.dir}"); return 1
@@ -295,6 +317,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("dashboard", help="启动 Streamlit 看板")
 
+    wi = sub.add_parser("whatif", help="反事实：补上哪一项能力，匹配分涨最多")
+    wi.add_argument("--jd", required=True)
+    wi.add_argument("--profile", required=True)
+    wi.add_argument("--top", type=int, default=5)
+
     cc = sub.add_parser("collect", help="W3：批量采集目录里的原始 JD 并入库（自动去重）")
     cc.add_argument("--dir", required=True, help="放原始 JD（.md/.txt）的目录")
     cc.add_argument("--report", default=None, help="可选：把需求热力报告写到这个 md 文件")
@@ -324,7 +351,7 @@ def main(argv: list[str] | None = None) -> int:
         "match": cmd_match, "apply": cmd_apply, "status": cmd_status,
         "log": cmd_log, "calibrate": cmd_calibrate, "eval": cmd_eval,
         "dashboard": cmd_dashboard, "recommend": cmd_recommend,
-        "collect": cmd_collect, "demand": cmd_demand,
+        "collect": cmd_collect, "demand": cmd_demand, "whatif": cmd_whatif,
     }
     return handlers[args.command](args)
 

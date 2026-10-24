@@ -168,6 +168,30 @@ class TestCollect(unittest.TestCase):
         self.assertGreater(python.coverage, 0.0)       # 部分/完全具备
 
 
+class TestCounterfactual(unittest.TestCase):
+    def test_fixing_missing_raises_score(self):
+        reqs = [
+            matching.Requirement("agent", "Agent", 3, "must"),
+            matching.Requirement("python", "Python", 2, "must"),
+        ]
+        matches = {
+            "agent": matching.MatchResult("agent", "missing"),
+            "python": matching.MatchResult("python", "full"),
+        }
+        base, rows = matching.counterfactual(reqs, matches)
+        self.assertAlmostEqual(base, 40.0)
+        self.assertEqual(rows[0][0].key, "agent")
+        self.assertAlmostEqual(rows[0][3], 100.0)
+        self.assertAlmostEqual(rows[0][2], 60.0)
+
+    def test_all_full_has_no_rows(self):
+        reqs = [matching.Requirement("python", "Python", 2, "must")]
+        matches = {"python": matching.MatchResult("python", "full")}
+        base, rows = matching.counterfactual(reqs, matches)
+        self.assertAlmostEqual(base, 100.0)
+        self.assertEqual(rows, [])
+
+
 class TestCliDbRouting(unittest.TestCase):
     """锁住 CLI 一定要把 --db 透传给 store，别串到默认库。"""
 

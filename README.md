@@ -1,6 +1,31 @@
 # Career-Loop
 
-> 把「我到底适不适合这个 AI 岗位」从玄学变成 **可证伪、可校准** 的数据闭环。
+<p align="center">
+  <b>先别投。先看清你到底差在哪。</b><br/>
+  粘贴 JD + 经历 → 匹配分 + 逐项缺口 + 「补哪一项分数涨最多」。
+</p>
+
+<p align="center">
+  <a href="https://github.com/<your-name>/career-loop/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/<your-name>/career-loop?style=social"></a>
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-22c55e.svg">
+  <img alt="python" src="https://img.shields.io/badge/python-3.10%2B-3776AB.svg">
+  <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">
+</p>
+
+<p align="center">
+  <a href="https://<your-name>.github.io/career-loop/"><b>▶ 在线试用（免安装，浏览器里跑）</b></a>
+  &nbsp;·&nbsp;
+  <a href="#三分钟演示视频">3 分钟演示视频</a>
+  &nbsp;·&nbsp;
+  <a href="#快速开始">命令行上手</a>
+</p>
+
+<p align="center">
+  <img src="docs/demo.png" alt="career-loop 网页演示：匹配分、能力矩阵与补强优先级" width="820">
+</p>
+
+> 把「我到底适不适合这个 AI 岗位」从玄学，变成 **可证伪、可校准** 的数据闭环。
+> 市面上大多数工具给你一个分数就走；career-loop 还会用你真实的投递结果，回算「这个分数到底准不准」。
 
 Career-Loop 是一个面向 **AI / Agent 方向求职者（尤其应届生）** 的开源小工具：它把一份 JD 和你的经历文本喂给一个匹配引擎，给出**预测匹配分 + 缺口清单**；你拿它去投递，再把真实结果（已读 / 面试 / offer）回流，最后用**相关系数**检验「这个匹配分到底准不准」。
 
@@ -19,6 +44,19 @@ Career-Loop 是一个面向 **AI / Agent 方向求职者（尤其应届生）** 
                              ▼
               调整能力权重 / 重排投递优先级 / 定位最该补的缺口
 ```
+
+---
+
+## 三分钟演示视频
+
+带旁白的完整演示（匹配 → 决策 → 采集 → 评估 → 校准 → 闭环）：
+
+[▶ 播放 / 下载演示视频（MP4, 3 分钟）](docs/career-loop-demo.mp4)
+
+## 在线体验（免安装）
+
+- 直接打开 [`docs/index.html`](docs/index.html)：纯前端，粘贴 JD 和经历就在浏览器里算，数据不上传。
+- 部署到 GitHub Pages：`Settings → Pages → Source: Deploy from a branch → Branch: main, Folder: /docs`，之后地址形如 `https://<your-name>.github.io/career-loop/`。
 
 ---
 
@@ -66,6 +104,7 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 - **评测集（eval）**：`data/eval_sample.jsonl` 共 42 条（14 能力 × 具备/部分/缺失），`run_eval` 给规则基线打分，作为逻辑回归锁。
 - **校准（calibrate）**：Pearson 相关系数 r + 20 分桶正反馈率，判断匹配分是否真能预测结果。
 - **双向匹配（recommend）**：给定一份经历 + 一批 JD，给 JD 排序，并算出「补哪一项能力最划算（能解锁最多岗位）」——直接回答「下一步该做什么项目」。
+- **反事实解释（whatif）**：假设把某一项补到「已具备」，匹配分能从多少涨到多少——把「补哪项最划算」变成一个具体数字，而不是一句建议。
 - **JD 采集与需求热力（collect / demand）**：`collect` 批量导入目录里的原始 JD（清理「一键投递 / 邮箱 / 手机号 / 链接」等噪声、按标题去重）；`demand` 跨整批 JD 汇总能力需求热力，并可结合你的经历算出「补哪一项性价比最高」。
 - **本地存储**：SQLite 存候选人 / JD / 投递记录，零外部依赖。
 - **看板（可选）**：有 `streamlit` 时一条命令起可视化，无数据时读演示数据。
@@ -180,6 +219,21 @@ career-loop recommend \
 
 第二块就是「下一步该做什么项目」的答案：把 Agent / 函数调用补到能拿出手，就能多够着一个岗位。
 
+也可以直接问「补哪一项分数涨最多」：
+
+```bash
+career-loop whatif --jd examples/jds/jd_agent_dev.md --profile examples/profile_me.md
+```
+
+```
+当前匹配度 61.4%  ·  模式 rule
+
+补上哪一项最划算（假设补到「已具备」，按涨幅排序）：
+  Agent / 智能体    [缺失]  61.4% → 75.0%  (+13.6)
+  函数调用 / 工具调用    [缺失]  61.4% → 70.5%  (+9.1)
+  Agent 框架使用     [部分]  61.4% → 68.2%  (+6.8)
+```
+
 ### 6) 批量采集 JD + 需求热力（W3）
 
 ```bash
@@ -240,9 +294,10 @@ career-loop/
 │   ├── eval.py          # 标注评测集加载 + 跑分
 │   ├── recommend.py     # 双向匹配：人→JD 排序 + 缺口性价比
 │   ├── collect.py       # W3：批量采集原始 JD + 需求热力 / 补能力优先级
-│   ├── cli.py           # 命令行入口（init / add-* / match / apply / status / log / calibrate / eval / recommend / collect / demand / dashboard）
+│   ├── cli.py           # 命令行入口（init / add-* / match / whatif / apply / status / log / calibrate / eval / recommend / collect / demand / dashboard）
 │   ├── dashboard.py     # Streamlit 看板（可选依赖）
-│   └── tests/           # 16 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / CLI 路由）
+│   └── tests/           # 18 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / CLI 路由）
+├── docs/                # 免安装网页 demo（index.html）＋ 截图 / 动图 / 演示视频，可挂 GitHub Pages
 ├── data/
 │   ├── eval_sample.jsonl        # 42 条标注评测集（回归锁）
 │   └── demo_applications.jsonl  # 29 条合成演示数据（校准演示）
@@ -257,8 +312,8 @@ career-loop/
 
 ## 质量与自检
 
-- **16 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集，以及 CLI 的 `--db` 路由（防止命令串库）。
-- **27 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态）。
+- **18 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实，以及 CLI 的 `--db` 路由（防止命令串库）。
+- **28 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态）。
 - 一条命令复现：`python -m unittest discover -s career_loop/tests`。
 
 ---
@@ -288,11 +343,12 @@ career-loop/
 - ✅ **W1 — 核心闭环**：匹配引擎 + 规则基线 + 评测集锁 + 校准数学（本仓库）。
 - ✅ **W2 — 双向匹配**：`recommend` 人→JD 排序 + 缺口性价比分析，直接回答「下一步该做什么项目」。
 - ✅ **W3 — JD 采集**：`collect` 批量采集原始 JD（清招聘站噪声 + 按标题去重），`demand` 输出能力需求热力与补能力优先级。
+- ✅ **加分项**：反事实解释 `whatif` + 免安装网页 demo（`docs/`）+ 3 分钟旁白演示视频。
 - 🔜 **W4 — 每日投递清单 + 跟踪看板增强**：按校准后的匹配分排优先级，每天该投哪些一目了然。
 - 🔜 **W5 — 真实回流 50 条 + 校准上墙**：把校准结果做成 README / 看板里的常驻模块。
 - 🔜 **W6 — 50 条人工标注公开评测集**：提升 eval 真实度，这是和同类项目拉开差距的关键。
 - 🔜 **W7 — Web 看板 / 分享页**：让非技术同学（面试官）也能一眼看懂。
-- 🔜 **W8 — 3 分钟演示视频 + 复盘长文**：用于简历附件和社区传播。
+- 🟡 **W8 — 3 分钟演示视频（✅ 已完成）+ 复盘长文（待写）**：用于简历附件和社区传播。
 
 ---
 

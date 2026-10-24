@@ -183,5 +183,27 @@ def gaps(
     return sorted(out, key=lambda x: -x[2])
 
 
+def counterfactual(
+    requirements: list[Requirement], matches: dict[str, MatchResult]
+) -> tuple[float, list[tuple[Requirement, str, float, float]]]:
+    """反事实：假设把某一项补到 full，匹配分会变成多少。
+
+    返回 (当前分, [(能力项, 原状态, 涨幅, 新分数), ...])，按涨幅降序。
+    这是「补哪一项最划算」的直接量化，比只列缺口更有决策价值。
+    """
+    base = score(requirements, matches)
+    out = []
+    for req in requirements:
+        status = matches.get(req.key, MatchResult(req.key, "missing")).status
+        if status == "full":
+            continue
+        sim = dict(matches)
+        sim[req.key] = MatchResult(req.key, "full")
+        new_score = score(requirements, sim)
+        out.append((req, status, round(new_score - base, 1), new_score))
+    out.sort(key=lambda x: -x[2])
+    return base, out
+
+
 def fix_for(key: str) -> str:
     return TAXONOMY.get(key, {}).get("fix", "找一个最小可交付物，把它做完并公开。")
