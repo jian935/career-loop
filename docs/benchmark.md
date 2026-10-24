@@ -109,3 +109,7 @@ perfectly covered. Long-tail roles rely on the custom fallback or the LLM mode.
 
 If you have a labeled dataset of (JD, profile, outcome), open an issue — a shared
 benchmark is the most useful contribution this project could receive.
+
+What building that benchmark actually requires (data volume, annotation rules,
+statistical power, legal constraints) is documented in
+[benchmark-plan.md](benchmark-plan.md).
