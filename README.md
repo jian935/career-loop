@@ -453,6 +453,7 @@ career-loop/
 - 版本变化见 [CHANGELOG.md](CHANGELOG.md)。
 - 设计取舍见 [docs/architecture.md](docs/architecture.md)，评分细节见 [docs/methodology.md](docs/methodology.md)，可复现数字见 [docs/benchmark.md](docs/benchmark.md)。
 - 想共建公开基准集？数据、标注、法务、规模要求都写在 [docs/benchmark-plan.md](docs/benchmark-plan.md)。
+- 想扩到「市面所有岗位」？四条路线的工期与成本见 [docs/scale-plan.md](docs/scale-plan.md)。
 - 基准集 v0（10 个岗位对，标注工具 + 一致性脚本已就绪，**待人工标注**）：[benchmark/](benchmark/)。
 
 ## Star history
