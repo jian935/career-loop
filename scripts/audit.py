@@ -56,6 +56,7 @@ def main() -> int:
     empty = str(tmp / "empty.db")
 
     run(["init"], name="init")
+    run(["doctor"], name="doctor")
     run(["add-profile", "--name", "测试我", "--file", "examples/profile_me.md"], name="add-profile")
     run(["add-jd", "--file", "examples/jds/jd_backend_pm.md"], name="add-jd")
 

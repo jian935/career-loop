@@ -265,6 +265,36 @@ class TestInternship(unittest.TestCase):
         self.assertGreaterEqual(len(internship.load_presets()), 8)
 
 
+class TestLLMWiring(unittest.TestCase):
+    def test_llm_mode_is_used_when_available(self):
+        class FakeLLM:
+            available = True
+
+            def json(self, system, user):
+                if "requirements" in system:
+                    return {"requirements": [{
+                        "key": "python", "label": "Python", "weight": 2,
+                        "kind": "must", "quote": "要求熟悉 Python",
+                    }]}
+                return {"matches": [{
+                    "key": "python", "status": "full",
+                    "evidence": "用 Python 写了服务",
+                }]}
+
+        fake = FakeLLM()
+        reqs, mode = matching.extract_requirements("要求熟悉 Python。", fake)
+        self.assertEqual(mode, "llm")
+        self.assertEqual([r.key for r in reqs], ["python"])
+
+        matches, used = matching.match(reqs, "用 Python 写了服务。", fake)
+        self.assertEqual(used, "llm")
+        self.assertEqual(matches["python"].status, "full")
+
+    def test_doctor_runs(self):
+        from career_loop import cli
+        self.assertEqual(cli.main(["doctor"]), 0)
+
+
 class TestCliDbRouting(unittest.TestCase):
     """锁住 CLI 一定要把 --db 透传给 store，别串到默认库。"""
 

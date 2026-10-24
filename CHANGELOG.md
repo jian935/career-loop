@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-10-24
+
+### Added
+- The CLI now actually uses the LLM mode (`match` / `whatif` / `apply` /
+  `recommend` / `add-jd`); it was implemented but never wired.
+- LLM response cache at `~/.career_loop/llm_cache` (hash of model + prompt),
+  disable with `CAREER_LOOP_NO_CACHE=1`.
+- `doctor` command: Python / DB / LLM / cache / eval-set status.
+
+### Fixed
+- Configuring an API key had no effect; every command silently used rules.
+
+### Changed
+- 30 unit tests, 31 end-to-end CLI checks.
+
 ## [0.5.0] - 2026-10-24
 
 ### Added

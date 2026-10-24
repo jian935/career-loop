@@ -53,6 +53,28 @@ def _domain_text(text: str) -> str:
     return " / ".join(DOMAIN_CN.get(d, d) for d in doms[:3]) or "通用"
 
 
+def _make_llm():
+    """Return a configured LLM, or None so every command falls back to rules."""
+    llm = matching.LLM()
+    return llm if llm.available else None
+
+
+def cmd_doctor(args) -> int:
+    import platform
+    from .matching.llm import CACHE_DIR
+
+    llm = matching.LLM()
+    print(f"Python   {platform.python_version()}  ({platform.system()})")
+    print(f"DB       {args.db or store.get_db()}")
+    print(f"LLM      {'已配置' if llm.available else '未配置（规则基线）'}")
+    print(f"  model  {llm.model}")
+    print(f"  base   {llm.base_url}")
+    print(f"  cache  {'on' if llm.cache else 'off'}  {CACHE_DIR}")
+    ev = Path("data/eval_sample.jsonl")
+    print(f"评测集   {'OK' if ev.exists() else '缺失'}  {ev}")
+    return 0
+
+
 def cmd_init(args) -> int:
     store.init(args.db)
     print(f"已初始化数据库：{args.db or store.get_db()}")
@@ -69,7 +91,7 @@ def cmd_add_profile(args) -> int:
 def cmd_add_jd(args) -> int:
     store.init(args.db)
     text = _read(args.file)
-    reqs, _ = matching.extract_requirements(text)
+    reqs, _ = matching.extract_requirements(text, _make_llm())
     jid = store.add_jd(matching.extract_title(text), text, reqs, args.db)
     print(f"已保存 JD #{jid}：{matching.extract_title(text)}（{len(reqs)} 项能力）")
     for r in reqs:
@@ -80,8 +102,9 @@ def cmd_add_jd(args) -> int:
 def cmd_match(args) -> int:
     text = _read(args.jd)
     profile = _read(args.profile)
-    reqs, mode = matching.extract_requirements(text)
-    matches, _ = matching.match(reqs, profile)
+    llm = _make_llm()
+    reqs, _ = matching.extract_requirements(text, llm)
+    matches, mode = matching.match(reqs, profile, llm)
     assessment = matching.Assessment(
         requirements=reqs, matches=matches,
         score=matching.score(reqs, matches),
@@ -107,8 +130,9 @@ def cmd_apply(args) -> int:
     prof = store.get_profile(args.profile_id, args.db)
     if not jd or not prof:
         print("JD 或候选人不存在"); return 1
-    reqs, _ = matching.extract_requirements(jd["text"])
-    matches, _ = matching.match(reqs, prof["text"])
+    llm = _make_llm()
+    reqs, _ = matching.extract_requirements(jd["text"], llm)
+    matches, _ = matching.match(reqs, prof["text"], llm)
     fit = matching.score(reqs, matches)
     aid = store.record_application(args.jd_id, args.profile_id, fit, args.db)
     print(f"已记录投递 #{aid}：{jd['title']} × {prof['name']}，预测匹配分 {fit}%")
@@ -192,12 +216,13 @@ def cmd_recommend(args) -> int:
     if not jds:
         print("目录里没有 .md JD 文件"); return 1
 
-    ranked = rec_mod.recommend(profile, jds)
+    llm = _make_llm()
+    ranked = rec_mod.recommend(profile, jds, llm)
     print(f"你的经历 × {len(jds)} 个 JD，按匹配分排序：")
     for i, r in enumerate(ranked[:args.top], 1):
         print(f"  {i}. {r.score:>5}%  {r.title}")
 
-    lev = rec_mod.gap_leverage(profile, jds, args.threshold)
+    lev = rec_mod.gap_leverage(profile, jds, args.threshold, llm)
     print(f"\n补上这些能力，能让你跨过 {args.threshold:.0f}% 线的 JD 数量最多（性价比最高缺口）：")
     shown = 0
     for item in lev:
@@ -260,8 +285,9 @@ def cmd_intern(args) -> int:
 def cmd_whatif(args) -> int:
     text = _read(args.jd)
     profile = _read(args.profile)
-    reqs, mode = matching.extract_requirements(text)
-    matches, used = matching.match(reqs, profile)
+    llm = _make_llm()
+    reqs, _ = matching.extract_requirements(text, llm)
+    matches, used = matching.match(reqs, profile, llm)
     base, rows = matching.counterfactual(reqs, matches)
     print(f"当前匹配度 {base}%  ·  模式 {used}  ·  岗位族 {_domain_text(text)}")
     print("\n补上哪一项最划算（假设补到「已具备」，按涨幅排序）：")
@@ -328,6 +354,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command")
 
     sub.add_parser("init", help="初始化本地数据库")
+    sub.add_parser("doctor", help="自检：Python / LLM / 缓存 / 评测集")
 
     ap = sub.add_parser("add-profile", help="保存候选人经历")
     ap.add_argument("--file", required=True)
@@ -401,7 +428,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     _ensure_stdout_utf8()
     handlers = {
-        "init": cmd_init, "add-profile": cmd_add_profile, "add-jd": cmd_add_jd,
+        "init": cmd_init, "doctor": cmd_doctor,
+        "add-profile": cmd_add_profile, "add-jd": cmd_add_jd,
         "match": cmd_match, "apply": cmd_apply, "status": cmd_status,
         "log": cmd_log, "calibrate": cmd_calibrate, "eval": cmd_eval,
         "dashboard": cmd_dashboard, "recommend": cmd_recommend,

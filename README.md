@@ -181,6 +181,24 @@ pip install streamlit
 
 ---
 
+## 可选：接大模型（LLM 模式）
+
+核心零依赖也能跑；配置了 OpenAI 兼容 Key 后，`match` / `whatif` / `apply` / `recommend` / `add-jd` 会自动走语义匹配，失败自动回退规则。
+
+```bash
+export OPENAI_API_KEY=sk-...                 # 或 DEEPSEEK_API_KEY
+export OPENAI_BASE_URL=https://api.deepseek.com/v1
+export OPENAI_MODEL=deepseek-chat
+career-loop doctor                           # 确认 LLM 是否已识别
+career-loop match --jd ... --profile ...     # 输出里模式会显示 llm
+```
+
+- 结果缓存在 `~/.career_loop/llm_cache`（按 JD/经历哈希），重复分析不重复计费。
+- 想强制走规则：`CAREER_LOOP_NO_CACHE=1` 只关缓存；不配 Key 就是纯规则。
+- `doctor` 会打印 Python、DB、LLM、缓存、评测集状态，排查环境先跑它。
+
+---
+
 ## 快速开始
 
 ### 1) 生成一份匹配报告（不需要任何 Key）
@@ -377,7 +395,7 @@ career-loop/
 │   ├── internship.py    # 实习方向推荐：目标契合排序 + 届别时间线
 │   ├── cli.py           # 命令行入口（init / add-* / match / whatif / apply / status / log / calibrate / eval / recommend / collect / demand / intern / dashboard）
 │   ├── dashboard.py     # Streamlit 看板（可选依赖）
-│   └── tests/           # 28 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / CLI 路由）
+│   └── tests/           # 30 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / LLM 接线 / CLI 路由）
 ├── docs/                # 免安装网页 demo（index.html）＋ 截图 / 动图 / 演示视频，可挂 GitHub Pages
 ├── data/
 │   ├── eval_sample.jsonl        # 42 条标注评测集（回归锁）
@@ -393,8 +411,8 @@ career-loop/
 
 ## 质量与自检
 
-- **28 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 非 AI 岗位泛化 / 实习推荐，以及 CLI 的 `--db` 路由（防止命令串库）。
-- **30 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态）。
+- **30 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 非 AI 岗位泛化 / 实习推荐 / LLM 接线，以及 CLI 的 `--db` 路由（防止命令串库）。
+- **31 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态）+ `doctor`。
 - 一条命令复现：`python -m unittest discover -s career_loop/tests`。
 
 ---

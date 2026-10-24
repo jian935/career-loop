@@ -19,30 +19,30 @@ class JdRank:
     n_reqs: int
 
 
-def recommend(profile: str, jds: list[tuple[str, str]]) -> list[JdRank]:
+def recommend(profile: str, jds: list[tuple[str, str]], llm=None) -> list[JdRank]:
     """jds: [(title, text), ...]。返回按匹配分降序排序的列表。"""
     out: list[JdRank] = []
     for title, text in jds:
-        reqs, _ = extract_requirements(text)
-        matches, _ = match(reqs, profile)
+        reqs, _ = extract_requirements(text, llm)
+        matches, _ = match(reqs, profile, llm)
         out.append(JdRank(title=title, score=score(reqs, matches), n_reqs=len(reqs)))
     out.sort(key=lambda x: -x.score)
     return out
 
 
 def gap_leverage(
-    profile: str, jds: list[tuple[str, str]], threshold: float = 70.0
+    profile: str, jds: list[tuple[str, str]], threshold: float = 70.0, llm=None
 ) -> list[dict]:
     """对每一项能力，模拟「把它补到 full」后，能让多少个原本低于阈值的 JD 跨过线。
 
     返回的条目按 gained 降序——gained 越高，说明这项能力是你的「性价比最高缺口」。
     """
-    base = recommend(profile, jds)
+    base = recommend(profile, jds, llm)
     base_scores = {b.title: b.score for b in base}
 
     keys: set[str] = set()
     for _, text in jds:
-        for r in extract_requirements(text)[0]:
+        for r in extract_requirements(text, llm)[0]:
             keys.add(r.key)
 
     leverage: list[dict] = []
@@ -50,13 +50,13 @@ def gap_leverage(
         gained = 0
         unlocked: list[str] = []
         for title, text in jds:
-            reqs, _ = extract_requirements(text)
+            reqs, _ = extract_requirements(text, llm)
             req_map = {r.key: r for r in reqs}
             if key not in req_map:
                 continue
             if base_scores[title] >= threshold:
                 continue  # 本来就越过线了，补这项没有边际收益
-            matches, _ = match(reqs, profile)
+            matches, _ = match(reqs, profile, llm)
             if matches.get(key, MatchResult(key, "missing")).status == "full":
                 continue  # 本来就有，谈不上「补」
             matches[key] = MatchResult(key, "full")  # 模拟补完
