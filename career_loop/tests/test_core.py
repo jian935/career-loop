@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from career_loop import calibrate, matching, recommend, store
+from career_loop import calibrate, collect, matching, recommend, store
 from career_loop.eval import load_dataset, run_eval
 
 
@@ -115,6 +115,57 @@ class TestRecommend(unittest.TestCase):
         agent_item = next((x for x in lev if x["key"] == "agent"), None)
         self.assertIsNotNone(agent_item)
         self.assertEqual(agent_item["gained"], 0)
+
+
+class TestCollect(unittest.TestCase):
+    def test_normalize_strips_noise(self):
+        raw = "一键投递 立即申请\n联系方式：hr@fake.com 或 13800138000\nhttps://example.com\n# AI 产品经理\n任职要求：熟悉 Python。"
+        clean = collect.normalize_jd(raw)
+        self.assertNotIn("一键投递", clean)
+        self.assertNotIn("hr@fake.com", clean)
+        self.assertNotIn("13800138000", clean)
+        self.assertNotIn("https://example.com", clean)
+        self.assertIn("AI 产品经理", clean)
+        self.assertIn("Python", clean)
+
+    def test_collect_ingests_and_dedupes(self):
+        with tempfile.TemporaryDirectory() as d:
+            rawdir = os.path.join(d, "raw")
+            os.makedirs(rawdir)
+            db = os.path.join(d, "t.db")
+            store.init(db)
+            # 两个不同 JD
+            Path(os.path.join(rawdir, "a.md")).write_text(
+                "# 岗位A\n任职要求：精通 Python。", encoding="utf-8")
+            Path(os.path.join(rawdir, "b.md")).write_text(
+                "# 岗位B\n任职要求：熟悉 RAG。", encoding="utf-8")
+            r1 = collect.collect_dir(rawdir, db)
+            self.assertEqual(r1.ingested, 2)
+            self.assertEqual(r1.skipped, 0)
+            # 重复采集：应全部跳过
+            r2 = collect.collect_dir(rawdir, db)
+            self.assertEqual(r2.ingested, 0)
+            self.assertEqual(r2.skipped, 2)
+            self.assertEqual(len(store.list_jds(db)), 2)
+
+    def test_demand_with_profile(self):
+        jds = [
+            ("岗A", "任职要求：\n1. 精通 Agent 框架。\n2. 了解 Python。"),
+            ("岗B", "任职要求：\n1. 熟悉 RAG。\n2. 了解 Python。"),
+        ]
+        # 经历里完全没有 Agent 和 RAG，Python 有
+        profile = "用 Python 写了后端服务。"
+        rep = collect.capability_demand(jds, profile)
+        self.assertTrue(rep.has_profile)
+        self.assertEqual(rep.total_jds, 2)
+        # 每个被要求的能力都应算出覆盖率
+        keys = {it.key for it in rep.items}
+        self.assertIn("agent", keys)
+        self.assertIn("rag", keys)
+        agent = next(it for it in rep.items if it.key == "agent")
+        self.assertAlmostEqual(agent.coverage, 0.0)   # 完全缺失
+        python = next(it for it in rep.items if it.key == "python")
+        self.assertGreater(python.coverage, 0.0)       # 部分/完全具备
 
 
 if __name__ == "__main__":

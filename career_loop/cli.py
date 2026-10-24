@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from . import calibrate as calib_mod
+from . import collect as collect_mod
 from . import matching
 from . import recommend as rec_mod
 from . import store
@@ -210,6 +211,44 @@ def cmd_dashboard(args) -> int:
     return subprocess.run([sys.executable, "-m", "streamlit", "run", str(path)], env=env).returncode
 
 
+def cmd_collect(args) -> int:
+    store.init(args.db)
+    res = collect_mod.collect_dir(args.dir, args.db)
+    total = len(store.list_jds(args.db))
+    print(f"采集完成：新增 {res.ingested} 个 JD，跳过重复 {res.skipped} 个。")
+    print(f"当前库内共 {total} 个 JD。")
+    jds = store.list_jds(args.db)
+    rep = collect_mod.capability_demand(jds)
+    print("\n岗位需求热力（按总权重排序，取前 10）：")
+    for it in rep.items[:10]:
+        print(f"  {it.label:<14} 需求权重 {it.demand_weight:<3} 出现在 {it.demand_count} 个 JD")
+    if args.report:
+        Path(args.report).write_text(collect_mod.render_demand(rep), encoding="utf-8")
+        print(f"\n需求报告已写入 {args.report}")
+    return 0
+
+
+def cmd_demand(args) -> int:
+    store.init(args.db)
+    jds = store.list_jds(args.db)
+    if not jds:
+        print("库里还没有 JD，先用 `collect` 或 `add-jd` 录入。"); return 1
+    profile = _read(args.profile) if args.profile else None
+    rep = collect_mod.capability_demand(jds, profile)
+    print(f"统计 {rep.total_jds} 个 JD 的能力需求：")
+    for it in rep.items:
+        if profile is None:
+            print(f"  {it.label:<14} 需求权重 {it.demand_weight:<3} 出现在 {it.demand_count} 个 JD")
+        else:
+            cov = f"{it.coverage:.0%}" if it.coverage is not None else "-"
+            pri = f"{it.priority:.0f}" if it.priority is not None else "-"
+            print(f"  {it.label:<14} 需求{it.demand_weight:<3} 你覆盖{cov:<4} 优先级{pri}")
+    if args.report:
+        Path(args.report).write_text(collect_mod.render_demand(rep), encoding="utf-8")
+        print(f"\n需求报告已写入 {args.report}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="career-loop",
@@ -254,6 +293,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("dashboard", help="启动 Streamlit 看板")
 
+    cc = sub.add_parser("collect", help="W3：批量采集目录里的原始 JD 并入库（自动去重）")
+    cc.add_argument("--dir", required=True, help="放原始 JD（.md/.txt）的目录")
+    cc.add_argument("--report", default=None, help="可选：把需求热力报告写到这个 md 文件")
+
+    dm = sub.add_parser("demand", help="跨整批 JD 汇总需求热力（可结合经历算该补什么）")
+    dm.add_argument("--profile", default=None, help="可选：你的经历文件，算补能力优先级")
+    dm.add_argument("--report", default=None, help="可选：把带优先级的需求报告写到 md 文件")
+
     rc = sub.add_parser("recommend", help="人→JD：给一批 JD 排序，并算补什么最划算")
     rc.add_argument("--profile", required=True)
     rc.add_argument("--jds", required=True, help="放多个 JD .md 的目录")
@@ -275,6 +322,7 @@ def main(argv: list[str] | None = None) -> int:
         "match": cmd_match, "apply": cmd_apply, "status": cmd_status,
         "log": cmd_log, "calibrate": cmd_calibrate, "eval": cmd_eval,
         "dashboard": cmd_dashboard, "recommend": cmd_recommend,
+        "collect": cmd_collect, "demand": cmd_demand,
     }
     return handlers[args.command](args)
 

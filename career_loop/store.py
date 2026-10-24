@@ -96,6 +96,21 @@ def get_jd(jid: int, db: Optional[str] = None) -> Optional[dict]:
     return dict(row) if row else None
 
 
+def list_jds(db: Optional[str] = None) -> list[dict]:
+    conn = _connect(db)
+    rows = conn.execute("SELECT * FROM jds ORDER BY id").fetchall()
+    conn.close()
+    out = []
+    for r in rows:
+        d = dict(r)
+        try:
+            d["requirements"] = json.loads(d["requirements"])
+        except (json.JSONDecodeError, TypeError):
+            d["requirements"] = []
+        out.append(d)
+    return out
+
+
 def record_application(
     jd_id: int, profile_id: int, fit_score: float, db: Optional[str] = None
 ) -> int:
