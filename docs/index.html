@@ -6,150 +6,241 @@
 <title>career-loop · 先看清你差在哪</title>
 <meta name="description" content="粘贴岗位描述和你的经历，10 秒得到匹配分、缺口清单，以及补哪一项分数涨最多。">
 <style>
+
   :root{
-    --bg:#f5f6fa; --card:#ffffff; --ink:#151823; --sub:#5b6172;
-    --line:#e4e7ef; --brand:#4f46e5; --brand-2:#6366f1;
-    --ok:#059669; --warn:#d97706; --bad:#e11d48;
-    --ok-bg:#ecfdf5; --warn-bg:#fffbeb; --bad-bg:#fff1f2;
-    --shadow:0 1px 2px rgba(20,24,40,.04), 0 8px 24px rgba(20,24,40,.06);
+    --bg:#07070A; --bg2:#0B0C11;
+    --panel:rgba(255,255,255,.035); --panel2:rgba(255,255,255,.06);
+    --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+    --ink:#F4F6FB; --sub:#A0A7B8; --muted:#6E768A;
+    --violet:#7C5CFF; --cyan:#22D3EE; --emerald:#34D399; --amber:#FBBF24; --rose:#FB7185;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
   body{
-    margin:0; background:var(--bg); color:var(--ink);
+    margin:0;background:var(--bg);color:var(--ink);overflow-x:hidden;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
     -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:1120px; margin:0 auto; padding:40px 20px 56px}
-  .topnav{display:flex; align-items:center; justify-content:space-between; margin-bottom:34px}
-  .brand{
-    display:inline-flex; align-items:center; gap:10px;
-    font-weight:700; letter-spacing:.2px; color:var(--brand); font-size:15px;
+  ::selection{background:rgba(124,92,255,.35)}
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+    background-size:64px 64px;
+    -webkit-mask-image:radial-gradient(ellipse 85% 62% at 50% 0%,#000 28%,transparent 76%);
+    mask-image:radial-gradient(ellipse 85% 62% at 50% 0%,#000 28%,transparent 76%);
   }
-  .star{
-    display:inline-flex; align-items:center; gap:6px; text-decoration:none;
-    font-size:13px; font-weight:600; color:var(--ink); background:#fff;
-    border:1px solid var(--line); border-radius:999px; padding:8px 14px;
-    box-shadow:var(--shadow); transition:border-color .15s, color .15s;
+  .glow{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;opacity:.55}
+  .glow-a{width:640px;height:640px;left:-200px;top:-240px;background:radial-gradient(circle,rgba(124,92,255,.55),transparent 62%)}
+  .glow-b{width:560px;height:560px;right:-180px;top:-200px;background:radial-gradient(circle,rgba(34,211,238,.32),transparent 62%)}
+  @media(prefers-reduced-motion:no-preference){
+    .glow-a{animation:float 14s ease-in-out infinite}
+    .glow-b{animation:float 18s ease-in-out infinite reverse}
   }
-  .star:hover{border-color:var(--brand); color:var(--brand)}
-  header.hero{text-align:center; margin-bottom:28px}
-  .dot{width:9px;height:9px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
-  h1{font-size:34px; line-height:1.25; margin:14px 0 10px; letter-spacing:-.5px}
-  .lead{margin:0 auto; max-width:640px; color:var(--sub); font-size:15.5px; line-height:1.7}
-  .badges{margin-top:16px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
-  .badge{
-    font-size:12px; color:var(--sub); background:#fff; border:1px solid var(--line);
-    padding:5px 11px; border-radius:999px;
-  }
-  .grid{display:grid; grid-template-columns:1.05fr .95fr; gap:20px; margin-top:26px}
-  @media (max-width:860px){ .grid{grid-template-columns:1fr} h1{font-size:27px} }
-  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); padding:20px}
-  h2{font-size:14px; margin:0 0 6px; letter-spacing:.3px; color:var(--sub); font-weight:600}
-  label{display:block; font-size:13px; font-weight:600; margin:16px 0 7px}
-  label:first-child{margin-top:2px}
-  textarea{
-    width:100%; min-height:150px; resize:vertical; padding:12px 13px;
-    border:1px solid var(--line); border-radius:11px; background:#fbfbfe;
-    font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,"PingFang SC",monospace;
-    color:var(--ink); outline:none; transition:border-color .15s, box-shadow .15s;
-  }
-  textarea:focus{border-color:var(--brand-2); box-shadow:0 0 0 3px rgba(99,102,241,.12); background:#fff}
-  .actions{display:flex; gap:10px; margin-top:16px}
-  button{
-    cursor:pointer; border:0; border-radius:10px; padding:11px 18px;
-    font-size:14px; font-weight:600; background:var(--brand); color:#fff;
-    transition:transform .08s, background .15s;
-  }
-  button:hover{background:var(--brand-2)}
-  button:active{transform:translateY(1px)}
-  button.ghost{background:#fff; color:var(--brand); border:1px solid var(--line)}
-  button.ghost:hover{background:#f4f4ff}
-  .hint{margin:12px 0 0; font-size:12px; color:#8a90a2}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
 
-  .scorebox{display:flex; align-items:baseline; gap:12px; padding-bottom:14px; border-bottom:1px dashed var(--line)}
-  .score{font-size:60px; font-weight:800; line-height:1; letter-spacing:-2px; color:var(--brand)}
-  .score.ok{color:var(--ok)} .score.warn{color:var(--warn)} .score.bad{color:var(--bad)}
-  .scorelabel{font-size:13px; color:var(--sub); font-weight:600}
-  .scorehint{margin-left:auto; font-size:12px; color:#8a90a2}
+  .nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;
+    padding:13px 24px;background:rgba(7,7,10,.72);backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--line)}
+  .logo{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font-weight:650;letter-spacing:-.01em}
+  .logo svg{width:26px;height:26px;flex:none}
+  .ver{font:11px var(--mono);color:var(--muted);border:1px solid var(--line);padding:2px 7px;border-radius:99px}
+  .nav-links{display:flex;gap:20px;margin-left:auto}
+  .nav-links a{color:var(--sub);text-decoration:none;font-size:13px;transition:color .15s}
+  .nav-links a:hover{color:var(--ink)}
+  .star-btn{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:13px;font-weight:600;
+    color:var(--ink);padding:7px 13px;border-radius:10px;border:1px solid var(--line2);
+    background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
+    box-shadow:0 1px 0 rgba(255,255,255,.12) inset;transition:.18s}
+  .star-btn:hover{border-color:rgba(124,92,255,.6);box-shadow:0 0 24px rgba(124,92,255,.28)}
 
-  .matrix{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:16px 0 6px}
-  @media (max-width:520px){ .matrix{grid-template-columns:1fr} }
-  .chip{
-    display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:9px;
-    font-size:12.5px; border:1px solid transparent; line-height:1.35;
-  }
+  .hero{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:76px 24px 6px;text-align:center}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub);
+    border:1px solid var(--line);background:var(--panel);padding:6px 12px;border-radius:99px}
+  .pill .dot{width:6px;height:6px;border-radius:50%;background:var(--emerald);box-shadow:0 0 12px var(--emerald)}
+  h1{font-size:clamp(34px,6vw,64px);line-height:1.06;letter-spacing:-.035em;margin:22px 0 16px;font-weight:700}
+  .grad{background:linear-gradient(100deg,#FFFFFF 0%,#CFC8FF 34%,#8BE9F7 68%,#FFFFFF 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{max-width:670px;margin:0 auto;color:var(--sub);font-size:16px;line-height:1.75}
+  .cta{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+  .btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:11px 20px;border-radius:11px;border:1px solid rgba(124,92,255,.55);
+    background:linear-gradient(180deg,#8B6BFF,#6C4DFF);color:#fff;font-size:14px;font-weight:600;
+    cursor:pointer;text-decoration:none;
+    box-shadow:0 1px 0 rgba(255,255,255,.22) inset,0 10px 34px rgba(124,92,255,.35);
+    transition:transform .15s,box-shadow .2s}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 16px 46px rgba(124,92,255,.52)}
+  .btn-ghost{display:inline-flex;align-items:center;justify-content:center;
+    padding:11px 18px;border-radius:11px;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:.18s}
+  .btn-ghost:hover{border-color:var(--line2);background:var(--panel2)}
+  .stats{display:flex;gap:42px;justify-content:center;margin-top:42px;flex-wrap:wrap}
+  .stats div{text-align:left}
+  .stats b{display:block;font:700 26px/1.1 var(--mono);letter-spacing:-.5px;
+    background:linear-gradient(180deg,#fff,#98A0B4);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stats span{font-size:12px;color:var(--muted)}
+
+  .app{position:relative;z-index:1;max-width:1160px;margin:36px auto 0;padding:0 24px 44px}
+  .window{position:relative;background:linear-gradient(180deg,rgba(18,19,26,.92),rgba(10,11,16,.94));
+    border:1px solid var(--line);border-radius:20px;overflow:hidden;
+    box-shadow:0 44px 130px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.02) inset}
+  .window::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;z-index:2;
+    background:linear-gradient(90deg,transparent,rgba(124,92,255,.9),rgba(34,211,238,.9),transparent)}
+  .win-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;
+    border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+  .dots{display:flex;gap:6px}
+  .dots i{width:10px;height:10px;border-radius:50%;display:block}
+  .dots i:nth-child(1){background:#FF5F57}
+  .dots i:nth-child(2){background:#FEBC2E}
+  .dots i:nth-child(3){background:#28C840}
+  .win-title{font:12px var(--mono);color:var(--muted)}
+  .win-badge{margin-left:auto;font:11px var(--mono);color:var(--emerald);
+    border:1px solid rgba(52,211,153,.3);background:rgba(52,211,153,.08);padding:3px 9px;border-radius:99px}
+  .pane{display:grid;grid-template-columns:1.02fr .98fr}
+  @media(max-width:900px){.pane{grid-template-columns:1fr}}
+  .inputs{padding:22px;border-right:1px solid var(--line)}
+  .results{padding:22px;background:rgba(255,255,255,.012)}
+  @media(max-width:900px){.inputs{border-right:0;border-bottom:1px solid var(--line)}}
+  label{display:block;font-size:12px;font-weight:600;color:var(--sub);margin:0 0 7px;letter-spacing:.2px}
+  label+label{margin-top:16px}
+  textarea{width:100%;min-height:132px;resize:vertical;padding:12px 13px;border-radius:11px;
+    border:1px solid var(--line);background:rgba(0,0,0,.30);color:var(--ink);
+    font:12.5px/1.7 var(--mono);outline:none;transition:border-color .18s,box-shadow .18s}
+  textarea:focus{border-color:rgba(124,92,255,.7);
+    box-shadow:0 0 0 3px rgba(124,92,255,.14),0 0 26px rgba(124,92,255,.12)}
+  .actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .hint{margin:12px 0 0;font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+
+  .scorewrap{display:flex;align-items:center;gap:14px;padding-bottom:14px}
+  .score{font:800 56px/1 var(--mono);letter-spacing:-2.5px;
+    background:linear-gradient(180deg,#FFFFFF,#8B93A7);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .score.ok{background:linear-gradient(180deg,#7BF1C4,#22D3EE);-webkit-background-clip:text;background-clip:text}
+  .score.warn{background:linear-gradient(180deg,#FFD37A,#F59E0B);-webkit-background-clip:text;background-clip:text}
+  .score.bad{background:linear-gradient(180deg,#FF9BAF,#E11D48);-webkit-background-clip:text;background-clip:text}
+  .scorelabel{font-size:12px;color:var(--sub);font-weight:600}
+  .mode{font:11px var(--mono);color:var(--muted);margin-top:5px}
+  .divider{height:1px;background:var(--line);margin:2px 0 14px}
+
+  .matrix{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 4px}
+  @media(max-width:520px){.matrix{grid-template-columns:1fr}}
+  .chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;font-size:12px;
+    background:rgba(255,255,255,.025);border:1px solid var(--line);border-left:3px solid var(--muted);
+    transition:background .15s}
+  .chip:hover{background:rgba(255,255,255,.05)}
   .chip .name{font-weight:600}
-  .chip .st{margin-left:auto; font-size:11px; font-weight:700; white-space:nowrap}
-  .chip.full{background:var(--ok-bg); border-color:#c7f0dd} .chip.full .st{color:var(--ok)}
-  .chip.partial{background:var(--warn-bg); border-color:#fde9bd} .chip.partial .st{color:var(--warn)}
-  .chip.missing{background:var(--bad-bg); border-color:#ffd3dc} .chip.missing .st{color:var(--bad)}
+  .chip .st{margin-left:auto;font-size:10.5px;font-weight:700;white-space:nowrap}
+  .chip.full{border-left-color:var(--emerald);background:rgba(52,211,153,.06)}
+  .chip.full .st{color:var(--emerald)}
+  .chip.partial{border-left-color:var(--amber);background:rgba(251,191,36,.06)}
+  .chip.partial .st{color:var(--amber)}
+  .chip.missing{border-left-color:var(--rose);background:rgba(251,113,133,.06)}
+  .chip.missing .st{color:var(--rose)}
 
-  h3{font-size:14px; margin:20px 0 10px; letter-spacing:.2px}
-  .uplift{list-style:none; margin:0; padding:0}
-  .uplift li{padding:10px 0; border-bottom:1px solid #f0f1f6}
+  h3{font-size:11.5px;letter-spacing:.5px;color:var(--sub);margin:20px 0 8px;text-transform:uppercase}
+  .uplift{list-style:none;margin:0;padding:0}
+  .uplift li{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
   .uplift li:last-child{border-bottom:0}
-  .u-head{display:flex; align-items:baseline; gap:8px; font-size:13px}
-  .u-name{font-weight:650}
-  .u-delta{margin-left:auto; color:var(--ok); font-weight:800; font-variant-numeric:tabular-nums}
-  .u-sub{font-size:11.5px; color:var(--sub); margin-top:4px}
-  .bar{height:6px; border-radius:999px; background:#eef0f7; margin-top:7px; overflow:hidden}
-  .bar > i{display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#6366f1,#22c55e)}
-  .empty{color:#8a90a2; font-size:13px; padding:10px 0}
-  footer{margin-top:26px; text-align:center; font-size:12.5px; color:#8a90a2; line-height:1.8}
-  footer a{color:var(--brand); text-decoration:none}
+  .u-head{display:flex;align-items:baseline;gap:8px;font-size:13px}
+  .u-name{font-weight:600}
+  .u-delta{margin-left:auto;color:var(--emerald);font:800 13px var(--mono)}
+  .u-sub{font-size:11.5px;color:var(--muted);margin-top:4px;font-family:var(--mono)}
+  .bar{height:6px;border-radius:99px;background:rgba(255,255,255,.06);margin-top:7px;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:99px;
+    background:linear-gradient(90deg,var(--violet),var(--cyan));
+    box-shadow:0 0 14px rgba(34,211,238,.45)}
+  .empty{color:var(--muted);font-size:12.5px;padding:8px 0}
+
+  .foot{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:26px 24px 64px;
+    display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap;
+    color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+  .foot a{color:var(--sub);text-decoration:none}
+  .foot a:hover{color:var(--ink)}
+  @media(max-width:720px){.nav-links{display:none}.hero{padding-top:52px}.stats{gap:26px}}
+
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="topnav">
-    <div class="brand"><span class="dot"></span>career-loop</div>
-    <a class="star" href="https://github.com/&lt;your-name&gt;/career-loop" target="_blank" rel="noopener">★ Star on GitHub</a>
+
+<div class="glow glow-a"></div>
+<div class="glow glow-b"></div>
+
+<nav class="nav">
+  <a class="logo" href="#">
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <path d="M8.5 16a7.5 7.5 0 0 1 12.8-5.3" stroke="#8B6BFF" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M23.5 16a7.5 7.5 0 0 1-12.8 5.3" stroke="#22D3EE" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="8.5" cy="16" r="2.1" fill="#8B6BFF"/>
+      <circle cx="23.5" cy="16" r="2.1" fill="#22D3EE"/>
+    </svg>
+    <span>career-loop</span>
+    <span class="ver">v0.4</span>
+  </a>
+  <div class="nav-links">
+    <a href="#app">Demo</a>
+    <a href="https://github.com/&lt;your-name&gt;/career-loop/tree/main/benchmark">Benchmark</a>
+    <a href="https://github.com/&lt;your-name&gt;/career-loop/tree/main/docs">Docs</a>
   </div>
-  <header class="hero">
-    <h1>先别投。先看清你到底差在哪。</h1>
-    <p class="lead">粘贴一份 JD 和你的经历，10 秒得到加权匹配分、逐项缺口，以及「补哪一项分数涨最多」。全部在你的浏览器里算，不上传。</p>
-    <div class="badges">
-      <span class="badge">免安装</span>
-      <span class="badge">本地计算</span>
-      <span class="badge">通用岗位词表</span>
-      <span class="badge">支持任意岗位</span>
-      <span class="badge">反事实解释</span>
+  <a class="star-btn" href="https://github.com/&lt;your-name&gt;/career-loop" target="_blank" rel="noopener">★ Star on GitHub</a>
+</nav>
+
+<header class="hero">
+  <div class="pill"><span class="dot"></span>33 个岗位族 · 本地计算 · 零依赖核心</div>
+  <h1>先别投。<br><span class="grad">先看清你到底差在哪。</span></h1>
+  <p class="lead">粘贴 JD 和你的经历，10 秒得到加权匹配分、逐项缺口，以及「补哪一项分数涨最多」。数据不离开浏览器。</p>
+  <div class="cta">
+    <a class="btn-primary" href="#app">开始匹配</a>
+    <a class="btn-ghost" href="https://github.com/&lt;your-name&gt;/career-loop" target="_blank" rel="noopener">查看源码</a>
+  </div>
+  <div class="stats">
+    <div><b>33</b><span>岗位族</span></div>
+    <div><b>42</b><span>评测集</span></div>
+    <div><b>0</b><span>核心依赖</span></div>
+    <div><b>100%</b><span>本地计算</span></div>
+  </div>
+</header>
+
+<main class="app" id="app">
+  <div class="window">
+    <div class="win-bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span class="win-title">career-loop — local</span>
+      <span class="win-badge">no upload</span>
     </div>
-  </header>
-
-  <main class="grid">
-    <section class="card">
-      <h2>输入</h2>
-      <label for="jd">岗位描述（JD）</label>
-      <textarea id="jd" spellcheck="false"></textarea>
-      <label for="profile">你的经历</label>
-      <textarea id="profile" spellcheck="false"></textarea>
-      <div class="actions">
-        <button id="run">开始匹配</button>
-        <button id="sample" class="ghost">换个示例</button>
-      </div>
-      <p class="hint">数据只在你本机浏览器计算；刷新即清空。</p>
-    </section>
-
-    <section class="card">
-      <div class="scorebox">
-        <div class="score" id="score">--</div>
-        <div>
-          <div class="scorelabel">加权匹配度</div>
-          <div class="scorehint" id="mode">规则基线</div>
+    <div class="pane">
+      <section class="inputs">
+        <label for="jd">岗位描述（JD）</label>
+        <textarea id="jd" spellcheck="false"></textarea>
+        <label for="profile">你的经历</label>
+        <textarea id="profile" spellcheck="false"></textarea>
+        <div class="actions">
+          <button id="run" class="btn-primary">开始匹配</button>
+          <button id="sample" class="btn-ghost">换个示例</button>
         </div>
-      </div>
-      <div class="matrix" id="matrix"></div>
-      <h3>最划算的补强</h3>
-      <ul class="uplift" id="uplift"></ul>
-    </section>
-  </main>
+        <p class="hint">data stays in your browser · refresh to clear</p>
+      </section>
+      <section class="results">
+        <div class="scorewrap">
+          <div class="score" id="score">--</div>
+          <div>
+            <div class="scorelabel">加权匹配度</div>
+            <div class="mode" id="mode">规则基线</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="matrix" id="matrix"></div>
+        <h3>最划算的补强</h3>
+        <ul class="uplift" id="uplift"></ul>
+      </section>
+    </div>
+  </div>
+</main>
 
-  <footer>
-    浏览器版为简化规则引擎（零依赖、可离线）；完整版含 LLM 可选语义匹配、42 条标注评测集、Pearson 校准闭环。<br>
-    源码与评测集：<a href="https://github.com/&lt;your-name&gt;/career-loop" target="_blank" rel="noopener">github.com/&lt;your-name&gt;/career-loop</a>
-  </footer>
-</div>
+<footer class="foot">
+  <span>MIT · 本地优先 · 匹配分可证伪</span>
+  <span><a href="https://github.com/&lt;your-name&gt;/career-loop">GitHub</a> · <a href="https://github.com/&lt;your-name&gt;/career-loop/tree/main/docs">方法论</a></span>
+</footer>
 
 <script>
 const TAXONOMY = {
