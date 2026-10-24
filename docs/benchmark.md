@@ -56,6 +56,12 @@ These are **synthetic demo data** used to show how to read the report. They are
 not the author's job-search statistics. With real data, run `calibrate` without
 `--data`.
 
+**Real-data check:** on the public `job-resume-matching` dataset (1,167 real JDs +
+9,544 real résumés + 122,560 real match labels), family-identification accuracy is
+**91.9%** and the engine score vs. the dataset's `final_score` gives Pearson **r = 0.193**
+(2,000 real pairs, weak positive). The engine is a rule baseline; a weak-but-positive
+r is expected next to a multi-dimensional semantic label. See `docs/real_eval_report.md`.
+
 ## 3. Cross-engine parity (Python vs browser)
 
 The browser demo reimplements the rules in JavaScript. To keep them honest, the

@@ -4,6 +4,32 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.1] - 2026-10-24
+
+### Added
+- **English capability aliases (`EN_VOCAB`)**: career-loop can now read English JDs
+  and résumés, not just Chinese. Scoped to the 5 categories covered by the public
+  evaluation dataset + general dimensions; other families' English support is
+  "to-be-added" and not overclaimed.
+- **Real-data validation** (`docs/real_eval_report.md`, `scripts/real_eval_family.py`,
+  `scripts/real_eval_calibrate.py`): replaced the hand-written eval set and the
+  synthetic 29-row calibration demo with public datasets (job-resume-matching:
+  1,167 real JDs + 9,544 résumés + 122,560 real match labels). Family-identification
+  accuracy **91.9%** on real JDs; engine score vs. real `final_score` Pearson **r = 0.193**
+  (2,000 real pairs, weak positive — honest vs. the old synthetic r = 0.694).
+- **`scripts/fetch_real_eval_data.py`**: one-command downloader for the public
+  evaluation dataset (saved as `data/real_eval/job_resume_*.csv`). The dataset is
+  large (~250MB) and is **gitignored** so the repo stays lean; third parties
+  reproduce the validation by running this script.
+
+### Changed
+- `detect_domains` AI judgment now uses a hardcore `AI_CORE_KW` list instead of all
+  TAXONOMY keywords, fixing a real cross-family bug where generic business words
+  (`business process` / `kpi` / `sql`) mis-tagged non-AI JDs as AI.
+- Removed over-broad short tokens (`ui`, `ux`, `ps`, `vi`) from the design family and
+  added real sales-title words (`sales representative`, `account executive`, …),
+  discovered via the real-data test (SALES accuracy 0.58 -> 0.70).
+
 ## [0.8.0] - 2026-10-24
 
 ### Added

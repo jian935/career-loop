@@ -245,7 +245,9 @@ career-loop eval --data data/eval_sample.jsonl --badcases badcases.jsonl
 
 > ⚠️ **诚实声明**：一致率 1.0 是在一份**人工构造、刻意覆盖边界case** 的 42 条评测集上取得的，它的作用是**锁住匹配逻辑不被改坏**（回归测试），**不**代表真实世界 100% 准确。真实准确率要靠下面第 4 步的校准和更多真实回流来逼近。
 
-### 3) 校准：匹配分到底准不准（用内置演示数据）
+### 3) 校准：匹配分到底准不准
+
+**演示（看报告怎么读）：**
 
 ```bash
 career-loop calibrate --data data/demo_applications.jsonl
@@ -265,7 +267,22 @@ career-loop calibrate --data data/demo_applications.jsonl
 结论：中到强相关（|r| ≥ 0.4）。匹配分确实在预测真实结果……
 ```
 
-> 演示数据是合成的（29 条），用来展示校准模块怎么读、怎么出结论。r=0.694 是**演示数值**，不是真实投递统计。
+> ⚠️ 演示数据是合成的 29 条，r=0.694 只用来展示校准模块怎么读，**不是真实统计**。
+
+**真实数据检验（可复现）：** 用公开数据集 `job-resume-matching`（1,167 真实 JD + 9,544 真实简历
++ 122,560 真实匹配标注）跑出：
+
+- 族识别准确率 **91.9%**（FINANCE 96.6% / HR 99.5% / BUSINESS-DEVELOPMENT 100% / IT 93.3% / SALES 69.8%）
+- 匹配分 ↔ 真实标注 `final_score` 的 Pearson **r = 0.193**（2,000 真实配对，弱正相关）
+
+r 偏低且为正，符合预期：引擎当前是**规则关键词基线**，而 `final_score` 是**多维语义匹配**，
+二者方向一致但解释力有限。完整方法、检验驱动修复的真实 bug、以及诚实边界见
+[`docs/real_eval_report.md`](docs/real_eval_report.md)。
+
+```bash
+python scripts/real_eval_family.py                       # 族识别准确率（真实 JD）
+python scripts/real_eval_calibrate.py --n 2000 --seed 7   # 真实 r（2,000 配对）
+```
 
 ### 4) 真实闭环：记录投递 → 回流结果 → 校准
 

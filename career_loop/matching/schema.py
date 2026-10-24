@@ -152,9 +152,9 @@ DOMAIN_PACKS: dict[str, dict] = {
         "fin_software": {"label": "财务软件(用友/金蝶/SAP)", "kw": ["用友", "金蝶", "sap", "erp", "财务软件"]},
     },
     "design": {
-        "ds_visual": {"label": "视觉设计", "kw": ["视觉", "平面", "海报", "banner", "排版", "ui", "审美", "vi", "封面"]},
-        "ds_ux": {"label": "交互/UX", "kw": ["交互", "ux", "用户体验", "信息架构", "原型", "线框图", "交互逻辑"]},
-        "ds_tools": {"label": "设计工具", "kw": ["figma", "sketch", "c4d", "blender", "illustrator", "ps"]},
+        "ds_visual": {"label": "视觉设计", "kw": ["视觉", "平面", "海报", "banner", "排版", "审美", "封面"]},
+        "ds_ux": {"label": "交互/UX", "kw": ["交互", "用户体验", "信息架构", "原型", "线框图", "交互逻辑"]},
+        "ds_tools": {"label": "设计工具", "kw": ["figma", "sketch", "c4d", "blender", "illustrator"]},
         "ds_motion": {"label": "动效/三维", "kw": ["动效", "动画设计", "after effects", "lottie", "特效", "三维"]},
     },
     "operations": {
@@ -445,15 +445,111 @@ for _pack in DOMAIN_PACKS.values():
         ALL_DIMS.setdefault(_k, _v)
 
 
+# 英文别名层：让引擎能识别英文 JD / 简历。
+# 仅覆盖真实评测集（job-resume-matching 数据集）有数据的岗位族 + 通用维度；
+# 其余族英文支持为「待补」，不夸大覆盖。
+# 严格只用复合英文词（如 "project management"），绝不用过泛单字
+# （单独 management/analysis/development/design 等会跨族误判，与中文词表同一铁律）。
+EN_VOCAB: dict[str, list[str]] = {
+    # ---- 通用维度 ----
+    "exec_project": ["project management", "program management", "project planning", "project coordination", "deliverables", "timeline"],
+    "problem_solving": ["problem solving", "root cause", "troubleshooting", "critical thinking", "process improvement", "analytical thinking"],
+    "learning": ["self-motivated", "quick learner", "continuous learning", "proactive learning"],
+    "ownership": ["adaptability", "flexibility", "attention to detail", "reliability", "integrity", "confidentiality"],
+    "writing": ["report writing", "documentation", "presentation skills", "proposal", "technical writing", "business writing"],
+    "customer": ["customer focus", "customer relationship", "client relationship", "user experience", "customer satisfaction"],
+    "leadership": ["leadership", "team management", "people management", "mentoring", "coaching", "team leadership"],
+    "language": ["english", "bilingual", "fluent english"],
+    "office": ["microsoft office", "microsoft excel", "excel", "ms office", "powerpoint", "word"],
+    # ---- AI 维度 ----
+    "python": ["python", "pandas", "numpy", "fastapi", "django"],
+    "llm_basics": ["gpt", "large language model", "transformer"],
+    "prompt_eng": ["prompt engineering"],
+    "rag": ["retrieval augmented", "vector database", "reranking"],
+    "agent": ["multi-agent", "orchestration"],
+    "product_sense": ["user interview", "product design", "product sense", "requirements analysis", "customer discovery"],
+    "data_analysis": ["metrics", "kpi", "sql", "dashboard", "funnel", "retention", "attribution", "data analytics"],
+    "eval": ["evaluation", "a/b testing", "ab testing", "benchmark"],
+    "engineering": ["backend", "api", "deployment", "docker", "database", "service", "devops"],
+    "communication": ["cross-functional", "stakeholder", "collaboration"],
+    "domain": ["business process", "industry", "cost structure", "pain point"],
+    # ---- FINANCE ----
+    "fin_accounting": ["accounting", "bookkeeping", "general ledger", "accounts payable", "accounts receivable"],
+    "fin_reporting": ["financial reporting", "financial statements", "financial analysis", "financial modeling", "budgeting", "forecasting", "p&l", "balance sheet", "variance analysis"],
+    "fin_tax": ["tax", "taxation", "tax filing", "vat", "corporate tax"],
+    "fin_audit": ["audit", "internal control", "internal audit", "sox", "risk management"],
+    "fin_cert": ["cpa", "acca", "cfa"],
+    "fin_software": ["sap", "oracle financials", "quickbooks", "hyperion"],
+    # ---- HR ----
+    "hr_recruit": ["recruitment", "recruiting", "sourcing", "talent acquisition", "hiring"],
+    "hr_perf": ["performance management", "compensation", "benefits", "payroll", "incentive"],
+    "hr_training": ["training", "learning and development", "organizational development", "employee engagement"],
+    "hr_labor": ["labor law", "employment law", "employee relations", "onboarding", "offboarding", "hr compliance"],
+    # ---- SALES ----
+    "sales_bd": ["business development", "lead generation", "prospecting", "new business", "revenue generation", "sales representative", "account executive", "sales manager", "account manager", "sales rep", "salesperson", "quota"],
+    "sales_negotiation": ["negotiation", "closing", "contract negotiation"],
+    "sales_crm": ["crm", "customer relationship management", "account management", "renewal"],
+    # ---- MARKETING ----
+    "mkt_content": ["content marketing", "copywriting", "social media", "blog"],
+    "mkt_ads": ["advertising", "sem", "ppc", "paid media", "campaign", "cpa"],
+    "mkt_brand": ["branding", "public relations", "communications"],
+    # ---- CONSULTING ----
+    "csl_industry": ["market research", "commercial analysis", "strategy consulting", "business analysis"],
+    "csl_strategy": ["strategic planning", "business strategy", "organizational design", "benchmarking"],
+    # ---- IT / ENGINEERING ----
+    "its_impl": ["system implementation", "erp implementation", "system configuration"],
+    "its_ops": ["system administration", "active directory", "help desk", "technical support", "ticketing", "incident management", "vendor management", "networking"],
+    "devops_linux": ["linux", "shell scripting", "server administration"],
+    "devops_container": ["docker", "kubernetes", "container", "helm"],
+    "devops_monitor": ["monitoring", "prometheus", "grafana", "alerting"],
+    "devops_ci": ["ci/cd", "jenkins", "gitlab ci", "pipeline"],
+    "be_lang": ["golang", "java", "c++", "node.js", "backend development", "rust"],
+    "be_arch": ["microservices", "distributed systems", "rest api", "message queue", "kafka", "redis", "caching"],
+    "be_db": ["mysql", "postgresql", "oracle", "database design", "index optimization"],
+    "fe_framework": ["react", "vue", "angular", "typescript", "javascript", "frontend"],
+    "fe_mobile": ["flutter", "react native", "mobile development", "h5"],
+    "fe_build": ["webpack", "vite", "frontend performance"],
+    "qa_functional": ["functional testing", "test cases", "black box", "compatibility testing", "regression testing"],
+    "qa_auto": ["automation testing", "selenium", "playwright", "api testing"],
+    "qa_perf": ["performance testing", "load testing", "jmeter", "stress testing"],
+    "sec_pentest": ["penetration testing", "vulnerability", "owasp", "code review", "ctf"],
+    "sec_compliance": ["iso 27001", "data masking", "personal information protection", "security compliance"],
+    "sec_ops": ["security operations", "incident response", "firewall", "intrusion detection", "threat intelligence"],
+    "emb_mcu": ["firmware", "rtos", "microcontroller", "stm32", "embedded development"],
+    "emb_circuit": ["pcb", "circuit design", "hardware design", "altium"],
+    "emb_bus": ["can bus", "modbus", "spi", "i2c"],
+}
+for _k, _en in EN_VOCAB.items():
+    if _k in ALL_DIMS:
+        _existing = {w.lower() for w in ALL_DIMS[_k]["kw"]}
+        for _w in _en:
+            _w = _w.lower()
+            if _w not in _existing:
+                ALL_DIMS[_k]["kw"].append(_w)
+                _existing.add(_w)
+
+
+# AI 硬核词：只有命中这些才计入「AI 岗位」判定，避免通用业务词
+# （business process / kpi / sql 等）把任意岗位误判成 AI。
+AI_CORE_KW = [
+    "python", "pandas", "numpy", "fastapi", "django", "gpt", "large language model", "llm",
+    "transformer", "prompt engineering", "rag", "retrieval augmented", "vector database",
+    "reranking", "agent", "multi-agent", "orchestration", "mlops", "fine-tuning", "pytorch",
+    "tensorflow", "langchain", "langgraph", "nlp", "natural language processing", "computer vision",
+    "object detection", "recommender", "model deployment", "kubernetes", "etl", "data pipeline",
+    "embedding", "大模型", "微调", "智能体", "检索增强", "提示词", "函数调用", "多智能体",
+]
+
+
 def detect_domains(text: str) -> list[str]:
     """粗判岗位族，返回命中关键词最多的前几个（用于展示/裁剪词表）。"""
     low = text.lower()
     scores: dict[str, int] = {}
     for name, pack in DOMAIN_PACKS.items():
-        c = sum(1 for spec in pack.values() for kw in spec["kw"] if kw in low)
+        c = sum(1 for spec in pack.values() for kw in spec["kw"] if kw.lower() in low)
         if c:
             scores[name] = c
-    ai_hits = sum(1 for spec in TAXONOMY.values() for kw in spec["kw"] if kw.lower() in low)
+    ai_hits = sum(1 for k in AI_CORE_KW if k in low)
     if ai_hits >= 2:
         scores["ai"] = ai_hits
     return [n for n, _ in sorted(scores.items(), key=lambda x: (-x[1], x[0]))]

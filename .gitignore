@@ -16,3 +16,5 @@ badcases.jsonl
 .career_loop_demo/
 benchmark/real_jds*.jsonl
 benchmark/target_jds*.jsonl
+# 真实公开评测数据集（250MB+，由 scripts/fetch_real_eval_data.py 下载，不入库）
+data/real_eval/
