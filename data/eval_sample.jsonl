@@ -1,0 +1,42 @@
+{"id": 1, "capability": "python", "jd": "任职要求：精通 Python，能独立开发和调试。", "profile": "用 Python 写了后端服务，部署到服务器跑了三个月。", "expected": "full"}
+{"id": 2, "capability": "python", "jd": "要求熟悉 Python 编程。", "profile": "在课程里了解过 Python 语法，知道它的基本用途。", "expected": "partial"}
+{"id": 3, "capability": "python", "jd": "要求熟练掌握 Python。", "profile": "主要负责产品文档，没写过代码。", "expected": "missing"}
+{"id": 4, "capability": "llm_basics", "jd": "需要理解大模型的能力边界与适用场景。", "profile": "做过三个大模型在同一任务上的失败模式对比分析。", "expected": "full"}
+{"id": 5, "capability": "llm_basics", "jd": "要求了解大模型基本原理。", "profile": "知道大模型是什么，能大概说清用途。", "expected": "partial"}
+{"id": 6, "capability": "llm_basics", "jd": "需要深入理解大模型原理。", "profile": "完全没接触过相关技术。", "expected": "missing"}
+{"id": 7, "capability": "prompt_eng", "jd": "需要设计系统提示词与多轮提示策略。", "profile": "把提示词迭代了五个版本，每版记录指标变化。", "expected": "full"}
+{"id": 8, "capability": "prompt_eng", "jd": "要求会基本的提示词工程。", "profile": "了解提示词工程，知道要让模型按格式回复。", "expected": "partial"}
+{"id": 9, "capability": "prompt_eng", "jd": "需要提示词工程能力。", "profile": "没做过相关工作。", "expected": "missing"}
+{"id": 10, "capability": "rag", "jd": "要求有 RAG / 检索增强的落地经验。", "profile": "用向量库做了知识库问答，报了 Recall@k 和幻觉率。", "expected": "full"}
+{"id": 11, "capability": "rag", "jd": "需要了解 RAG 技术。", "profile": "知道 RAG 是检索增强生成，看过科普。", "expected": "partial"}
+{"id": 12, "capability": "rag", "jd": "需要 RAG 落地经验。", "profile": "只做过直接调用大模型问答，没有检索。", "expected": "missing"}
+{"id": 13, "capability": "agent", "jd": "需要设计并实现 Agent 工作流。", "profile": "做了一个只解决排障的 Agent，录了失败轨迹当评测集。", "expected": "full"}
+{"id": 14, "capability": "agent", "jd": "要求理解 Agent / 智能体概念。", "profile": "了解 Agent 是能自主完成任务的智能体。", "expected": "partial"}
+{"id": 15, "capability": "agent", "jd": "需要 Agent 开发经验。", "profile": "主要负责产品文档，没写过代码。", "expected": "missing"}
+{"id": 16, "capability": "function_calling", "jd": "需要把真实 API 封装成工具并做参数校验。", "profile": "用函数调用把天气 API 封装成工具，做了参数校验和失败重试。", "expected": "full"}
+{"id": 17, "capability": "function_calling", "jd": "要求理解函数调用机制。", "profile": "知道 function calling 是让模型调工具，没实际封装过。", "expected": "partial"}
+{"id": 18, "capability": "function_calling", "jd": "需要函数调用开发经验。", "profile": "没做过相关工作。", "expected": "missing"}
+{"id": 19, "capability": "framework", "jd": "要求熟练使用 Agent 框架搭建应用。", "profile": "用 LangGraph 搭了一个带状态的多步工作流。", "expected": "full"}
+{"id": 20, "capability": "framework", "jd": "要求了解 Agent 框架。", "profile": "看过 Dify 的文档，知道它是低代码平台。", "expected": "partial"}
+{"id": 21, "capability": "framework", "jd": "需要熟练使用 Agent 框架。", "profile": "只用过纯手写调用，没碰过平台。", "expected": "missing"}
+{"id": 22, "capability": "coding_tools", "jd": "要求熟悉 Claude Code / Cursor 等 AI 编程工具。", "profile": "用 Cursor 从零到发布做完了一个项目，写了复盘。", "expected": "full"}
+{"id": 23, "capability": "coding_tools", "jd": "要求会用 AI 编程工具。", "profile": "了解 Cursor 是 AI 编辑器，装过但没怎么用。", "expected": "partial"}
+{"id": 24, "capability": "coding_tools", "jd": "要求熟练使用 AI 编程工具。", "profile": "没用过任何 AI 编程工具。", "expected": "missing"}
+{"id": 25, "capability": "product_sense", "jd": "需要独立完成需求洞察与产品设计。", "profile": "做了十次用户访谈，整理出带原话引用的需求清单。", "expected": "full"}
+{"id": 26, "capability": "product_sense", "jd": "要求有产品设计意识。", "profile": "了解需求调研的方法，知道要先访谈用户。", "expected": "partial"}
+{"id": 27, "capability": "product_sense", "jd": "需要需求洞察能力。", "profile": "从没做过这方面的工作。", "expected": "missing"}
+{"id": 28, "capability": "data_analysis", "jd": "需要建立指标体系并通过数据指导迭代。", "profile": "给项目定了三个指标，每天记录并画趋势线。", "expected": "full"}
+{"id": 29, "capability": "data_analysis", "jd": "要求有数据分析思维。", "profile": "了解数据驱动决策，知道要跟踪指标。", "expected": "partial"}
+{"id": 30, "capability": "data_analysis", "jd": "需要数据分析能力。", "profile": "对相关方向完全没有概念。", "expected": "missing"}
+{"id": 31, "capability": "eval", "jd": "需要建立效果评估体系并迭代。", "profile": "人工标注了 50 条评测集，报准确率和误判类型。", "expected": "full"}
+{"id": 32, "capability": "eval", "jd": "要求理解效果评估。", "profile": "了解评估的重要性，知道要算准确率。", "expected": "partial"}
+{"id": 33, "capability": "eval", "jd": "需要效果评估体系经验。", "profile": "模型跑通就上线了。", "expected": "missing"}
+{"id": 34, "capability": "engineering", "jd": "需要能把项目部署上线并稳定运行。", "profile": "用 Docker 部署了服务，配置了监控和告警。", "expected": "full"}
+{"id": 35, "capability": "engineering", "jd": "要求有基础工程能力。", "profile": "了解部署概念，知道要上服务器。", "expected": "partial"}
+{"id": 36, "capability": "engineering", "jd": "需要工程落地能力。", "profile": "只写算法，没碰过线上。", "expected": "missing"}
+{"id": 37, "capability": "communication", "jd": "需要高效推动跨团队对齐与协作。", "profile": "主导了研发、设计、运营三方对齐，把需求推上线。", "expected": "full"}
+{"id": 38, "capability": "communication", "jd": "要求沟通协作能力。", "profile": "了解跨团队协作的必要性，知道要同步进度。", "expected": "partial"}
+{"id": 39, "capability": "communication", "jd": "需要跨团队协作能力。", "profile": "习惯自己闷头做，不擅长协调。", "expected": "missing"}
+{"id": 40, "capability": "domain", "jd": "需要深入理解某业务场景的痛点与流程。", "profile": "梳理了客服业务全流程，标出人力和耗时最贵的三步。", "expected": "full"}
+{"id": 41, "capability": "domain", "jd": "要求理解业务场景。", "profile": "了解业务流程大概，知道要找痛点。", "expected": "partial"}
+{"id": 42, "capability": "domain", "jd": "需要业务理解能力。", "profile": "对相关方向完全没有概念。", "expected": "missing"}
