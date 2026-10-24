@@ -121,5 +121,5 @@ def render(assessment: Assessment, profile_name: str = "你的经历") -> str:
     add("")
     add("---")
     add("")
-    add("由 `jd-fit` 生成。它只是一个起点——真正让别人 star 你的，是这份报告后面那个能跑的项目。")
+    add("由 `career-loop` 生成。它只是一个起点——真正让别人 star 你的，是这份报告后面那个能跑的项目。")
     return "\n".join(lines)
