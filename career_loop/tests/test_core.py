@@ -168,5 +168,35 @@ class TestCollect(unittest.TestCase):
         self.assertGreater(python.coverage, 0.0)       # 部分/完全具备
 
 
+class TestCliDbRouting(unittest.TestCase):
+    """锁住 CLI 一定要把 --db 透传给 store，别串到默认库。"""
+
+    def test_apply_and_log_use_given_db(self):
+        from career_loop import cli
+
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, "c.db")
+            prof = os.path.join(d, "p.md")
+            jd = os.path.join(d, "j.md")
+            Path(prof).write_text("用 Python 写了后端服务。", encoding="utf-8")
+            Path(jd).write_text("# 后端\n任职要求：精通 Python。", encoding="utf-8")
+            self.assertEqual(cli.main(["--db", db, "init"]), 0)
+            self.assertEqual(cli.main(["--db", db, "add-profile", "--name", "me", "--file", prof]), 0)
+            self.assertEqual(cli.main(["--db", db, "add-jd", "--file", jd]), 0)
+            self.assertEqual(cli.main(["--db", db, "apply", "--jd-id", "1", "--profile-id", "1"]), 0)
+            self.assertEqual(cli.main(["--db", db, "log", "--app-id", "1", "--status", "interview"]), 0)
+            rows = store.list_applications(db)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["status"], "interview")
+
+    def test_collect_missing_dir_returns_error(self):
+        from career_loop import cli
+
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, "c.db")
+            rc = cli.main(["--db", db, "collect", "--dir", os.path.join(d, "nope")])
+            self.assertEqual(rc, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

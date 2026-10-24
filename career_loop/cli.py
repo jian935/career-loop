@@ -81,14 +81,14 @@ def cmd_match(args) -> int:
 
 def cmd_apply(args) -> int:
     store.init(args.db)
-    jd = store.get_jd(args.jd_id)
-    prof = store.get_profile(args.profile_id)
+    jd = store.get_jd(args.jd_id, args.db)
+    prof = store.get_profile(args.profile_id, args.db)
     if not jd or not prof:
         print("JD 或候选人不存在"); return 1
     reqs, _ = matching.extract_requirements(jd["text"])
     matches, _ = matching.match(reqs, prof["text"])
     fit = matching.score(reqs, matches)
-    aid = store.record_application(args.jd_id, args.profile_id, fit)
+    aid = store.record_application(args.jd_id, args.profile_id, fit, args.db)
     print(f"已记录投递 #{aid}：{jd['title']} × {prof['name']}，预测匹配分 {fit}%")
     return 0
 
@@ -106,7 +106,7 @@ def cmd_status(args) -> int:
 
 def cmd_log(args) -> int:
     store.init(args.db)
-    store.set_status(args.app_id, args.status, args.note)
+    store.set_status(args.app_id, args.status, args.note, args.db)
     print(f"#{args.app_id} 状态更新为 {args.status}")
     return 0
 
@@ -212,6 +212,8 @@ def cmd_dashboard(args) -> int:
 
 
 def cmd_collect(args) -> int:
+    if not Path(args.dir).is_dir():
+        print(f"目录不存在：{args.dir}"); return 1
     store.init(args.db)
     res = collect_mod.collect_dir(args.dir, args.db)
     total = len(store.list_jds(args.db))

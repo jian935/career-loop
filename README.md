@@ -242,7 +242,7 @@ career-loop/
 │   ├── collect.py       # W3：批量采集原始 JD + 需求热力 / 补能力优先级
 │   ├── cli.py           # 命令行入口（init / add-* / match / apply / status / log / calibrate / eval / recommend / collect / demand / dashboard）
 │   ├── dashboard.py     # Streamlit 看板（可选依赖）
-│   └── tests/           # 14 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集）
+│   └── tests/           # 16 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / CLI 路由）
 ├── data/
 │   ├── eval_sample.jsonl        # 42 条标注评测集（回归锁）
 │   └── demo_applications.jsonl  # 29 条合成演示数据（校准演示）
@@ -252,6 +252,14 @@ career-loop/
 │   └── raw_jds/                 # 带招聘站噪声的原始 JD（演示 collect）
 └── gen_eval.py          # 生成评测集的脚本
 ```
+
+---
+
+## 质量与自检
+
+- **16 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集，以及 CLI 的 `--db` 路由（防止命令串库）。
+- **27 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态）。
+- 一条命令复现：`python -m unittest discover -s career_loop/tests`。
 
 ---
 
