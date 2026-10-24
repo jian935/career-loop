@@ -27,12 +27,20 @@ LEVEL_FACTOR = {
 }
 
 
-def detect_level(title: str, description: str = "") -> str:
-    """Seniority from the title first; fall back to the description.
+def detect_level(title: str, description: str = "", hint: str | None = None) -> str:
+    """Seniority from an explicit hint, then the title, then the description.
 
     Word boundaries matter: "internal" must not match "intern".
     """
     import re
+
+    if hint:
+        h = str(hint).lower()
+        for k, v in (("intern", "intern"), ("entry", "junior"), ("junior", "junior"),
+                     ("mid", "mid"), ("senior", "senior"), ("manager", "senior"),
+                     ("director", "exec"), ("executive", "exec")):
+            if k in h:
+                return v
 
     t = title.lower()
     d = description[:300].lower()
@@ -117,6 +125,7 @@ def load_jobs(path: str) -> list[dict]:
             "company": d.get("company") or d.get("companyName") or "",
             "category": d.get("category") or d.get("jobIndustry") or "未分类",
             "description": desc,
+            "level_hint": d.get("level_hint") or d.get("seniority"),
         })
     return rows
 
@@ -145,7 +154,8 @@ def _goal_match(title: str, category: str, description: str, goal: str | None) -
 
 def _one(job: dict, profile: str, llm, target_level: str | None = "junior",
          goal: str | None = None) -> JobFit:
-    level = detect_level(job.get("title", ""), job.get("description", ""))
+    level = detect_level(job.get("title", ""), job.get("description", ""),
+                         job.get("level_hint"))
     factor = LEVEL_FACTOR.get(target_level or "", {}).get(level, 1.0)
     goal_match = _goal_match(job.get("title", ""), job.get("category", ""),
                              job.get("description", ""), goal)

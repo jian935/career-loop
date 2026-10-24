@@ -14,7 +14,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - `--no-llm` (and `CAREER_LOOP_NO_LLM=1`) to force rules; the CLI audit now runs
   fully offline.
 - Real-corpus scripts: `scripts/fetch_real_jds.py` (Remotive + Jobicy, public
-  feeds) and `scripts/coverage_real.py`.
+  feeds), `scripts/fetch_target_jds.py` (Himalayas, product/AI entry-mid pool),
+  and `scripts/coverage_real.py`.
+- `level_hint` from the source (e.g. Himalayas `seniority`) is honored by
+  `detect_level` before falling back to title/description regexes.
 
 ### Fixed
 - Seniority detection matched `intern` inside `internal`; now word-boundary.

@@ -351,6 +351,8 @@ class TestExplore(unittest.TestCase):
         self.assertEqual(explore.detect_level("Associate Product Manager"), "junior")
         self.assertNotEqual(explore.detect_level("Engineering Manager - Security Standard"), "intern")
         self.assertEqual(explore.detect_level("Engineering Manager"), "senior")
+        self.assertEqual(explore.detect_level("X", "", "Entry-level"), "junior")
+        self.assertEqual(explore.detect_level("X", "", "Senior"), "senior")
 
     def test_scan_penalizes_senior(self):
         prof = "用 Python 写了后端服务。"
