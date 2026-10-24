@@ -39,9 +39,11 @@ def main() -> int:
 
     first = ""
     for line in path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            first = line.strip()
-            break
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        first = s
+        break
     if not first.startswith("sk-") or "PASTE" in first.upper():
         print("还没填 Key：请把 sk-PASTE-HERE 替换成你的真实 Key 再保存。")
         return 1
