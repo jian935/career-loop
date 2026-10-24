@@ -24,7 +24,7 @@ def run(args: list[str], expect: int = 0, contains: str | list[str] | None = Non
     r = subprocess.run(
         [sys.executable, "-m", "career_loop", "--db", db, *args],
         capture_output=True, text=True, cwd=str(ROOT),
-        env={**os.environ, "PYTHONPATH": str(ROOT)},
+        env={**os.environ, "PYTHONPATH": str(ROOT), "CAREER_LOOP_NO_LLM": "1"},
     )
     out = (r.stdout + r.stderr).strip()
     ok = r.returncode == expect
@@ -83,6 +83,8 @@ def main() -> int:
          "--profile", "examples/profile_me.md"], contains=["当前匹配度", "最划算"], name="whatif")
     run(["intern", "--profile", "examples/profile_me.md", "--goal", "ai", "--cohort", "2028"],
         contains=["目标方向", "届时间线"], name="intern")
+    run(["scan", "--profile", "examples/profile_me.md", "--jobs", "examples/jds",
+         "--level", "junior"], contains=["最适配岗位", "行业适配"], name="scan")
 
     run(["collect", "--dir", "examples/raw_jds", "--report", str(tmp / "demand.md")],
         contains="采集完成", name="collect")

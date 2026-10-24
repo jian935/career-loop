@@ -4,6 +4,24 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] - 2026-10-24
+
+### Added
+- **`scan`**: resume × a job corpus -> all-industry ranking, industry fit,
+  gap ranking, and next actions.
+- Seniority detection (`intern/junior/mid/senior/exec`) with level-aware
+  down-weighting; a separate "goal direction" section (e.g. `--goal ai`).
+- `--no-llm` (and `CAREER_LOOP_NO_LLM=1`) to force rules; the CLI audit now runs
+  fully offline.
+- Real-corpus scripts: `scripts/fetch_real_jds.py` (Remotive + Jobicy, public
+  feeds) and `scripts/coverage_real.py`.
+
+### Fixed
+- Seniority detection matched `intern` inside `internal`; now word-boundary.
+
+### Changed
+- 36 unit tests, 32 CLI checks.
+
 ## [0.6.0] - 2026-10-24
 
 ### Added

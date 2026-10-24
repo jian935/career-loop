@@ -161,6 +161,7 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 - **双向匹配（recommend）**：给定一份经历 + 一批 JD，给 JD 排序，并算出「补哪一项能力最划算（能解锁最多岗位）」——直接回答「下一步该做什么项目」。
 - **反事实解释（whatif）**：假设把某一项补到「已具备」，匹配分能从多少涨到多少——把「补哪项最划算」变成一个具体数字，而不是一句建议。
 - **实习方向推荐（intern）**：内置 10 个实习方向，按「目标契合 + 匹配分」排序，并按届别生成时间线（日常实习 → 暑期实习 → 秋招 → 春招）。
+- **全行业扫描（scan）**：简历 × 一批岗位 → 全行业适配排序 + 行业适配度 + 最该补的能力 + 下一步建议；支持目标职级降权（intern/junior/mid/senior）与目标方向分区。
 - **JD 采集与需求热力（collect / demand）**：`collect` 批量导入目录里的原始 JD（清理「一键投递 / 邮箱 / 手机号 / 链接」等噪声、按标题去重）；`demand` 跨整批 JD 汇总能力需求热力，并可结合你的经历算出「补哪一项性价比最高」。
 - **本地存储**：SQLite 存候选人 / JD / 投递记录，零外部依赖。
 - **看板（可选）**：有 `streamlit` 时一条命令起可视化，无数据时读演示数据。
@@ -197,7 +198,7 @@ career-loop match --jd ... --profile ...     # 输出里模式会显示 llm
 - 不想手动编辑 `.env`：把 key 存到任意文本文件，运行 `python scripts/set_key.py --file 该文件 --delete`，会自动写入并删除源文件。
 - LLM 模式**不受词表限制**：遇到没有预置岗位族的职业（茶艺师、兽医、报关员……），会自动创建 `custom:` / `llm:` 能力项，新岗位无需改代码。
 - 结果缓存在 `~/.career_loop/llm_cache`（按 JD/经历哈希），重复分析不重复计费。
-- 想强制走规则：`CAREER_LOOP_NO_CACHE=1` 只关缓存；不配 Key 就是纯规则。
+- 想强制走规则：`--no-llm`（或 `CAREER_LOOP_NO_LLM=1`）；`CAREER_LOOP_NO_CACHE=1` 只关缓存；不配 Key 就是纯规则。
 - `doctor` 会打印 Python、DB、LLM、缓存、评测集状态，排查环境先跑它。
 - 各家 base URL / 模型名 / 免费额度 / 价格对比见 [docs/providers.md](docs/providers.md)（智谱 GLM-4-Flash 免费、SiliconFlow 有免费模型、DeepSeek Flash 约 ¥0.005/次）。
 
@@ -351,7 +352,17 @@ career-loop intern --profile examples/profile_me.md --goal ai --cohort 2028 --to
 秋招       2027.08 – 2027.11  2028 届秋招
 ```
 
-### 8) 看板（可选）
+### 8) 全行业扫描（scan）
+
+```bash
+career-loop scan --profile examples/profile_me.md --jobs examples/jds \
+  --level junior --goal ai --report scan.md
+```
+
+输出四块：最适配岗位、行业适配度、最该补的能力、下一步建议。
+`--level` 会把高一级的岗位降权（应届生别被 Senior 岗的高分骗）；`--goal ai` 会单独列出目标方向的岗位。
+
+### 9) 看板（可选）
 
 ```bash
 career-loop dashboard        # 没有真实数据时读 data/demo_applications.jsonl 演示
@@ -397,9 +408,10 @@ career-loop/
 │   ├── recommend.py     # 双向匹配：人→JD 排序 + 缺口性价比
 │   ├── collect.py       # W3：批量采集原始 JD + 需求热力 / 补能力优先级
 │   ├── internship.py    # 实习方向推荐：目标契合排序 + 届别时间线
-│   ├── cli.py           # 命令行入口（init / add-* / match / whatif / apply / status / log / calibrate / eval / recommend / collect / demand / intern / dashboard）
+│   ├── explore.py       # 全行业扫描：岗位排序 + 行业适配 + 职级降权 + 推荐
+│   ├── cli.py           # 命令行入口（init / doctor / add-* / match / whatif / apply / status / log / calibrate / eval / recommend / collect / demand / intern / scan / dashboard）
 │   ├── dashboard.py     # Streamlit 看板（可选依赖）
-│   └── tests/           # 32 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / LLM 接线 / .env / CLI 路由）
+│   └── tests/           # 36 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / 扫描 / LLM 接线 / .env / CLI 路由）
 ├── docs/                # 免安装网页 demo（index.html）＋ 截图 / 动图 / 演示视频，可挂 GitHub Pages
 ├── data/
 │   ├── eval_sample.jsonl        # 42 条标注评测集（回归锁）
@@ -415,8 +427,8 @@ career-loop/
 
 ## 质量与自检
 
-- **32 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 非 AI 岗位泛化 / 实习推荐 / LLM 接线与自建能力项 / `.env` 解析，以及 CLI 的 `--db` 路由（防止命令串库）。
-- **31 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态）+ `doctor`。
+- **36 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 非 AI 岗位泛化 / 实习推荐 / 全行业扫描与职级识别 / LLM 接线与自建能力项 / `.env` 解析，以及 CLI 的 `--db` 路由（防止命令串库）。
+- **32 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态）+ `doctor` + `scan`。
 - 一条命令复现：`python -m unittest discover -s career_loop/tests`。
 
 ---

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from . import calibrate as calib_mod
 from . import collect as collect_mod
+from . import explore as explore_mod
 from . import internship as intern_mod
 from . import matching
 from . import recommend as rec_mod
@@ -85,8 +86,10 @@ def _domain_text(text: str) -> str:
     return " / ".join(DOMAIN_CN.get(d, d) for d in doms[:3]) or "通用"
 
 
-def _make_llm():
+def _make_llm(args=None):
     """Return a configured LLM, or None so every command falls back to rules."""
+    if getattr(args, "no_llm", False) or os.getenv("CAREER_LOOP_NO_LLM") == "1":
+        return None
     llm = matching.LLM()
     return llm if llm.available else None
 
@@ -123,7 +126,7 @@ def cmd_add_profile(args) -> int:
 def cmd_add_jd(args) -> int:
     store.init(args.db)
     text = _read(args.file)
-    reqs, _ = matching.extract_requirements(text, _make_llm())
+    reqs, _ = matching.extract_requirements(text, _make_llm(args))
     jid = store.add_jd(matching.extract_title(text), text, reqs, args.db)
     print(f"已保存 JD #{jid}：{matching.extract_title(text)}（{len(reqs)} 项能力）")
     for r in reqs:
@@ -134,7 +137,7 @@ def cmd_add_jd(args) -> int:
 def cmd_match(args) -> int:
     text = _read(args.jd)
     profile = _read(args.profile)
-    llm = _make_llm()
+    llm = _make_llm(args)
     reqs, _ = matching.extract_requirements(text, llm)
     matches, mode = matching.match(reqs, profile, llm)
     assessment = matching.Assessment(
@@ -162,7 +165,7 @@ def cmd_apply(args) -> int:
     prof = store.get_profile(args.profile_id, args.db)
     if not jd or not prof:
         print("JD 或候选人不存在"); return 1
-    llm = _make_llm()
+    llm = _make_llm(args)
     reqs, _ = matching.extract_requirements(jd["text"], llm)
     matches, _ = matching.match(reqs, prof["text"], llm)
     fit = matching.score(reqs, matches)
@@ -248,7 +251,7 @@ def cmd_recommend(args) -> int:
     if not jds:
         print("目录里没有 .md JD 文件"); return 1
 
-    llm = _make_llm()
+    llm = _make_llm(args)
     ranked = rec_mod.recommend(profile, jds, llm)
     print(f"你的经历 × {len(jds)} 个 JD，按匹配分排序：")
     for i, r in enumerate(ranked[:args.top], 1):
@@ -290,6 +293,54 @@ def cmd_dashboard(args) -> int:
     return subprocess.run([sys.executable, "-m", "streamlit", "run", str(path)], env=env).returncode
 
 
+def cmd_scan(args) -> int:
+    profile = _read(args.profile)
+    jobs = explore_mod.load_jobs(args.jobs)
+    if args.category:
+        c = args.category.lower()
+        jobs = [j for j in jobs if c in str(j["category"]).lower()]
+    if not jobs:
+        print("没有可扫描的岗位"); return 1
+    llm = _make_llm(args)
+    print(f"扫描 {len(jobs)} 个岗位（LLM={'on' if llm else 'off'}）...")
+    level = None if args.level == "all" else args.level
+    rep = explore_mod.scan(profile, jobs, llm, top=args.top, workers=args.workers,
+                           level=level, goal=args.goal)
+    print(f"成功 {rep.ok}/{rep.total} · {rep.categories} 个行业 · 模式 {rep.mode_counts}\n")
+
+    if args.goal:
+        targets = [r for r in rep.jobs if r.goal_match][:5]
+        print(f"目标方向（{args.goal}）命中 {sum(1 for r in rep.jobs if r.goal_match)} 个：")
+        for i, r in enumerate(targets, 1):
+            gap = f"{r.top_gaps[0][1]} +{r.top_gaps[0][2]}" if r.top_gaps else "无"
+            print(f"  {i}. {r.score:>5}%  [{r.level:<6}] {r.title[:38]:<38} 缺口: {gap}")
+        print()
+
+    print("最适配岗位：")
+    for i, r in enumerate(rep.jobs[:10], 1):
+        gap = f"{r.top_gaps[0][1]} +{r.top_gaps[0][2]}" if r.top_gaps else "无"
+        print(f"  {i:>2}. {r.score:>5}%  [{r.level:<6}] {r.title[:36]:<36} {r.category[:18]:<18} 缺口: {gap}")
+
+    print("\n行业适配：")
+    for ind in rep.industries[:10]:
+        print(f"  {ind.category[:26]:<26} n={ind.n_jobs:<3} best={ind.best_score:<5} avg={ind.avg_score}")
+
+    print("\n最该补的能力：")
+    for key, label, n, fix in rep.gap_counts[:5]:
+        print(f"  {label} ×{n}  → {fix[:48]}")
+
+    intern_rows = None
+    if args.cohort:
+        intern_rows = intern_mod.rank(profile, goal=args.goal)
+    if args.report:
+        Path(args.report).write_text(
+            explore_mod.render_markdown(rep, Path(args.profile).stem, intern_rows, args.cohort),
+            encoding="utf-8",
+        )
+        print(f"\n报告已写入 {args.report}")
+    return 0
+
+
 def cmd_intern(args) -> int:
     profile = _read(args.profile)
     presets = intern_mod.load_presets(args.presets)
@@ -317,7 +368,7 @@ def cmd_intern(args) -> int:
 def cmd_whatif(args) -> int:
     text = _read(args.jd)
     profile = _read(args.profile)
-    llm = _make_llm()
+    llm = _make_llm(args)
     reqs, _ = matching.extract_requirements(text, llm)
     matches, used = matching.match(reqs, profile, llm)
     base, rows = matching.counterfactual(reqs, matches)
@@ -383,6 +434,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="AI 求职漏斗：预测匹配 → 记录投递 → 回流结果 → 校准模型。",
     )
     p.add_argument("--db", default=None, help="SQLite 数据库路径（默认 ~/.career_loop/loop.db）")
+    p.add_argument("--no-llm", action="store_true", help="强制规则模式（即使配置了 Key）")
     sub = p.add_subparsers(dest="command")
 
     sub.add_parser("init", help="初始化本地数据库")
@@ -427,6 +479,18 @@ def build_parser() -> argparse.ArgumentParser:
     wi.add_argument("--profile", required=True)
     wi.add_argument("--top", type=int, default=5)
 
+    sc = sub.add_parser("scan", help="简历 × 一批岗位 → 全行业适配 + 缺口 + 推荐")
+    sc.add_argument("--profile", required=True)
+    sc.add_argument("--jobs", required=True, help="岗位 JSONL，或放 JD 的目录")
+    sc.add_argument("--top", type=int, default=20)
+    sc.add_argument("--workers", type=int, default=6)
+    sc.add_argument("--category", default=None, help="只扫包含该关键词的行业")
+    sc.add_argument("--level", choices=["intern", "junior", "mid", "senior", "all"],
+                    default="junior", help="目标职级；更高职级按比例降权（all=不降权）")
+    sc.add_argument("--cohort", type=int, default=None)
+    sc.add_argument("--goal", default=None)
+    sc.add_argument("--report", default=None)
+
     it = sub.add_parser("intern", help="实习方向推荐：目标契合 + 匹配分，可算届别时间线")
     it.add_argument("--profile", required=True)
     it.add_argument("--goal", default=None, help="目标方向标签，如 ai / data / product")
@@ -467,7 +531,7 @@ def main(argv: list[str] | None = None) -> int:
         "log": cmd_log, "calibrate": cmd_calibrate, "eval": cmd_eval,
         "dashboard": cmd_dashboard, "recommend": cmd_recommend,
         "collect": cmd_collect, "demand": cmd_demand, "whatif": cmd_whatif,
-        "intern": cmd_intern,
+        "intern": cmd_intern, "scan": cmd_scan,
     }
     return handlers[args.command](args)
 

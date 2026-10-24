@@ -1,5 +1,6 @@
 """core 行为契约：抽取、匹配、校准、评测。"""
 
+import json
 import os
 import sys
 import tempfile
@@ -8,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from career_loop import calibrate, collect, internship, matching, recommend, store
+from career_loop import calibrate, collect, explore, internship, matching, recommend, store
 from career_loop.eval import load_dataset, run_eval
 
 
@@ -329,6 +330,52 @@ class TestDotenv(unittest.TestCase):
             self.assertEqual(env["OPENAI_API_KEY"], "sk-x")
             self.assertEqual(env["OPENAI_MODEL"], "deepseek-flash")
             self.assertNotIn("NOT_A_PAIR", env)
+
+
+class TestExplore(unittest.TestCase):
+    def test_load_jobs_jsonl(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "jobs.jsonl"
+            p.write_text(json.dumps({
+                "id": "1", "title": "后端", "company": "X",
+                "category": "SWE", "description": "要求 Python。",
+            }, ensure_ascii=False) + "\n", encoding="utf-8")
+            jobs = explore.load_jobs(str(p))
+            self.assertEqual(jobs[0]["title"], "后端")
+            self.assertEqual(jobs[0]["category"], "SWE")
+
+    def test_detect_level(self):
+        self.assertEqual(explore.detect_level("Senior Product Manager"), "senior")
+        self.assertEqual(explore.detect_level("Director of Operations"), "exec")
+        self.assertEqual(explore.detect_level("Product Manager Intern"), "intern")
+        self.assertEqual(explore.detect_level("Associate Product Manager"), "junior")
+        self.assertNotEqual(explore.detect_level("Engineering Manager - Security Standard"), "intern")
+        self.assertEqual(explore.detect_level("Engineering Manager"), "senior")
+
+    def test_scan_penalizes_senior(self):
+        prof = "用 Python 写了后端服务。"
+        jobs = [
+            {"id": "s", "title": "高级后端工程师", "company": "A", "category": "SWE",
+             "description": "任职要求：精通 Python。"},
+            {"id": "j", "title": "初级后端工程师", "company": "B", "category": "SWE",
+             "description": "任职要求：精通 Python。"},
+        ]
+        rep = explore.scan(prof, jobs, llm=None, level="junior")
+        self.assertEqual(rep.jobs[0].title, "初级后端工程师")
+
+    def test_scan_rules(self):
+        prof = "用 Python 写了后端服务。"
+        jobs = [
+            {"id": "1", "title": "后端", "company": "A", "category": "SWE",
+             "description": "任职要求：精通 Python。"},
+            {"id": "2", "title": "设计", "company": "B", "category": "Design",
+             "description": "任职要求：熟练使用 Figma。"},
+        ]
+        rep = explore.scan(prof, jobs, llm=None)
+        self.assertEqual(rep.total, 2)
+        self.assertEqual(rep.categories, 2)
+        self.assertEqual(rep.jobs[0].title, "后端")
+        self.assertGreaterEqual(rep.jobs[0].score, rep.jobs[1].score)
 
 
 class TestCliDbRouting(unittest.TestCase):
