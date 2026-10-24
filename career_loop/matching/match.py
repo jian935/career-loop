@@ -28,6 +28,44 @@ STRONG_NEGATIVE = [
 ]
 
 
+# 自定义（词表未覆盖）要求的匹配：用字符二元组重合度兜底
+CUSTOM_STOP = {
+    "负责", "经验", "相关", "工作", "能力", "要求", "熟悉", "了解", "具备", "完成",
+    "以及", "进行", "能够", "优先", "以上", "学历", "本科", "专业", "岗位", "职责",
+    "任职", "参与", "独立", "熟练", "掌握", "良好", "一定", "具有",
+}
+
+
+def _bigrams(s: str) -> set[str]:
+    s = re.sub(r"[^\u4e00-\u9fa5a-z0-9]", "", s.lower())
+    return {s[i:i + 2] for i in range(len(s) - 1)}
+
+
+def _match_custom(req: Requirement, lines: list[str]) -> MatchResult:
+    target = _bigrams(req.quote) - CUSTOM_STOP
+    if not target:
+        return MatchResult(req.key, "missing")
+    best_c = 0.0
+    best_line = ""
+    for line in lines:
+        pb = _bigrams(line)
+        if not pb:
+            continue
+        c = len(target & pb) / len(target)
+        if c > best_c:
+            best_c = c
+            best_line = line
+    if best_c >= 0.5:
+        status = "full" if any(a in best_line for a in ACTION_WORDS) else "partial"
+        return MatchResult(req.key, status, evidence=best_line[:110])
+    if best_c >= 0.28:
+        return MatchResult(
+            req.key, "partial", evidence=best_line[:110],
+            note="文字有部分重合，建议人工确认是否真的做过",
+        )
+    return MatchResult(req.key, "missing")
+
+
 def _profile_lines(profile: str) -> list[str]:
     lines = []
     for raw in profile.splitlines():
@@ -55,11 +93,11 @@ def _claim_lines(lines: list[str]) -> dict[str, list[str]]:
             ((max(len(w) for w in words), key) for key, words in hits.items()),
             reverse=True,
         )
-        top_len = ranked[0][0]
-        for length, key in ranked:
-            if length < 2:
-                continue
-            if length >= top_len - 1:
+        # 保留命中词最长的前 4 个能力。原先的 top-1 规则会让同一行里
+        # 较长的岗位词（如"资产负债表"）把较短的核心词（"会计""金蝶"）挤掉，
+        # 在非 AI 岗位里造成大量漏判。
+        for length, key in ranked[:4]:
+            if length >= 2:
                 owned.setdefault(key, []).append(line)
     return owned
 
@@ -69,6 +107,9 @@ def match_by_rules(requirements: list[Requirement], profile: str) -> dict[str, M
     owned = _claim_lines(lines)
     results: dict[str, MatchResult] = {}
     for req in requirements:
+        if req.key.startswith("custom:"):
+            results[req.key] = _match_custom(req, lines)
+            continue
         candidates = owned.get(req.key, [])
         if not candidates:
             results[req.key] = MatchResult(req.key, "missing")

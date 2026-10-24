@@ -4,10 +4,10 @@ from .extract import extract_requirements, extract_title
 from .llm import LLM, LLMError
 from .match import counterfactual, gaps, match, match_by_rules, score
 from .render import render
-from .schema import Assessment, MatchResult, Requirement
+from .schema import Assessment, MatchResult, Requirement, detect_domains
 
 __all__ = [
     "LLM", "LLMError", "Assessment", "MatchResult", "Requirement",
     "extract_requirements", "extract_title", "match", "match_by_rules",
-    "score", "gaps", "counterfactual", "render",
+    "score", "gaps", "counterfactual", "render", "detect_domains",
 ]

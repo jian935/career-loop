@@ -192,6 +192,36 @@ class TestCounterfactual(unittest.TestCase):
         self.assertEqual(rows, [])
 
 
+class TestGeneralization(unittest.TestCase):
+    """非 AI 岗位 / 词表外要求也要能分析。"""
+
+    def test_general_dims_recognized(self):
+        jd = "任职要求：\n1. 具备良好的沟通能力和责任心。\n2. 有较强的学习能力。"
+        reqs, _ = matching.extract_requirements(jd)
+        keys = {r.key for r in reqs}
+        self.assertTrue({"communication", "ownership", "learning"} <= keys, keys)
+
+    def test_custom_requirement_kept(self):
+        jd = "任职要求：\n1. 熟练操作数控机床并读懂机械图纸。"
+        reqs, _ = matching.extract_requirements(jd)
+        self.assertTrue(any(r.key.startswith("custom:") for r in reqs),
+                        [r.key for r in reqs])
+
+    def test_custom_match_by_overlap(self):
+        reqs = [matching.Requirement(
+            "custom:abc", "数控机床操作", 2, "must",
+            quote="熟练操作数控机床并读懂机械图纸。",
+        )]
+        ms, _ = matching.match(reqs, "在工厂实习时操作过数控机床，能看懂机械图纸。")
+        self.assertIn(ms["custom:abc"].status, ("full", "partial"))
+
+    def test_non_ai_job_has_domain_requirements(self):
+        jd = "财务会计\n任职要求\n1. 熟悉纳税申报。\n2. 熟练使用金蝶财务软件。"
+        reqs, _ = matching.extract_requirements(jd)
+        keys = {r.key for r in reqs}
+        self.assertTrue({"fin_tax", "fin_software"} <= keys, keys)
+
+
 class TestCliDbRouting(unittest.TestCase):
     """锁住 CLI 一定要把 --db 透传给 store，别串到默认库。"""
 

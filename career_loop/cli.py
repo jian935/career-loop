@@ -31,6 +31,19 @@ def _ensure_stdout_utf8() -> None:
             pass
 
 
+DOMAIN_CN = {
+    "ai": "AI/技术", "product": "产品", "marketing": "市场", "sales": "销售",
+    "finance": "财务", "design": "设计", "operations": "运营", "hr": "人力",
+    "education": "教育", "healthcare": "医疗", "legal": "法务",
+    "supply": "供应链", "manufacturing": "制造",
+}
+
+
+def _domain_text(text: str) -> str:
+    doms = matching.detect_domains(text)
+    return " / ".join(DOMAIN_CN.get(d, d) for d in doms[:3]) or "通用"
+
+
 def cmd_init(args) -> int:
     store.init(args.db)
     print(f"已初始化数据库：{args.db or store.get_db()}")
@@ -67,7 +80,7 @@ def cmd_match(args) -> int:
     )
     report = matching.render(assessment, Path(args.profile).stem)
     Path(args.out).write_text(report, encoding="utf-8")
-    print(f"匹配度 {assessment.score}%  ·  模式 {mode}  ·  报告已写入 {args.out}")
+    print(f"匹配度 {assessment.score}%  ·  模式 {mode}  ·  岗位族 {_domain_text(text)}  ·  报告已写入 {args.out}")
     if args.json:
         out = Path(args.out).with_suffix(".json")
         out.write_text(json.dumps({
@@ -217,7 +230,7 @@ def cmd_whatif(args) -> int:
     reqs, mode = matching.extract_requirements(text)
     matches, used = matching.match(reqs, profile)
     base, rows = matching.counterfactual(reqs, matches)
-    print(f"当前匹配度 {base}%  ·  模式 {used}")
+    print(f"当前匹配度 {base}%  ·  模式 {used}  ·  岗位族 {_domain_text(text)}")
     print("\n补上哪一项最划算（假设补到「已具备」，按涨幅排序）：")
     label = {"full": "已具备", "partial": "部分", "missing": "缺失"}
     shown = 0

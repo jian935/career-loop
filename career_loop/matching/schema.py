@@ -111,15 +111,116 @@ TAXONOMY: dict[str, dict] = {
     },
 }
 
+# 通用能力：任何岗位都适用（与 TAXONOMY 的 key 不重复）
+GENERAL_DIMS: dict[str, dict] = {
+    "exec_project": {"label": "执行与项目推进", "kw": ["项目管理", "项目推进", "统筹", "排期", "进度", "落地", "执行", "跟进", "交付"]},
+    "problem_solving": {"label": "问题分析与解决", "kw": ["分析问题", "解决问题", "根因", "复盘", "逻辑分析", "优化流程", "排查"]},
+    "learning": {"label": "学习与自驱", "kw": ["学习能力", "快速学习", "自驱", "主动学习", "钻研", "自学"]},
+    "ownership": {"label": "责任心与抗压", "kw": ["责任心", "抗压", "细致", "严谨", "耐心", "踏实"]},
+    "writing": {"label": "文档与表达", "kw": ["文档", "报告", "汇报", "写作", "文案", "ppt", "方案撰写"]},
+    "customer": {"label": "客户/用户导向", "kw": ["客户", "服务意识", "满意度", "需求响应", "售后", "用户导向"]},
+    "leadership": {"label": "领导力/带团队", "kw": ["带团队", "团队管理", "领导", "培养下属", "搭建团队", "统筹团队"]},
+    "language": {"label": "外语能力", "kw": ["英语", "日语", "韩语", "雅思", "托福", "六级", "四级", "口语", "cet"]},
+    "office": {"label": "办公软件", "kw": ["excel", "word", "ppt", "wps", "office", "表格", "文档处理"]},
+}
+
+# 常见岗位族词表：key 带前缀，避免与 AI 词表冲突
+DOMAIN_PACKS: dict[str, dict] = {
+    "product": {
+        "prod_prd": {"label": "PRD/需求文档", "kw": ["prd", "需求文档", "需求分析", "原型", "axure", "墨刀"]},
+        "prod_roadmap": {"label": "产品规划", "kw": ["产品规划", "路线图", "版本规划", "迭代规划"]},
+    },
+    "marketing": {
+        "mkt_content": {"label": "内容/文案", "kw": ["文案", "内容运营", "选题", "脚本", "种草", "小红书", "抖音"]},
+        "mkt_ads": {"label": "投放/广告", "kw": ["投放", "信息流", "sem", "千川", "roi", "cpa", "广告"]},
+        "mkt_brand": {"label": "品牌/公关", "kw": ["品牌", "公关", "传播", "媒介", "危机公关"]},
+        "mkt_private": {"label": "私域/社群", "kw": ["私域", "社群", "企微", "用户运营"]},
+    },
+    "sales": {
+        "sales_bd": {"label": "客户开发/BD", "kw": ["客户开发", "拓客", "bd", "商务拓展", "渠道开发", "销售", "业绩", "大客户", "电话销售", "面销"]},
+        "sales_negotiation": {"label": "商务谈判", "kw": ["谈判", "商务", "签约", "报价", "招投标"]},
+        "sales_crm": {"label": "CRM/客户管理", "kw": ["crm", "客户管理", "客户维护", "续约", "回款"]},
+    },
+    "finance": {
+        "fin_accounting": {"label": "会计核算", "kw": ["会计", "记账", "凭证", "总账", "应收应付", "核算", "账务"]},
+        "fin_reporting": {"label": "财务报表", "kw": ["报表", "合并报表", "财务分析", "预算", "决算", "利润表", "资产负债表"]},
+        "fin_tax": {"label": "税务", "kw": ["税务", "报税", "增值税", "汇算清缴", "纳税申报", "个税"]},
+        "fin_audit": {"label": "审计/内控", "kw": ["审计", "内控", "合规", "风控"]},
+        "fin_cert": {"label": "证书(CPA/ACCA)", "kw": ["cpa", "acca", "中级会计", "注会", "税务师"]},
+        "fin_software": {"label": "财务软件(用友/金蝶/SAP)", "kw": ["用友", "金蝶", "sap", "erp", "财务软件"]},
+    },
+    "design": {
+        "ds_visual": {"label": "视觉设计", "kw": ["视觉", "平面", "海报", "banner", "排版", "ui", "审美", "vi", "封面"]},
+        "ds_ux": {"label": "交互/UX", "kw": ["交互", "ux", "用户体验", "信息架构", "原型图"]},
+        "ds_tools": {"label": "设计工具", "kw": ["figma", "sketch", "c4d", "blender", "illustrator", "ps"]},
+    },
+    "operations": {
+        "ops_activity": {"label": "活动运营", "kw": ["活动策划", "活动运营", "执行落地", "活动复盘"]},
+        "ops_user": {"label": "用户运营", "kw": ["用户运营", "留存", "召回", "分层", "社群运营"]},
+        "ops_content": {"label": "内容运营", "kw": ["内容运营", "选题", "编辑", "分发", "内容策划", "公众号"]},
+    },
+    "hr": {
+        "hr_recruit": {"label": "招聘", "kw": ["招聘", "面试", "人才盘点", "招聘渠道"]},
+        "hr_perf": {"label": "绩效/薪酬", "kw": ["绩效", "薪酬", "kpi", "okr", "激励"]},
+        "hr_training": {"label": "培训/组织", "kw": ["培训", "组织发展", "企业文化", "员工关系"]},
+    },
+    "education": {
+        "edu_teach": {"label": "教学/授课", "kw": ["教学", "授课", "备课", "课堂", "学员"]},
+        "edu_curriculum": {"label": "课程/教研", "kw": ["课程", "教研", "教案", "课纲"]},
+    },
+    "healthcare": {
+        "med_clinical": {"label": "临床/护理", "kw": ["临床", "护理", "诊断", "病历", "医嘱"]},
+        "med_pharma": {"label": "药学/医学", "kw": ["药学", "药理", "医学", "gmp"]},
+    },
+    "legal": {
+        "legal_contract": {"label": "合同/法务", "kw": ["合同", "法务", "诉讼", "仲裁", "合规审查"]},
+    },
+    "supply": {
+        "scm_supply": {"label": "供应链/采购", "kw": ["供应链", "采购", "仓储", "物流", "库存"]},
+    },
+    "manufacturing": {
+        "mfg_process": {"label": "工艺/生产", "kw": ["工艺", "生产", "设备", "质量", "cad", "solidworks"]},
+    },
+}
+
+# 全量词表：AI 词表 + 通用能力 + 所有岗位族（用于文本命中；不改变原有 key）
+ALL_DIMS: dict[str, dict] = {}
+for _k, _v in TAXONOMY.items():
+    ALL_DIMS[_k] = _v
+for _k, _v in GENERAL_DIMS.items():
+    ALL_DIMS.setdefault(_k, _v)
+for _pack in DOMAIN_PACKS.values():
+    for _k, _v in _pack.items():
+        ALL_DIMS.setdefault(_k, _v)
+
+
+def detect_domains(text: str) -> list[str]:
+    """粗判岗位族，返回命中关键词最多的前几个（用于展示/裁剪词表）。"""
+    low = text.lower()
+    scores: dict[str, int] = {}
+    for name, pack in DOMAIN_PACKS.items():
+        c = sum(1 for spec in pack.values() for kw in spec["kw"] if kw in low)
+        if c:
+            scores[name] = c
+    ai_hits = sum(1 for spec in TAXONOMY.values() for kw in spec["kw"] if kw.lower() in low)
+    if ai_hits >= 2:
+        scores["ai"] = ai_hits
+    return [n for n, _ in sorted(scores.items(), key=lambda x: (-x[1], x[0]))]
+
+
 STATUS_LABEL = {"full": "已具备", "partial": "部分具备", "missing": "缺失"}
 STATUS_ICON = {"full": "🟢", "partial": "🟡", "missing": "🔴"}
 
 
-def canonical_hits(text: str) -> dict[str, list[str]]:
-    """返回 text 中命中的能力 key 及其命中的原始词。"""
+def canonical_hits(text: str, dims: dict[str, dict] | None = None) -> dict[str, list[str]]:
+    """返回 text 中命中的能力 key 及其命中的原始词。
+
+    默认用全量词表（AI + 通用 + 各岗位族），因此非 AI 岗位也能命中。
+    """
+    table = dims if dims is not None else ALL_DIMS
     low = text.lower()
     hits: dict[str, list[str]] = {}
-    for key, spec in TAXONOMY.items():
+    for key, spec in table.items():
         found = [kw for kw in spec["kw"] if kw.lower() in low]
         if found:
             hits[key] = found

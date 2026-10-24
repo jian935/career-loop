@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 
 from .llm import LLM, LLMError
-from .schema import TAXONOMY, Requirement, canonical_hits
+from .schema import ALL_DIMS, TAXONOMY, Requirement, canonical_hits
 
 SECTION_MARKERS = {
     "job": ["岗位职责", "工作职责", "工作内容", "职位描述", "你将", "职责"],
@@ -14,6 +15,31 @@ SECTION_MARKERS = {
 }
 
 STRONG_WORDS = ["精通", "深入", "独立", "主导", "熟练掌握", "扎实", "闭环", "从0到1", "从 0 到 1"]
+
+# 判断一行是否是「要求」（用于把词表未覆盖的要求也纳入，不静默丢弃）
+REQ_SIGNALS = [
+    "熟悉", "掌握", "具备", "能够", "会", "负责", "了解", "精通", "熟练", "经验",
+    "优先", "要求", "独立", "完成", "参与", "维护", "开发", "设计", "管理", "推进",
+    "分析", "制定", "执行", "对接", "沟通", "处理", "操作", "使用",
+]
+NOISE_MARKERS = [
+    "薪资", "福利", "五险", "双休", "地点", "地址", "公司简介", "融资", "规模",
+    "简历投递", "邮箱", "微信", "电话", "官网", "包吃", "补贴", "年终奖", "团建", "上班时间",
+]
+
+
+def _looks_like_requirement(line: str) -> bool:
+    if len(line) < 6 or len(line) > 120:
+        return False
+    if any(n in line for n in NOISE_MARKERS):
+        return False
+    return any(s in line for s in REQ_SIGNALS)
+
+
+def _custom_label(line: str) -> str:
+    s = re.sub(r"^\s*(?:[-*+•]|\d+[.、)]|[（(]\d+[)）])\s*", "", line).strip()
+    s = re.sub(r"^(负责|熟悉|掌握|具备|能够|要求|参与|独立|完成|了解|精通|熟练)", "", s)
+    return (s[:16] or line[:16]).strip()
 
 
 def _detect_section(line: str) -> str | None:
@@ -70,16 +96,34 @@ def extract_title(text: str) -> str:
 
 
 def extract_by_rules(jd_text: str) -> list[Requirement]:
-    """无 LLM 时的基线：按词表命中 + 章节权重抽取能力项。"""
+    """无 LLM 时的基线：按词表命中 + 章节权重抽取能力项。
+
+    对词表未覆盖的要求行，不再丢弃，而是生成一条 custom 要求，
+    由匹配阶段按文本相似度判断——这样会计/销售/设计等非 AI 岗位也能被分析。
+    """
     best: dict[str, Requirement] = {}
     for section, line in _split_sections(jd_text):
         weight = _weight_for(section, line)
-        for key, words in canonical_hits(line).items():
-            existing = best.get(key)
+        hits = canonical_hits(line)
+        if hits:
+            for key in hits:
+                existing = best.get(key)
+                if existing is None or weight > existing.weight:
+                    best[key] = Requirement(
+                        key=key,
+                        label=ALL_DIMS.get(key, {}).get("label", key),
+                        weight=weight,
+                        kind="nice" if weight == 1 else "must",
+                        quote=line[:120],
+                        section=section,
+                    )
+        elif _looks_like_requirement(line):
+            ckey = "custom:" + hashlib.md5(line.encode("utf-8")).hexdigest()[:8]
+            existing = best.get(ckey)
             if existing is None or weight > existing.weight:
-                best[key] = Requirement(
-                    key=key,
-                    label=TAXONOMY[key]["label"],
+                best[ckey] = Requirement(
+                    key=ckey,
+                    label=_custom_label(line),
                     weight=weight,
                     kind="nice" if weight == 1 else "must",
                     quote=line[:120],
