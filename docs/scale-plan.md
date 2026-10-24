@@ -108,7 +108,7 @@ Do not claim "covers all jobs" without numbers. Define done as:
 
 | Phase | Duration | Output |
 | --- | --- | --- |
-| P0 LLM path | 2–3 weeks | any JD can be parsed; cache + fallback |
+| P0 LLM path | 2–3 weeks | ✅ done: LLM wired into CLI, cache, free-form `custom:`/`llm:` keys — coverage no longer bounded by packs |
 | P1 taxonomy skeleton | 3–4 weeks | 8/79/449 mapping; family labels |
 | P2 benchmark | 6–8 weeks | 500–1,000 JDs, 2 annotators, kappa |
 | P3 coverage report | 3–4 weeks | per-family accuracy + long-tail report |

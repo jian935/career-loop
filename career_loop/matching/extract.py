@@ -6,7 +6,7 @@ import hashlib
 import re
 
 from .llm import LLM, LLMError
-from .schema import ALL_DIMS, TAXONOMY, Requirement, canonical_hits
+from .schema import ALL_DIMS, Requirement, canonical_hits
 
 SECTION_MARKERS = {
     "job": ["岗位职责", "工作职责", "工作内容", "职位描述", "你将", "职责"],
@@ -155,39 +155,62 @@ def extract_by_rules(jd_text: str) -> list[Requirement]:
     return sorted(best.values(), key=lambda r: -r.weight)
 
 
-EXTRACT_SYSTEM = """你是资深 AI 产品经理招聘官。把 JD 拆成互不重叠的能力项。
+EXTRACT_SYSTEM = """你是资深招聘官。把 JD 拆成互不重叠的能力项。
 
 只输出 JSON：
-{"requirements":[{"key":"python|llm_basics|prompt_eng|rag|agent|function_calling|framework|coding_tools|product_sense|data_analysis|eval|engineering|communication|domain 之一","label":"中文能力名，不超过 12 字","weight":1|2|3,"kind":"must|nice","quote":"JD 原文片段，不超过 60 字"}]}
+{"requirements":[{"key":"...","label":"中文能力名，不超过 12 字","weight":1|2|3,"kind":"must|nice","quote":"JD 原文片段，不超过 60 字"}]}
 
 规则：
-- key 只能从给定枚举里选，无法归类的并入最接近的一项，不要发明新 key。
+- 优先从输入的 known_keys 里选 key，key 必须与 known_keys 完全一致。
+- 如果没有合适的 key，用 "custom:<简短 slug>"，并给出中文 label；不要发明 known_keys 之外的普通 key。
 - weight: 3=核心硬门槛（精通/独立负责/必须），2=一般要求，1=优先/加分。
-- 同一 key 只出现一次，取权重最高的那条依据。
+- 同一 key 只出现一次，取权重最高的一条依据。
+- label 用中文，不超过 12 字；quote 必须逐字摘自 JD，不要编造。
 - 只输出 JSON，不要解释。"""
 
 
 def extract_by_llm(jd_text: str, llm: LLM) -> list[Requirement]:
-    data = llm.json(EXTRACT_SYSTEM, f"JD 原文：\n\n{jd_text}")
-    items = []
+    """LLM extraction is not limited to the built-in vocabulary.
+
+    It may return a known key, a `custom:<slug>` key, or an invented key which we
+    normalize to `llm:<slug>`. This is what lets it cover roles that have no pack.
+    """
+    payload = {
+        "known_keys": {k: v["label"] for k, v in ALL_DIMS.items()},
+        "jd": jd_text,
+    }
+    data = llm.json(EXTRACT_SYSTEM, f"输入：\n{payload}")
+    best: dict[str, Requirement] = {}
     for item in data.get("requirements", []):
-        key = item.get("key", "")
-        if key not in TAXONOMY:
+        key = str(item.get("key", "")).strip()
+        label = str(item.get("label") or "").strip()
+        if not key:
             continue
+        if key in ALL_DIMS:
+            label = label or ALL_DIMS[key]["label"]
+        elif key.startswith(("custom:", "llm:")):
+            if not label:
+                continue
+        else:
+            if not label:
+                continue
+            slug = re.sub(r"[^a-z0-9\u4e00-\u9fa5_-]+", "-", key.lower()).strip("-")[:24] or "skill"
+            key = f"llm:{slug}"
         weight = int(item.get("weight", 2))
         weight = min(3, max(1, weight))
-        items.append(
-            Requirement(
-                key=key,
-                label=item.get("label") or TAXONOMY[key]["label"],
-                weight=weight,
-                kind=item.get("kind") or ("nice" if weight == 1 else "must"),
-                quote=(item.get("quote") or "")[:120],
-            )
+        req = Requirement(
+            key=key,
+            label=label[:24],
+            weight=weight,
+            kind=item.get("kind") or ("nice" if weight == 1 else "must"),
+            quote=(item.get("quote") or "")[:120],
         )
-    if not items:
+        prev = best.get(key)
+        if prev is None or weight > prev.weight:
+            best[key] = req
+    if not best:
         raise LLMError("LLM 未抽取到有效能力项")
-    return sorted(items, key=lambda r: -r.weight)
+    return sorted(best.values(), key=lambda r: -r.weight)
 
 
 def extract_requirements(jd_text: str, llm: LLM | None = None) -> tuple[list[Requirement], str]:

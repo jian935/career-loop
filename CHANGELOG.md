@@ -4,6 +4,19 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-10-24
+
+### Added
+- **LLM extraction is no longer bounded by the built-in vocabulary.** It accepts
+  `custom:<slug>` keys and normalizes invented keys to `llm:<slug>`, so a role with
+  no job-family pack (e.g. 茶艺师) gets structured capability items instead of
+  line fragments. In a tea-artisan test the rule baseline scored 45.5% with
+  fragment labels; the LLM produced five clean items and 83.3%.
+- `--llm` coverage is now meaningful for jobs outside the 33 packs.
+
+### Changed
+- 32 unit tests.
+
 ## [0.5.1] - 2026-10-24
 
 ### Added

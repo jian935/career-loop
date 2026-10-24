@@ -30,6 +30,11 @@ Every step is deterministic in the default (rules) mode.
    with leading verbs stripped. This is why non-AI roles are not silently
    under-counted.
 
+**LLM mode is not bounded by the vocabulary.** `extract_by_llm` first tries the
+`known_keys` it is given (all 33 packs), then accepts `custom:<slug>` and
+normalizes invented keys to `llm:<slug>`. A role with no pack at all (e.g. 茶艺师)
+still gets structured capability items instead of line fragments.
+
 ### Weights
 
 | Section | Weight |

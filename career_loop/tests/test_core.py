@@ -290,6 +290,24 @@ class TestLLMWiring(unittest.TestCase):
         self.assertEqual(used, "llm")
         self.assertEqual(matches["python"].status, "full")
 
+    def test_llm_can_add_new_capability(self):
+        class FakeLLM:
+            available = True
+
+            def json(self, system, user):
+                return {"requirements": [
+                    {"key": "custom:tea_brewing", "label": "茶艺冲泡",
+                     "weight": 2, "kind": "must", "quote": "熟悉六大茶类冲泡"},
+                    {"key": "tea_cert", "label": "茶艺证书",
+                     "weight": 1, "kind": "nice", "quote": "持有中级茶艺师证书"},
+                ]}
+
+        reqs, mode = matching.extract_requirements("茶艺师\n任职要求\n熟悉六大茶类冲泡。", FakeLLM())
+        keys = {r.key for r in reqs}
+        self.assertEqual(mode, "llm")
+        self.assertIn("custom:tea_brewing", keys)
+        self.assertIn("llm:tea_cert", keys)
+
     def test_doctor_runs(self):
         from career_loop import cli
         self.assertEqual(cli.main(["doctor"]), 0)
