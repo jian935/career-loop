@@ -7,6 +7,9 @@ Switching providers = changing three environment variables; no code change.
 career-loop doctor    # shows whether the key is detected and which model is used
 ```
 
+**Easiest setup:** copy `.env.example` to `.env`, fill in the key, and the CLI loads
+it automatically (`.env` is gitignored). The `export` snippets below also work.
+
 ## 0. Recommended order
 
 | Situation | Provider | Model | Cost |

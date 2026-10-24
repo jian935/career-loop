@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -22,6 +23,37 @@ def _read(path: str) -> str:
 
 def _read_jsonl(path: str) -> list[dict]:
     return load_dataset(path)
+
+
+def _parse_env_file(path: Path) -> dict[str, str]:
+    """Minimal .env parser: KEY=VALUE, optional `export`, quotes, comments."""
+    out: dict[str, str] = {}
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export "):].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key:
+            out[key] = value
+    return out
+
+
+def _load_dotenv() -> None:
+    """Load .env from cwd or repo root without overriding real env vars."""
+    for candidate in (Path.cwd() / ".env", Path(__file__).resolve().parent.parent / ".env"):
+        if not candidate.exists():
+            continue
+        try:
+            for key, value in _parse_env_file(candidate).items():
+                os.environ.setdefault(key, value)
+        except OSError:
+            pass
 
 
 def _ensure_stdout_utf8() -> None:
@@ -421,6 +453,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    _load_dotenv()
     parser = build_parser()
     args = parser.parse_args(argv)
     if not args.command:

@@ -295,6 +295,24 @@ class TestLLMWiring(unittest.TestCase):
         self.assertEqual(cli.main(["doctor"]), 0)
 
 
+class TestDotenv(unittest.TestCase):
+    def test_parse_env_file(self):
+        from career_loop.cli import _parse_env_file
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / ".env"
+            p.write_text(
+                'OPENAI_API_KEY="sk-x"\n'
+                "export OPENAI_MODEL=deepseek-flash\n"
+                "# comment\n"
+                "NOT_A_PAIR\n",
+                encoding="utf-8",
+            )
+            env = _parse_env_file(p)
+            self.assertEqual(env["OPENAI_API_KEY"], "sk-x")
+            self.assertEqual(env["OPENAI_MODEL"], "deepseek-flash")
+            self.assertNotIn("NOT_A_PAIR", env)
+
+
 class TestCliDbRouting(unittest.TestCase):
     """锁住 CLI 一定要把 --db 透传给 store，别串到默认库。"""
 

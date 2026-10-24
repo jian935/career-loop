@@ -193,6 +193,7 @@ career-loop doctor                           # 确认 LLM 是否已识别
 career-loop match --jd ... --profile ...     # 输出里模式会显示 llm
 ```
 
+- 也可以把这三行写进项目根目录的 `.env`（已被 gitignore），CLI 启动时自动读取；可复制 `.env.example` 改。
 - 结果缓存在 `~/.career_loop/llm_cache`（按 JD/经历哈希），重复分析不重复计费。
 - 想强制走规则：`CAREER_LOOP_NO_CACHE=1` 只关缓存；不配 Key 就是纯规则。
 - `doctor` 会打印 Python、DB、LLM、缓存、评测集状态，排查环境先跑它。
