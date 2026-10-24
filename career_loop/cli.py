@@ -78,6 +78,18 @@ DOMAIN_CN = {
     "ai_speech": "语音", "ai_multimodal": "多模态", "ai_robotics": "具身/机器人",
     "ai_data": "数据工程", "ai_testing": "AI测试",
     "property": "物业/房地产", "construction": "工程管理",
+    # 0.8.0 新增岗位族
+    "backend": "后端", "frontend": "前端", "qa": "测试", "devops": "运维",
+    "security": "信息安全", "embedded": "嵌入式", "electrical": "电气",
+    "mechanical": "机械设计", "quality": "质量",
+    "banking": "银行", "insurance": "保险", "securities": "证券",
+    "consulting": "咨询", "media": "传媒", "film": "影视", "game": "游戏",
+    "translation": "翻译", "service": "客服", "retail": "零售",
+    "catering": "餐饮", "tourism_cn": "导游/讲解", "domestic": "居民服务",
+    "transport_ops": "运输操作",
+    "energy": "能源化工", "automotive": "汽车", "agriculture": "农林牧渔",
+    "research": "科研", "public_admin": "公务/公共事务", "social": "社工",
+    "psychology": "心理", "sports": "体育", "logistics": "物流",
 }
 
 

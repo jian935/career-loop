@@ -1,7 +1,24 @@
 # -*- coding: utf-8 -*-
-"""岗位覆盖度体检：AI 各细分 + 工商管理大类，量化抽取召回与兜底比例。"""
+"""岗位覆盖度体检。
 
+75 个岗位，分 8 组：AI / 工商管理 / 研发工程 / 金融专业 / 传媒文娱 /
+服务零售 / 制造能源 / 科研公共，外加一组「未建词表的长尾岗位」。
+
+量化三件事：
+- 召回：JD 里写出来的要求，有多少被抽成了 requirement；
+- 岗位族识别：是否落到了正确的岗位族；
+- 兜底占比：有多少要求只能靠 custom: 原句兜底（照抄原文，不算真正理解）。
+
+用法：
+    python scripts/coverage.py                 # 规则模式（离线）
+    python scripts/coverage.py --mode llm      # 大模型模式（需 API Key）
+    python scripts/coverage.py --mode both     # 对比两种模式
+    python scripts/coverage.py --only 长尾      # 只跑某一组
+"""
+
+import argparse
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -53,7 +70,7 @@ NLP 算法工程师
 2. 有 PyTorch 训练与微调经验
 3. 能读论文并复现实验
 """),
-    ("AI", "CV 算法工程师", "ai", ["图像", "目标检测", "分割", "OpenCV"], """
+    ("AI", "CV 算法工程师", "ai_cv", ["图像", "目标检测", "分割", "OpenCV"], """
 CV 算法工程师
 任职要求
 1. 熟悉图像分类、目标检测与语义分割
@@ -250,6 +267,338 @@ AI 测试工程师
 2. 能编制工程造价与招投标文件
 3. 了解 BIM 与监理流程
 """),
+
+    # ---------- 研发/工程类 ----------
+    ("研发工程", "后端开发", "backend", ["Java", "微服务", "MySQL", "高并发"], """
+后端开发工程师
+任职要求
+1. 精通 Java 或 Go，有服务端开发经验
+2. 熟悉微服务架构，处理过高并发场景
+3. 熟练使用 MySQL，能做索引优化与分库分表
+4. 熟悉 Redis、Kafka 等中间件
+"""),
+    ("研发工程", "前端开发", "frontend", ["Vue", "小程序", "性能优化"], """
+前端开发工程师
+任职要求
+1. 熟练使用 Vue 或 React 框架
+2. 有小程序或移动端 H5 开发经验
+3. 能做首屏性能优化与构建优化
+"""),
+    ("研发工程", "软件测试", "qa", ["测试用例", "自动化测试", "性能测试"], """
+软件测试工程师
+任职要求
+1. 能独立设计测试用例，完成功能测试
+2. 有自动化测试经验，熟悉 Selenium 或 Playwright
+3. 能做性能测试与压力测试
+"""),
+    ("研发工程", "运维/DevOps", "devops", ["Linux", "Kubernetes", "监控", "Jenkins"], """
+运维工程师 / DevOps
+任职要求
+1. 熟悉 Linux 与 Shell 脚本，能管理服务器
+2. 熟悉 Kubernetes 与容器化部署
+3. 搭建监控告警体系，能做故障排查
+4. 熟悉 Jenkins 与 CI/CD 流水线
+"""),
+    ("研发工程", "信息安全", "security", ["渗透", "漏洞", "等保", "应急响应"], """
+信息安全工程师
+任职要求
+1. 能做渗透测试与漏洞挖掘
+2. 熟悉等保与等级保护合规要求
+3. 有安全运营与应急响应经验
+"""),
+    ("研发工程", "嵌入式开发", "embedded", ["单片机", "驱动", "原理图", "CAN"], """
+嵌入式软件工程师
+任职要求
+1. 熟悉单片机开发，有 STM32 项目经验
+2. 能做驱动开发与固件调试
+3. 能看懂原理图和 PCB
+4. 熟悉 CAN 总线与串口通信
+"""),
+    ("研发工程", "电气/自动化", "electrical", ["PLC", "伺服", "供配电"], """
+电气工程师
+任职要求
+1. 熟悉 PLC 编程与梯形图
+2. 有伺服、变频器调试经验
+3. 能做供配电设计与电气选型
+"""),
+    ("研发工程", "机械设计", "mechanical", ["结构设计", "有限元", "公差"], """
+机械设计工程师
+任职要求
+1. 负责非标设备结构设计与钣金设计
+2. 能用 ANSYS 做有限元仿真与力学分析
+3. 熟悉公差配合与工程图出图
+"""),
+    ("研发工程", "质量工程师", "quality", ["ISO9001", "来料检验", "六西格玛"], """
+质量工程师
+任职要求
+1. 熟悉 ISO9001 质量管理体系与内审
+2. 能执行来料检验与出货检验，处理不合格品
+3. 有六西格玛或精益改善经验
+"""),
+
+    # ---------- 金融/专业服务 ----------
+    ("金融专业", "银行客户经理", "banking", ["授信", "贷前", "理财", "征信"], """
+银行客户经理
+任职要求
+1. 负责信贷业务贷前调查与授信上报
+2. 能解读征信报告，做贷后管理
+3. 有理财产品销售经验
+"""),
+    ("金融专业", "保险理赔", "insurance", ["理赔", "核保", "定损"], """
+保险理赔专员
+任职要求
+1. 负责理赔案件查勘与定损
+2. 了解核保规则与承保条件
+3. 能独立结案并出具赔付意见
+"""),
+    ("金融专业", "证券行研", "securities", ["行业研究", "估值建模", "深度报告"], """
+证券行业研究员
+任职要求
+1. 负责行业研究与公司研究，撰写深度报告
+2. 能做 DCF 估值建模与财务模型
+3. 有调研纪要与路演经验
+"""),
+    ("金融专业", "管理咨询", "consulting", ["管理咨询", "客户访谈", "战略规划"], """
+管理咨询顾问
+任职要求
+1. 参与管理咨询项目，做竞品分析与商业分析
+2. 能独立开展客户访谈并输出汇报材料
+3. 有战略规划或组织设计项目经验
+"""),
+
+    # ---------- 传媒/文娱 ----------
+    ("传媒文娱", "公关经理", "media", ["新闻稿", "舆情", "媒体关系"], """
+公关经理
+任职要求
+1. 维护媒体关系，撰写新闻稿
+2. 能做舆情监测与危机应对
+3. 有发布会策划经验
+"""),
+    ("传媒文娱", "内容编辑", "media", ["编辑", "校对", "稿件"], """
+内容编辑
+任职要求
+1. 负责稿件编辑与校对
+2. 能做选题策划与内容审核
+3. 文字功底扎实
+"""),
+    ("传媒文娱", "视频编导", "film", ["拍摄", "分镜", "剪辑"], """
+视频编导
+任职要求
+1. 负责短视频拍摄与分镜脚本策划
+2. 能独立完成剪辑与后期调色
+3. 有账号运营经验优先
+"""),
+    ("传媒文娱", "游戏策划", "game", ["关卡", "数值", "玩法"], """
+游戏系统策划
+任职要求
+1. 负责玩法设计与关卡设计
+2. 能做数值配置与平衡性调整
+3. 熟悉游戏版本迭代流程
+"""),
+    ("传媒文娱", "英语翻译", "translation", ["笔译", "术语", "Trados"], """
+英语翻译
+任职要求
+1. 负责技术文档笔译与本地化
+2. 维护术语库，保证译文一致性
+3. 熟练使用 Trados 等 CAT 工具
+"""),
+
+    # ---------- 服务/零售 ----------
+    ("服务零售", "客服主管", "service", ["客服", "工单", "客诉", "质检"], """
+客服主管
+任职要求
+1. 负责呼叫中心与在线客服团队管理
+2. 处理客诉与异常工单
+3. 制定服务标准，做录音抽检质检
+"""),
+    ("服务零售", "门店店长", "retail", ["门店", "陈列", "进销存", "巡店"], """
+连锁门店店长
+任职要求
+1. 负责门店日常运营与陈列管理
+2. 熟悉进销存与补货盘点
+3. 有巡店与导购培训经验
+"""),
+    ("服务零售", "餐饮店长", "catering", ["餐饮", "出餐", "食品安全"], """
+餐饮店长
+任职要求
+1. 负责前厅后厨排班与出餐效率
+2. 落实食品安全与卫生管理
+3. 能控制成本率与毛利
+"""),
+    ("服务零售", "家政/美容", "domestic", ["家政", "保洁", "美容"], """
+家政服务培训师
+任职要求
+1. 熟悉家政保洁与收纳服务标准
+2. 有美容护肤或造型培训经验
+3. 能做服务人员带教
+"""),
+
+    # ---------- 制造/能源/农林 ----------
+    ("制造能源", "化工工艺", "energy", ["化工", "反应釜", "危化品"], """
+化工工艺工程师
+任职要求
+1. 负责化工工艺包设计与反应釜工艺参数
+2. 熟悉危化品管理与化工安全规范
+3. 能处理现场工艺异常
+"""),
+    ("制造能源", "电池/储能", "energy", ["锂电", "储能", "BMS"], """
+电池工程师
+任职要求
+1. 负责锂电电芯选型与储能系统设计
+2. 熟悉 BMS 与逆变器
+3. 有光伏或储能项目经验
+"""),
+    ("制造能源", "汽车三电", "automotive", ["三电", "电机", "电控"], """
+新能源汽车三电工程师
+任职要求
+1. 负责电池包、电机与电控系统集成
+2. 熟悉整车控制策略
+3. 有 CAN 总线标定经验
+"""),
+    ("制造能源", "整车试验", "automotive", ["路试", "标定", "台架"], """
+整车试验工程师
+任职要求
+1. 负责整车路试与台架试验
+2. 能做整车标定与 NVH 分析
+3. 输出试验报告
+"""),
+    ("制造能源", "种植技术员", "agriculture", ["种植", "病虫害", "灌溉"], """
+农业技术员
+任职要求
+1. 负责作物种植管理与病虫害防治
+2. 熟悉灌溉与土壤改良
+3. 有智慧农业或无人机植保经验优先
+"""),
+    ("制造能源", "林业技术", "agriculture", ["造林", "林地", "抚育"], """
+林业技术员
+任职要求
+1. 负责造林设计与林地抚育
+2. 能做森林资源调查
+3. 熟悉采伐作业规范
+"""),
+    ("制造能源", "纺织印染", "manufacturing", ["纺织", "印染", "织造"], """
+印染工艺员
+任职要求
+1. 负责纺织面料印染与染整工艺
+2. 熟悉织造流程与配色
+3. 能处理色差与色牢度问题
+"""),
+    ("制造能源", "冶炼/轧制", "manufacturing", ["炼钢", "轧制", "熔炼"], """
+轧钢工艺工程师
+任职要求
+1. 熟悉炼钢、连铸与轧制工艺
+2. 能优化熔炼参数
+3. 有现场质量管理经验
+"""),
+
+    # ---------- 科研/公共/社会 ----------
+    ("科研公共", "高校科研岗", "research", ["论文", "课题", "SCI"], """
+高校科研助理
+任职要求
+1. 协助课题申报与实验设计
+2. 能检索文献并撰写论文，有 SCI 发表经验优先
+3. 熟悉 SPSS 或 Stata 等统计方法
+"""),
+    ("科研公共", "公务员/综合管理", "public_admin", ["公文", "政策", "窗口"], """
+综合管理岗（事业单位）
+任职要求
+1. 能独立起草公文与汇报材料
+2. 熟悉相关政策法规
+3. 有窗口服务或基层工作经验优先
+"""),
+    ("科研公共", "社工", "social", ["个案", "社区", "帮扶"], """
+社会工作者
+任职要求
+1. 负责个案服务与社区走访
+2. 能组织小组工作与帮扶活动
+3. 有公益项目执行经验
+"""),
+    ("科研公共", "心理咨询师", "psychology", ["心理咨询", "心理测评", "量表"], """
+心理咨询师
+任职要求
+1. 能开展个案咨询，具备共情与倾听能力
+2. 熟练使用心理测评量表与筛查工具
+3. 有危机干预经验优先
+"""),
+    ("科研公共", "健身教练", "sports", ["私教", "训练计划", "体测"], """
+健身私教
+任职要求
+1. 能为客户制定训练计划与体能提升方案
+2. 会做体测评估与运动损伤防护
+3. 有会员维护经验
+"""),
+
+    # ---------- 长尾/未建词表（诚实测量兜底率） ----------
+    ("长尾", "茶艺师", "-", ["茶艺", "茶席", "冲泡"], """
+茶艺师
+任职要求
+1. 熟悉六大茶类茶艺冲泡流程
+2. 能设计茶席并做茶文化传播
+3. 有茶馆服务经验
+"""),
+    ("长尾", "婚礼策划", "-", ["婚礼", "现场执行", "花艺"], """
+婚礼策划师
+任职要求
+1. 负责婚礼方案策划与现场执行
+2. 熟悉花艺与场地布置
+3. 能对接供应商与婚礼当天统筹
+"""),
+    ("长尾", "宠物美容师", "-", ["宠物", "美容", "洗护"], """
+宠物美容师
+任职要求
+1. 能独立完成宠物洗护与造型修剪
+2. 熟悉常见犬种毛发护理
+3. 有宠物店工作经验
+"""),
+    ("长尾", "无人机飞手", "-", ["无人机", "航线", "飞控"], """
+无人机飞手
+任职要求
+1. 持有无人机执照，能规划航线并安全飞行
+2. 熟悉飞控参数与云台操作
+3. 有测绘或植保作业经验
+"""),
+    ("长尾", "乘务员", "-", ["客舱", "旅客安全", "应急处置"], """
+客舱乘务员
+任职要求
+1. 负责客舱服务与旅客安全
+2. 熟悉应急处置流程
+3. 形象气质佳，普通话标准
+"""),
+    ("长尾", "快递员", "-", ["派件", "揽收", "时效"], """
+快递配送员
+任职要求
+1. 负责区域揽收与派件
+2. 能保证时效与妥投率
+3. 熟悉末端配送路线
+"""),
+    ("长尾", "美甲师", "-", ["美甲", "款式", "手足护理"], """
+美甲师
+任职要求
+1. 熟悉各类美甲款式与手足护理
+2. 能做甲片延长与彩绘
+3. 有美甲店工作经验
+"""),
+    ("长尾", "调酒师", "-", ["调酒", "鸡尾酒", "吧台"], """
+调酒师
+任职要求
+1. 熟悉经典鸡尾酒配方与调酒技法
+2. 能管理吧台与酒水库存
+3. 有酒吧工作经验
+"""),
+    ("长尾", "剧本杀主持人", "-", ["带本", "串场", "剧本类型"], """
+剧本杀主持人（DM）
+任职要求
+1. 能独立带本并控场，熟悉多种剧本类型
+2. 负责串场演绎与玩家体验维护
+3. 有桌游门店经验优先
+"""),
+    ("长尾", "仓储叉车司机", "transport_ops", ["叉车", "驾驶", "特种设备"], """
+叉车司机
+任职要求
+1. 持有特种设备作业证，能熟练驾驶叉车
+2. 负责库内货物转运与堆垛
+3. 遵守仓储安全规范
+"""),
 ]
 
 
@@ -260,24 +609,50 @@ def line_coverage(jd):
     return len(req_lines)
 
 
-def main():
+_LIST_MARK = re.compile(r"^\s*([-•*·‣]|[（(]?\d+[)）.、]|"
+                        r"[①②③④⑤⑥⑦⑧⑨⑩ⅰ-ⅹ]|[a-z]\))\s*")
+
+
+def _norm_line(s: str) -> str:
+    """去掉行首的项目符号/序号，便于两种模式的引用互相比对。"""
+    prev = None
+    while prev != s:
+        prev = s
+        s = _LIST_MARK.sub("", s.strip()).strip()
+    return s
+
+
+def run_mode(mode, cases):
+    """跑一种模式，返回明细行。mode: rule | llm"""
+    llm = None
+    if mode == "llm":
+        from career_loop.cli import _load_dotenv
+        from career_loop.matching.llm import LLM
+        _load_dotenv()
+        llm = LLM()
+        if not llm.available:
+            print("未配置 API Key，退出大模型模式。")
+            return None
     rows = []
-    for cat, name, dom_exp, expected, jd in CASES:
-        reqs, _ = matching.extract_requirements(jd)
+    for cat, name, dom_exp, expected, jd in cases:
+        reqs, _ = matching.extract_requirements(jd, llm=llm)
         doms = matching.detect_domains(jd)
         canon = [r for r in reqs if not r.key.startswith("custom:")]
         custom = [r for r in reqs if r.key.startswith("custom:")]
         from career_loop.matching.schema import canonical_hits
-        quotes = {r.quote.strip() for r in reqs}
+        quotes = {_norm_line(r.quote) for r in reqs if r.quote}
         req_keys = {r.key for r in reqs}
         def covered(term):
             for raw in jd.splitlines():
-                line = raw.strip()
-                if term.lower() in line.lower():
-                    if line[:120] in quotes or any(line[:120] in q for q in quotes):
-                        return True
-                    if any(k in req_keys for k in canonical_hits(line)):
-                        return True
+                line = _norm_line(raw)
+                if not line or term.lower() not in line.lower():
+                    continue
+                # 命中抽取出来的原文依据（规则模式保留序号，大模型模式会去掉，故两边都归一化）
+                if any(line in q or q in line for q in quotes if q):
+                    return True
+                # 或者这一行命中了某个已进入结果的标准能力项
+                if any(k in req_keys for k in canonical_hits(line)):
+                    return True
             return False
         hit = [t for t in expected if covered(t)]
         miss = [t for t in expected if not covered(t)]
@@ -289,6 +664,12 @@ def main():
             "recall_v": len(hit) / len(expected), "miss": miss,
         })
 
+    return rows
+
+
+def report(rows, title=""):
+    if title:
+        print(f"\n===== {title} =====")
     print(f"{'类':<6}{'岗位':<18}{'族(期望/实际)':<20}{'要求':>4}{'标准':>4}{'兜底':>4}{'召回':>7}  漏掉")
     print("-" * 100)
     for r in rows:
@@ -297,13 +678,76 @@ def main():
         print(f"{r['cat']:<6}{r['name']:<18}{dom:<20}{r['n_req']:>4}{r['n_canon']:>4}{r['n_custom']:>4}{r['recall']:>7}  {', '.join(r['miss']) or '-'}")
 
     print("-" * 100)
-    for cat in ("AI", "工商管理"):
+    cats = []
+    for r in rows:
+        if r["cat"] not in cats:
+            cats.append(r["cat"])
+    for cat in cats:
         sub = [r for r in rows if r["cat"] == cat]
         rec = sum(r["recall_v"] for r in sub) / len(sub)
-        dom_ok = sum(1 for r in sub if r["dom_exp"] in r["doms"]) / len(sub)
+        # 长尾组期望就是「未建词表」，不考核族识别
+        dom_sub = [r for r in sub if r["dom_exp"] != "-"]
+        dom_ok = (sum(1 for r in dom_sub if r["dom_exp"] in r["doms"]) / len(dom_sub)) if dom_sub else 0.0
         cust = sum(r["n_custom"] for r in sub) / max(1, sum(r["n_req"] for r in sub))
-        print(f"{cat}: 平均召回 {rec:.0%} | 岗位族识别 {dom_ok:.0%} | 兜底占比 {cust:.0%}")
-    print(f"总体平均召回 {sum(r['recall_v'] for r in rows)/len(rows):.0%}")
+        dom_txt = f"{dom_ok:.0%}" if len(dom_sub) > 1 else "n/a"
+        print(f"{cat:<8} 岗位 {len(sub):>2} | 平均召回 {rec:.0%} | 岗位族识别 {dom_txt} | 兜底占比 {cust:.0%}")
+
+    built = [r for r in rows if r["dom_exp"] != "-"]
+    tail = [r for r in rows if r["dom_exp"] == "-"]
+    print("-" * 100)
+    print(f"已建词表岗位 {len(built)} 个：召回 {sum(r['recall_v'] for r in built)/len(built):.0%} | "
+          f"族识别 {sum(1 for r in built if r['dom_exp'] in r['doms'])/len(built):.0%} | "
+          f"兜底占比 {sum(r['n_custom'] for r in built)/max(1,sum(r['n_req'] for r in built)):.0%}")
+    if tail:
+        print(f"未建词表长尾 {len(tail)} 个：召回 {sum(r['recall_v'] for r in tail)/len(tail):.0%} | "
+              f"兜底占比 {sum(r['n_custom'] for r in tail)/max(1,sum(r['n_req'] for r in tail)):.0%}"
+              "（长尾本就靠兜底，兜底率高是预期结果）")
+    print(f"总体 {len(rows)} 个岗位，平均召回 {sum(r['recall_v'] for r in rows)/len(rows):.0%}")
+
+
+def summary_line(rows, tag):
+    built = [r for r in rows if r["dom_exp"] != "-"]
+    tail = [r for r in rows if r["dom_exp"] == "-"]
+    n_req = sum(r["n_req"] for r in rows)
+    n_cus = sum(r["n_custom"] for r in rows)
+    print(f"[{tag}] 总体 {len(rows)} 岗位 | 召回 {sum(r['recall_v'] for r in rows)/len(rows):.0%} | "
+          f"兜底占比 {n_cus/max(1,n_req):.0%}")
+    if built:
+        print(f"[{tag}] 已建词表 {len(built)} 个 | 兜底占比 "
+              f"{sum(r['n_custom'] for r in built)/max(1,sum(r['n_req'] for r in built)):.0%}")
+    if tail:
+        print(f"[{tag}] 长尾 {len(tail)} 个 | 兜底占比 "
+              f"{sum(r['n_custom'] for r in tail)/max(1,sum(r['n_req'] for r in tail)):.0%}")
+
+
+def main():
+    ap = argparse.ArgumentParser(description="岗位覆盖度体检")
+    ap.add_argument("--mode", default="rule", choices=["rule", "llm", "both"])
+    ap.add_argument("--only", default=None, help="只跑某一组，如 长尾 / AI / 研发工程")
+    ap.add_argument("--quiet", action="store_true", help="不打印明细，只打印汇总")
+    args = ap.parse_args()
+
+    cases = CASES
+    if args.only:
+        cases = [c for c in CASES if c[0] == args.only]
+        if not cases:
+            print(f"没有分类为 {args.only} 的用例。可选：" +
+                  "、".join(sorted({c[0] for c in CASES})))
+            return
+
+    if args.mode in ("rule", "both"):
+        rows = run_mode("rule", cases)
+        if not args.quiet:
+            report(rows, "规则模式（离线基线）")
+        else:
+            summary_line(rows, "rule")
+    if args.mode in ("llm", "both"):
+        rows = run_mode("llm", cases)
+        if rows:
+            if not args.quiet:
+                report(rows, "大模型模式")
+            else:
+                summary_line(rows, "llm")
 
 
 if __name__ == "__main__":

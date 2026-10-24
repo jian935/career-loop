@@ -66,6 +66,11 @@ def _match_custom(req: Requirement, lines: list[str]) -> MatchResult:
     return MatchResult(req.key, "missing")
 
 
+# 一行里「命中词只有 2 个字」的能力最多认领几个。中文能力词大量是两字词，
+# 太小会误判缺失；太大会让一行认领过多能力、虚高分数。
+_WEAK_KEEP = 4
+
+
 def _profile_lines(profile: str) -> list[str]:
     lines = []
     for raw in profile.splitlines():
@@ -91,14 +96,19 @@ def _claim_lines(lines: list[str]) -> dict[str, list[str]]:
             continue
         ranked = sorted(
             ((max(len(w) for w in words), key) for key, words in hits.items()),
-            reverse=True,
+            key=lambda x: (-x[0], x[1]),
         )
-        # 保留命中词最长的前 4 个能力。原先的 top-1 规则会让同一行里
-        # 较长的岗位词（如"资产负债表"）把较短的核心词（"会计""金蝶"）挤掉，
-        # 在非 AI 岗位里造成大量漏判。
-        for length, key in ranked[:4]:
-            if length >= 2:
-                owned.setdefault(key, []).append(line)
+        # 词表扩到 189 项之后，一行可能同时命中十几个能力。固定取前 N 个会有两个问题：
+        #   1) 短关键词（中文里大量能力词就是两个字：业务、沟通、会计、招聘…）
+        #      会被更长的术语挤掉；
+        #   2) 同长度之间的取舍只由 key 名字的字母序决定 —— 这是任意的。
+        # 改成按证据强度分档：
+        #   命中词 >= 3 字：多字术语，证据强，全部保留；
+        #   命中词 == 2 字：弱证据，最多保留 _WEAK_KEEP 个，避免一行认领过多。
+        strong = [k for length, k in ranked if length >= 3]
+        weak = [k for length, k in ranked if length == 2][:_WEAK_KEEP]
+        for key in strong + weak:
+            owned.setdefault(key, []).append(line)
     return owned
 
 

@@ -4,6 +4,60 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] - 2026-10-24
+
+### Added
+- **65 job families / 166 family-level capabilities** (was 33 / 52): the v0.7
+  families were mostly single-dimension stubs. Added `backend`, `frontend`, `qa`,
+  `devops`, `security`, `embedded`, `electrical`, `mechanical`, `quality`,
+  `banking`, `insurance`, `securities`, `consulting`, `media`, `film`, `game`,
+  `translation`, `service`, `retail`, `catering`, `domestic`, `transport_ops`,
+  `energy`, `automotive`, `agriculture`, `research`, `public_admin`, `social`,
+  `psychology`, `sports`, `logistics`, `tourism_cn`; and deepened the existing
+  thin families (e.g. `legal` 1->4, `supply` 1->3, `education` 2->4).
+- **`career_loop/matching/taxonomy_cn.py`**: heuristic mapping from the 8 top-level
+  classes of China's Occupation Classification Dictionary to career-loop job
+  families, plus a coverage matrix so "how much do we cover" can be audited
+  against an external skeleton. Explicitly labeled heuristic, not official data.
+- **`scripts/sync_web_vocab.py`**: regenerates the JS vocabulary inside
+  `docs/index.html` from the Python schema; `--check` mode catches drift in CI.
+- Coverage check grew from 30 to **75 probe roles** in 8 groups, including a
+  deliberate *long-tail* group (tea artisan, wedding planner, drone pilot, flight
+  attendant, courier, bartender, pet groomer, nail artist, LARP host) that has no
+  built-in family, so fallback rate is measured honestly.
+- `scripts/coverage.py --mode rule|llm|both`, `--only <group>`, `--quiet`.
+
+### Fixed
+- `scripts/coverage.py` compared quotes without stripping list markers, so LLM
+  mode (which drops the `1.` prefix) scored a false 13% recall on long-tail
+  roles. Now both sides are normalized; LLM long-tail recall is 97%.
+
+### Fixed
+- `_claim_lines` kept only the top-4 capabilities per line. With 189 dimensions a
+  single line can hit a dozen, so two-character keywords (业务 / 沟通 / 会计 /
+  招聘 — most Chinese capability words are two characters) were crowded out, and
+  ties between equal-length hits were broken by the alphabetical order of the
+  key name, i.e. arbitrarily. Now: hits with a >=3-character keyword are all
+  kept, 2-character hits are capped at 4 per line.
+- Generic words that were wrongly routing JDs into a family and inventing gaps:
+  `domain` lost bare 岗位 (every JD says it); `rs_paper` now needs 学术论文 /
+  发表论文 / 文献检索 rather than bare 论文 (a PM JD means *reading* papers);
+  `csl_industry` lost 竞品分析 (a product/marketing action, not consulting);
+  `csl_delivery` lost 方案设计; `devops_monitor` now needs 监控告警 / 监控体系
+  rather than bare 监控 (a PM JD monitors *effect*); `tr_written` lost bare 翻译
+  ("translate business problems into Agent solutions" is not translation work);
+  `pub_document` lost bare 政策 (税务政策 is not civil-service writing);
+  `pub_service` lost bare 办事; `rs_exp` lost bare 基金; `rs_method` lost bare
+  计量; `psy_counsel` lost 访谈 (user interviews are a PM action).
+  Each has a paired test asserting the real role still detects it, so tightening
+  a word cannot silently break the family it belongs to.
+
+### Changed
+- 47 unit tests (was 36), 32 CLI checks, eval consistency 1.0 — all still green.
+- Shipped browser samples still score 58.3 / 53.6 / 81.8, identical in Python
+  and JS.
+- Author / repository metadata now points to `github.com/jian35/career-loop`.
+
 ## [0.7.0] - 2026-10-24
 
 ### Added

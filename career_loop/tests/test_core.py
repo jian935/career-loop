@@ -246,6 +246,79 @@ class TestRealWorldRegressions(unittest.TestCase):
         self.assertEqual(res["ds_ux"].status, "full")
 
 
+class TestGenericWordRegressions(unittest.TestCase):
+    """词表扩到 65 个岗位族后，通用词把 JD 归错族的误判，锁死。
+
+    这些词的共同特点：单看词本身没错，但在别的岗位语境里是通用动作，
+    一旦放进某个族就会凭空造出一个「缺口」。
+    """
+
+    def test_solution_design_is_not_consulting_delivery(self):
+        jd = "任职要求\n1. 负责 MaaS 平台、知识库平台等核心产品的方案设计。"
+        keys = {r.key for r in matching.extract_requirements(jd)[0]}
+        self.assertNotIn("csl_delivery", keys, keys)
+
+    def test_monitoring_effect_is_not_devops_monitoring(self):
+        jd = "任职要求\n1. 制定大模型业务效果评估标准，监控并保障模型落地效果。"
+        keys = {r.key for r in matching.extract_requirements(jd)[0]}
+        self.assertNotIn("devops_monitor", keys, keys)
+
+    def test_reading_papers_is_not_research(self):
+        jd = "任职要求\n1. 英文能力良好，可查阅海外 AI 资料、论文、竞品动态。"
+        keys = {r.key for r in matching.extract_requirements(jd)[0]}
+        self.assertNotIn("rs_paper", keys, keys)
+
+    def test_competitor_analysis_is_not_consulting(self):
+        jd = "任职要求\n1. 负责需求挖掘、竞品分析、数据复盘。"
+        keys = {r.key for r in matching.extract_requirements(jd)[0]}
+        self.assertNotIn("csl_industry", keys, keys)
+        self.assertIn("data_analysis", keys, keys)
+
+    def test_short_keyword_not_crowded_out(self):
+        """词表变大后，一行可能命中十几个能力；两字词不能被长词挤掉。"""
+        from career_loop.matching.match import _claim_lines, _profile_lines
+        line = ("2028届工商管理本科应届生，熟悉商业供应链逻辑，深耕AIGC应用实践，"
+                "熟练掌握提示词工程、主流大模型、ComfyUI绘图工作流，"
+                "梳理了画师业务流程并定位到三个最大痛点。")
+        owned = _claim_lines(_profile_lines(line))
+        self.assertIn("domain", owned, sorted(owned))
+        self.assertIn("prompt_eng", owned, sorted(owned))
+
+    def test_ops_job_still_detects_monitoring(self):
+        """上一条收紧了「监控」，运维岗本身不能被误伤。"""
+        jd = "任职要求\n1. 搭建监控告警体系，能做故障排查。"
+        keys = {r.key for r in matching.extract_requirements(jd)[0]}
+        self.assertIn("devops_monitor", keys, keys)
+
+    def test_consulting_job_still_detects_delivery(self):
+        jd = "任职要求\n1. 参与咨询项目，能独立开展客户访谈并输出汇报材料。"
+        keys = {r.key for r in matching.extract_requirements(jd)[0]}
+        self.assertIn("csl_delivery", keys, keys)
+
+    def test_translate_into_solution_is_not_translation(self):
+        """「把业务问题翻译成 Agent 方案」是产品话术，不是笔译。"""
+        jd = "任职要求\n1. 负责大模型产品的需求设计与落地，把业务问题翻译成 Agent 方案。"
+        keys = {r.key for r in matching.extract_requirements(jd)[0]}
+        self.assertNotIn("tr_written", keys, keys)
+
+    def test_translation_job_still_detects_translation(self):
+        jd = "任职要求\n1. 负责技术文档笔译与本地化，维护术语库。"
+        keys = {r.key for r in matching.extract_requirements(jd)[0]}
+        self.assertIn("tr_written", keys, keys)
+
+    def test_tax_policy_is_not_civil_service_writing(self):
+        """「熟悉国家税务政策」不该被算成公文写作。"""
+        jd = "任职要求\n1. 熟悉国家税务政策，能独立完成纳税申报。"
+        keys = {r.key for r in matching.extract_requirements(jd)[0]}
+        self.assertNotIn("pub_document", keys, keys)
+        self.assertIn("fin_tax", keys, keys)
+
+    def test_civil_service_job_still_detects_document(self):
+        jd = "任职要求\n1. 能独立起草公文与汇报材料，熟悉相关政策法规。"
+        keys = {r.key for r in matching.extract_requirements(jd)[0]}
+        self.assertIn("pub_document", keys, keys)
+
+
 class TestInternship(unittest.TestCase):
     def test_goal_ranks_matching_direction_first(self):
         prof = ("工商管理本科，做过 AIGC 画师工具，访谈 20+ 画师，"

@@ -1,35 +1,36 @@
 # Career-Loop
 
-<p align="center">
-  <b>先别投。先看清你到底差在哪。</b><br/>
-  粘贴 JD + 经历 → 匹配分 + 逐项缺口 + 「补哪一项分数涨最多」。
+<p align="center">  
+  <b>先别投。先看清你到底差在哪。</b>  
+  
+  粘贴 JD + 经历 → 匹配分 + 逐项缺口 + 「补哪一项分数涨最多」。  
 </p>
 
-<p align="center">
-  <a href="https://github.com/<your-name>/career-loop/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/<your-name>/career-loop?style=social"></a>
-  <img alt="license" src="https://img.shields.io/badge/license-MIT-22c55e.svg">
-  <img alt="python" src="https://img.shields.io/badge/python-3.10%2B-3776AB.svg">
-  <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">
+<p align="center">  
+  <a href="https://github.com/jian35/career-loop/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/jian35/career-loop?style=social"></a>  
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-22c55e.svg">  
+  <img alt="python" src="https://img.shields.io/badge/python-3.10%2B-3776AB.svg">  
+  <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">  
 </p>
 
-<p align="center">
-  <a href="https://<your-name>.github.io/career-loop/"><b>▶ 在线试用（免安装，浏览器里跑）</b></a>
-  &nbsp;·&nbsp;
-  <a href="#三分钟演示视频">3 分钟演示视频</a>
-  &nbsp;·&nbsp;
-  <a href="#快速开始">命令行上手</a>
+<p align="center">  
+  <a href="https://jian35.github.io/career-loop/"><b>▶ 在线试用（免安装，浏览器里跑）</b></a>  
+  \&nbsp;·\&nbsp;  
+  <a href="#三分钟演示视频">3 分钟演示视频</a>  
+  \&nbsp;·\&nbsp;  
+  <a href="#快速开始">命令行上手</a>  
 </p>
 
-<p align="center">
-  <img src="docs/demo.png" alt="career-loop 网页演示：匹配分、能力矩阵与补强优先级" width="820">
+<p align="center">  
+  <img src="docs/demo.png" alt="career-loop 网页演示：匹配分、能力矩阵与补强优先级" width="820">  
 </p>
 
-> 把「我到底适不适合这个 AI 岗位」从玄学，变成 **可证伪、可校准** 的数据闭环。
+> 把「我到底适不适合这个 AI 岗位」从玄学，变成 **可证伪、可校准** 的数据闭环。>   
 > 市面上大多数工具给你一个分数就走；career-loop 还会用你真实的投递结果，回算「这个分数到底准不准」。
 
 Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的开源小工具：它把一份 JD 和你的经历文本喂给一个匹配引擎，给出**预测匹配分 + 缺口清单**；你拿它去投递，再把真实结果（已读 / 面试 / offer）回流，最后用**相关系数**检验「这个匹配分到底准不准」。
 
-能力词表不只有 AI：AI / 技术、通用能力（沟通、执行、学习……）、常见岗位族（产品、市场、销售、财务、设计、运营、人力、教育、医疗、法务、供应链、制造）都有覆盖；**词表没覆盖的要求也不会被丢掉**，会按文本相似度逐条判断。
+能力词表不只有 AI：AI / 技术、通用能力（沟通、执行、学习……）、65 个岗位族（产品、市场、销售、财务、设计、运营、人力、教育、医疗、法务、供应链、制造、后端、前端、测试、运维、金融、咨询、传媒、游戏、客服、零售、能源、汽车、农林、科研、社工、体育……）都有覆盖；**词表没覆盖的要求也不会被丢掉**，会按文本相似度逐条判断。
 
 准，就继续信它做投递优先级；不准，就说明模型在猜，该反过来用真实数据修权重。
 
@@ -56,7 +57,7 @@ Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的�
 - 把 JD 拆成能力项，逐条和你的经历比对，给出**带原文证据**的匹配矩阵。
 - 告诉你**补哪一项分数涨最多**（反事实），以及一批岗位里**先投哪个**。
 - 记录投递与真实结果，用 **Pearson r** 检验「这个分数到底准不准」。
-- 覆盖 AI 各细分 + 工商管理大类 + 常见岗位族；词表外的要求走兜底，不丢弃。
+- 覆盖 AI 各细分 + 工商管理大类 + 研发工程 / 金融 / 传媒 / 服务零售 / 制造能源 / 科研公共等 65 个岗位族；词表外的要求走兜底，不丢弃。
 
 **不做：**
 
@@ -76,7 +77,7 @@ Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的�
 ## 在线体验（免安装）
 
 - 直接打开 [`docs/index.html`](docs/index.html)：纯前端，粘贴 JD 和经历就在浏览器里算，数据不上传。
-- 部署到 GitHub Pages：`Settings → Pages → Source: Deploy from a branch → Branch: main, Folder: /docs`，之后地址形如 `https://<your-name>.github.io/career-loop/`。
+- 部署到 GitHub Pages：`Settings → Pages → Source: Deploy from a branch → Branch: main, Folder: /docs`，之后地址形如 `https://jian35.github.io/career-loop/`。
 
 ## 支持任意岗位（不只 AI）
 
@@ -84,14 +85,21 @@ Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的�
 
 1. **AI / 技术岗**：Python、RAG、Agent、函数调用、框架、AI 编程工具、效果评估……
 2. **通用能力**：沟通协作、执行推进、问题解决、学习自驱、文档表达、客户导向、领导力、外语、办公软件。
-3. **岗位族（33 个）**：
-   - AI 细分：NLP / CV / 推荐搜索 / MLOps / 语音 / 多模态 / 具身智能 / 数据工程 / AI 测试 / 解决方案 / AI 运营 / AI 合规
-   - 工商管理大类：市场营销 / 销售 / 会计 / 财务分析 / 审计 / 人力 / 行政 / 供应链物流 / 电商 / 旅游酒店 / 信息管理 / 项目管理 / 国际贸易 / 资产评估 / 物业房地产 / 工程管理
-   - 其他：产品 / 设计 / 运营 / 教育 / 医疗 / 法务 / 制造
-4. **自定义兜底**：没被任何词表命中的要求，会原样保留，按文本相似度与你的经历比对，并标注「需人工确认」。
+3. **岗位族（65 个 / 166 个能力项）**：
+   - AI 细分（12）：NLP / CV / 推荐搜索 / MLOps / 语音 / 多模态 / 具身智能 / 数据工程 / AI 测试 / 解决方案 / AI 运营 / AI 合规
+   - 工商管理大类（16）：市场营销 / 销售 / 会计 / 财务分析 / 审计 / 人力 / 行政 / 供应链 / 电商 / 旅游酒店 / 信息管理 / 项目管理 / 国际贸易 / 资产评估 / 物业房地产 / 工程管理
+   - 研发工程（9）：后端 / 前端 / 测试 / 运维 / 信息安全 / 嵌入式 / 电气 / 机械设计 / 质量
+   - 金融专业（4）：银行 / 保险 / 证券 / 咨询
+   - 传媒文娱（4）：传媒公关 / 影视编导 / 游戏 / 翻译
+   - 服务零售（5）：客服 / 零售 / 餐饮 / 居民服务 / 运输操作
+   - 制造能源农林（4）：能源化工 / 汽车 / 农林牧渔 / 物流
+   - 科研公共（5）：科研 / 公务公共事务 / 社工 / 心理 / 体育
+   - 其余：产品 / 设计 / 运营 / 教育 / 医疗 / 法务 / 制造 / 导游讲解
+4. **职业分类骨架**：岗位族可对齐到《职业分类大典》8 个职业大类；`scripts/coverage.py` 里的 75 个检验岗位中，66 个已建词表岗位的族识别率 100%、兜底占比 3%。
+5. **自定义兜底**：没被任何词表命中的要求，会原样保留，按文本相似度与你的经历比对，并标注「需人工确认」。
 
-<p align="center">
-  <img src="docs/demo-finance.png" alt="会计岗位分析示例：81.8%，识别为财务族" width="820">
+<p align="center">  
+  <img src="docs/demo-finance.png" alt="会计岗位分析示例：81.8%，识别为财务族" width="820">  
 </p>
 
 实测：会计岗识别为「财务」族、81.8%，缺口只剩「中级会计职称」；销售岗识别客户开发 / 谈判 / CRM；设计岗识别视觉 / 品牌 / 设计工具。浏览器 demo 里点「换个示例」就能看到 AI 岗和会计岗两种。
@@ -112,12 +120,12 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 
 ## 它和玩具项目的区别
 
-| 普通简历匹配工具 | Career-Loop |
-| --- | --- |
-| 黑盒分数，不给依据 | 每项能力附 **JD 原文 + 你的原文证据**，可逐条审计 |
-| 一次性打分，打完即忘 | **闭环**：投递 → 回流 → 校准，分数会随真实数据变准 |
-| 声称「准确率 95%」 | 自带 **42 条标注评测集** 当回归锁，且明说这是「锁逻辑」不是「真实准确率」 |
-| 依赖大模型 API | **零依赖规则基线** 开箱即用，有 OpenAI 兼容 Key 才升级语义匹配，无 Key 自动回退 |
+| 普通简历匹配工具    | Career-Loop                                         |
+| ----------- | --------------------------------------------------- |
+| 黑盒分数，不给依据   | 每项能力附 **JD 原文 + 你的原文证据**，可逐条审计                      |
+| 一次性打分，打完即忘  | **闭环**：投递 → 回流 → 校准，分数会随真实数据变准                      |
+| 声称「准确率 95%」 | 自带 **42 条标注评测集** 当回归锁，且明说这是「锁逻辑」不是「真实准确率」           |
+| 依赖大模型 API   | **零依赖规则基线** 开箱即用，有 OpenAI 兼容 Key 才升级语义匹配，无 Key 自动回退 |
 
 ---
 
@@ -140,12 +148,12 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 
 它们解决「把申请跑完」，我们解决「这个分数准不准、该补什么」。不替代，可组合。
 
-| | career-ops / ai-job-search | Resume-Matcher | **career-loop** |
-| --- | --- | --- | --- |
-| 定位 | 全流程求职 Agent（扫岗、定制简历、投递追踪） | 简历定制 + ATS 评分 | **可验证的评估层** |
-| 依赖 | Node / CLI / LaTeX | Next.js / FastAPI / Docker | **零依赖 Python 核心** |
-| 评分 | 1-5 分（含 calibrate 模式） | ATS 0-100，权重公开 | **加权分 + 原文证据 + 反事实 + Pearson r** |
-| 适合谁 | 想跑完整流程 | 想改简历过 ATS | **想搞清"准不准、补什么"** |
+|     | career-ops / ai-job-search | Resume-Matcher             | **career-loop**                  |
+| --- | -------------------------- | -------------------------- | -------------------------------- |
+| 定位  | 全流程求职 Agent（扫岗、定制简历、投递追踪）  | 简历定制 + ATS 评分              | **可验证的评估层**                      |
+| 依赖  | Node / CLI / LaTeX         | Next.js / FastAPI / Docker | **零依赖 Python 核心**                |
+| 评分  | 1-5 分（含 calibrate 模式）      | ATS 0-100，权重公开             | **加权分 + 原文证据 + 反事实 + Pearson r** |
+| 适合谁 | 想跑完整流程                     | 想改简历过 ATS                  | **想搞清"准不准、补什么"**                 |
 
 > 如果你要自动投递或生成 PDF 简历，用它们；如果你想知道「这个匹配分到底有没有预测力、补哪一项最划算」，用这里。
 
@@ -153,7 +161,7 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 
 ## 功能
 
-- **匹配引擎（支持任意岗位）**：JD × 经历 → 能力匹配矩阵（full / partial / missing），每项带原文证据；词表覆盖 AI / 通用能力 / 12 类岗位族，未覆盖要求按文本相似度兜底。
+- **匹配引擎（支持任意岗位）**：JD × 经历 → 能力匹配矩阵（full / partial / missing），每项带原文证据；词表覆盖 AI / 通用能力 / 65 个岗位族，未覆盖要求按文本相似度兜底。
 - **加权匹配分**：`score = Σ(权重 × 状态分) / Σ权重`，partial 记半分。
 - **缺口排序**：按 `权重 × 缺口严重度` 排序，避免高权重硬伤被平均分掩盖。
 - **评测集（eval）**：`data/eval_sample.jsonl` 共 42 条（14 能力 × 具备/部分/缺失），`run_eval` 给规则基线打分，作为逻辑回归锁。
@@ -173,7 +181,7 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 需要 Python 3.10+。本仓库**零第三方依赖**即可跑核心逻辑（eval / calibrate / match / 存储）；只有看板需要 `streamlit`。
 
 ```bash
-git clone https://github.com/<you>/career-loop.git
+git clone https://github.com/jian35/career-loop.git
 cd career-loop
 pip install -e .            # 装 cli 命令：career-loop
 # 可选：看板
@@ -320,6 +328,7 @@ career-loop collect --dir examples/raw_jds --report demand.md
 career-loop demand --profile examples/profile_me.md
 ```
 
+
 `collect` 会先清掉招聘站噪声（一键投递 / 邮箱 / 手机号 / 链接）再入库，并按标题去重；`demand` 跨整批 JD 汇总需求：
 
 ```
@@ -359,7 +368,7 @@ career-loop scan --profile examples/profile_me.md --jobs examples/jds \
   --level junior --goal ai --report scan.md
 ```
 
-输出四块：最适配岗位、行业适配度、最该补的能力、下一步建议。
+输出四块：最适配岗位、行业适配度、最该补的能力、下一步建议。  
 `--level` 会把高一级的岗位降权（应届生别被 Senior 岗的高分骗）；`--goal ai` 会单独列出目标方向的岗位。
 
 ### 9) 看板（可选）
@@ -376,21 +385,23 @@ career-loop dashboard        # 没有真实数据时读 data/demo_applications.j
 
 - **AI / 技术层**：下表 14 项
 - **通用能力层**：执行推进、问题解决、学习自驱、责任心、文档表达、客户导向、领导力、外语、办公软件
-- **岗位族层**：产品、市场、销售、财务、设计、运营、人力、教育、医疗、法务、供应链、制造
-- **自定义兜底**：未被以上任何词表命中的要求，按文本相似度匹配，不丢弃
+- **岗位族层**：65 个岗位族、166 个能力项（AI 细分 / 工商管理 / 研发工程 / 金融专业 / 传媒文娱 / 服务零售 / 制造能源农林 / 科研公共 / 其他），    
+  并可对齐到《职业分类大典》8 个职业大类（见 `career_loop/matching/taxonomy_cn.py`）
+- **自定义兜底**：未被以上任何词表命中的要求，按文本相似度匹配，不丢弃；    
+  开启大模型后还能自动创建 `custom:` / `llm:` 能力项（如茶艺师 → 茶艺冲泡、茶席设计）
 
 下表是 AI / 技术层的 14 项：
 
-| key | 标签 | key | 标签 |
-| --- | --- | --- | --- |
-| `python` | Python 工程能力 | `product_sense` | 需求洞察与产品设计 |
-| `llm_basics` | 大模型原理与边界 | `data_analysis` | 数据分析与指标体系 |
-| `prompt_eng` | 提示词工程 | `eval` | 效果评估体系 |
-| `rag` | RAG / 检索增强 | `engineering` | 工程落地与部署 |
-| `agent` | Agent / 智能体 | `communication` | 跨团队沟通协作 |
-| `function_calling` | 函数调用 / 工具调用 | `domain` | 业务/行业理解 |
-| `framework` | Agent 框架使用 | | |
-| `coding_tools` | AI 编程工具（Claude Code/Cursor） | | |
+| key                | 标签                          | key             | 标签        |
+| ------------------ | --------------------------- | --------------- | --------- |
+| `python`           | Python 工程能力                 | `product_sense` | 需求洞察与产品设计 |
+| `llm_basics`       | 大模型原理与边界                    | `data_analysis` | 数据分析与指标体系 |
+| `prompt_eng`       | 提示词工程                       | `eval`          | 效果评估体系    |
+| `rag`              | RAG / 检索增强                  | `engineering`   | 工程落地与部署   |
+| `agent`            | Agent / 智能体                 | `communication` | 跨团队沟通协作   |
+| `function_calling` | 函数调用 / 工具调用                 | `domain`        | 业务/行业理解   |
+| `framework`        | Agent 框架使用                  |                 |           |
+| `coding_tools`     | AI 编程工具（Claude Code/Cursor） |                 |           |
 
 每项 JD 要求会被映射到这些 key 上，并带 `weight`（3=核心硬要求 / 2=一般要求 / 1=加分项）和 `kind`（must / nice）。权重决定了缺口排序的优先级。
 
@@ -492,7 +503,7 @@ career-loop/
 
 ## Star history
 
-[![Star History Chart](https://api.star-history.com/svg?repos=<your-name>/career-loop&type=Date)](https://star-history.com/#<your-name>/career-loop&Date)
+![Star History Chart](https://api.star-history.com/svg?repos=jian35/career-loop\&type=Date)
 
 ## 许可
 

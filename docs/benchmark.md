@@ -75,31 +75,95 @@ If you change a rule, change both and update this table.
 python scripts/audit.py
 ```
 
-Runs 28 end-to-end cases (happy path + invalid ids, empty JD, too few samples,
+Runs 32 end-to-end cases (happy path + invalid ids, empty JD, too few samples,
 empty DB/dir, duplicate collection, invalid status) and exits non-zero on failure.
 CI runs it on Linux and Windows.
 
-## 4. Job coverage spot-check (30 roles)
+## 5. Job coverage spot-check (75 roles)
 
 ```bash
-python scripts/coverage.py
+python scripts/coverage.py                      # rule mode, offline
+python scripts/coverage.py --mode llm           # LLM mode (needs API key)
+python scripts/coverage.py --only 长尾 --mode both
 ```
 
-Runs 30 representative JDs and reports, per role: detected job family, number of
-requirements extracted, how many came from the vocabulary vs. the custom
-fallback, and whether the expected key terms were captured.
+Runs 75 representative JDs in 8 groups, plus a deliberate **long-tail group**
+(tea artisan, wedding planner, pet groomer, drone pilot, flight attendant,
+courier, nail artist, bartender, LARP host) that has **no built-in family**, so
+the fallback rate is measured instead of hidden.
 
-| Group | Roles | Extraction recall | Family detected |
-| --- | ---: | ---: | ---: |
-| AI (15) | PM, Agent, RAG, Prompt, NLP, CV, recsys, MLOps, solution, ops, speech, multimodal, robotics, data, testing | 100% | 100% |
-| Business admin (15) | marketing, sales, accounting, FP&A, audit, HR, admin, supply chain, ecommerce, tourism/hotel, IT systems, project mgmt, trade, property, construction | 100% | 100% |
+### Rule mode (offline)
+
+| Group | Roles | Recall | Family detected | Fallback share |
+| --- | ---: | ---: | ---: | ---: |
+| AI | 15 | 100% | 100% | 2% |
+| 工商管理 | 15 | 100% | 100% | 4% |
+| 研发工程 | 9 | 100% | 100% | 0% |
+| 金融专业 | 4 | 100% | 100% | 0% |
+| 传媒文娱 | 5 | 100% | 100% | 14% |
+| 服务零售 | 4 | 100% | 100% | 0% |
+| 制造能源农林 | 8 | 100% | 100% | 14% |
+| 科研公共 | 5 | 100% | 100% | 0% |
+| **长尾（未建词表）** | 9 | 100% | n/a | **46%** |
+
+- **66 roles with a built-in family**: recall 100%, family detection 100%,
+  fallback share 3% — i.e. the vocabulary actually carries the load.
+- **9 long-tail roles**: recall 100% but fallback share 46%. Recall stays high
+  because the fallback keeps the original line verbatim; that is *not* the same
+  as understanding it. Long-tail roles are where the LLM mode matters.
+
+Vocabulary size: **65 job families / 166 family-level capabilities**, plus 14 AI
+dimensions and 9 general dimensions (189 total).
+
+### LLM mode vs rule mode (same probe set)
+
+| Group | Rule fallback | LLM fallback | Note |
+| --- | ---: | ---: | --- |
+| AI | 2% | 21% | LLM prefers its own naming even when a canonical key exists |
+| 研发工程 | 0% | 7% | |
+| 长尾 | 46% | 91% | LLM invents *semantic* items, not verbatim copies |
+
+LLM recall on the long-tail group is 97%. The items it creates are named
+capabilities, e.g. 茶艺师 → `tea_brewing`(茶艺冲泡) / `tea_table_design`(茶席设计)
+/ `tea_culture`(茶文化传播); 无人机飞手 → `drone_license`(无人机执照) /
+`drone_fc_gimbal`(飞控与云台操作).
+
+**Trade-off, stated plainly:** LLM mode covers more, but it names capabilities
+ad hoc, so the same skill can appear under different keys across JDs — which
+makes the aggregate `demand` statistics noisier. Rule mode is worse at long-tail
+coverage and better at comparability. That is why both modes ship.
 
 Recall = expected key terms whose requirement line was captured, either as a
-canonical capability or as a custom requirement. This is a **spot check**: it
-shows the architecture generalizes, not that every role on the market is
-perfectly covered. Long-tail roles rely on the custom fallback or the LLM mode.
+canonical capability or as a self-created requirement. This is a **spot check**:
+it shows the architecture generalizes, not that every role on the market is
+perfectly covered.
 
-## 5. What we deliberately do not report
+## 6. Occupation-classification alignment
+
+```bash
+python -c "from career_loop.matching.taxonomy_cn import render_coverage; print(render_coverage())"
+```
+
+Maps job families onto the 8 top-level classes of China's Occupation
+Classification Dictionary so coverage can be audited against an external
+skeleton:
+
+| Class | Mid-classes collected | Mapped | Status |
+| --- | ---: | ---: | --- |
+| 1 单位负责人 | 3 | 3 | complete |
+| 2 专业技术人员 | 10 | 10 | complete |
+| 3 办事人员 | 4 | 4 | complete |
+| 4 社会生产服务和生活服务人员 | 9 | 9 | complete |
+| 5 农林牧渔生产及辅助人员 | 4 | 4 | complete |
+| 6 生产制造及有关人员 | 9 | 9 | complete |
+| 7 军人 | 0 | 0 | out of scope |
+| 8 不便分类的其他从业人员 | 0 | 0 | out of scope |
+
+**Honest limit:** 39 mid-classes are collected here; the Dictionary has 79. So
+this shows 100% of *what we listed*, i.e. ~49% of the Dictionary's mid-classes.
+The mapping is heuristic keyword matching, not official data.
+
+## 7. What we deliberately do not report
 
 - No "accuracy on real job postings" claim: we have no public, labeled, real-world
   corpus.
