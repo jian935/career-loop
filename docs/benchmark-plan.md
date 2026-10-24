@@ -118,9 +118,12 @@ no evidence or an explicit negative.
 
 ## 8. Division of labor
 
-**Can be done without your private data (I can build):**
+**Can be done without your private data (v0 kit is in `benchmark/`):**
 
-- JSONL schema and annotation guide.
+- JSONL schema and annotation guide. ✅ `benchmark/schema.md`, `annotation_guide.md`
+- Offline annotation tool. ✅ `benchmark/annotate.html`
+- Cohen's kappa + engine-vs-human script. ✅ `benchmark/agreement.py`
+- Seed cases. ✅ `benchmark/cases_v0.jsonl` (10 pairs, labels empty)
 - A local annotation tool (single HTML, keyboard-first, exports JSONL).
 - Cohen's kappa + confusion-matrix script.
 - Public-ATS fetcher for greenhouse/lever/ashby (respecting their public JSON).

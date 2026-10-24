@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>career-loop benchmark annotator</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#fff; --ink:#151823; --sub:#5b6172; --line:#e4e7ef;
+    --brand:#4f46e5; --ok:#059669; --warn:#d97706; --bad:#e11d48;
+    --ok-bg:#ecfdf5; --warn-bg:#fffbeb; --bad-bg:#fff1f2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .brand{font-weight:700;color:var(--brand)}
+  .spacer{flex:1}
+  button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-size:13px;color:var(--ink)}
+  button:hover{border-color:var(--brand);color:var(--brand)}
+  button.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  input[type=text]{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;outline:none;width:120px}
+  input[type=text]:focus{border-color:var(--brand)}
+  .meta{font-size:12px;color:var(--sub)}
+  main{max-width:1200px;margin:0 auto;padding:16px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:860px){.cols{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .card h3{margin:0 0 8px;font-size:12px;letter-spacing:.4px;color:var(--sub);text-transform:uppercase}
+  pre{white-space:pre-wrap;word-break:break-word;font:13px/1.7 ui-monospace,SFMono-Regular,Consolas,"PingFang SC",monospace;margin:0;max-height:300px;overflow:auto}
+  .reqs{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+  .req{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
+  .req.focus{outline:2px solid rgba(79,70,229,.35);border-color:var(--brand)}
+  .req .name{font-weight:650}
+  .req .key{font-size:11px;color:var(--sub);margin-left:6px}
+  .req .line{grid-column:1/-1;font-size:12px;color:var(--sub);font-family:ui-monospace,Consolas,monospace}
+  .btns{display:flex;gap:6px}
+  .btns button{padding:5px 10px;font-size:12px}
+  .btns button.on[data-s=full]{background:var(--ok-bg);border-color:var(--ok);color:var(--ok);font-weight:700}
+  .btns button.on[data-s=partial]{background:var(--warn-bg);border-color:var(--warn);color:var(--warn);font-weight:700}
+  .btns button.on[data-s=missing]{background:var(--bad-bg);border-color:var(--bad);color:var(--bad);font-weight:700}
+  .ev{grid-column:1/-1}
+  .ev input{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font:12px ui-monospace,Consolas,monospace;color:var(--ink)}
+  .hint{font-size:12px;color:var(--sub);margin-top:10px}
+  kbd{background:#eef0f7;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">career-loop · annotator</span>
+  <input type="text" id="annotator" placeholder="标注人" value="a1">
+  <input type="file" id="file" accept=".jsonl,.json,application/json" style="font-size:12px">
+  <span class="meta" id="progress">0 / 0</span>
+  <span class="spacer"></span>
+  <button id="prev">← 上一条 (p)</button>
+  <button id="next">下一条 (n) →</button>
+  <button class="primary" id="export">导出 JSONL (e)</button>
+</header>
+
+<main>
+  <div class="cols">
+    <div class="card"><h3>JD</h3><pre id="jd"></pre></div>
+    <div class="card"><h3>Profile</h3><pre id="profile"></pre></div>
+  </div>
+  <div class="reqs" id="reqs"></div>
+  <p class="hint">
+    快捷键：<kbd>1</kbd> 已具备 / <kbd>2</kbd> 部分 / <kbd>3</kbd> 缺失 ·
+    <kbd>↑</kbd><kbd>↓</kbd> 切换要求 · <kbd>n</kbd>/<kbd>p</kbd> 换案例 ·
+    进度自动存本地浏览器。判定规则见 <code>annotation_guide.md</code>。
+  </p>
+</main>
+
+<script>
+const DEMO = {
+  id:"demo-ai-pm", language:"zh", job_family:"ai",
+  jd:"AI 产品经理\n任职要求\n1. 熟悉大模型原理与边界\n2. 会做提示词工程\n3. 有 RAG 项目经验",
+  profile:"计算机本科。用 DeepSeek API 做了提示词工程，把课件整理成知识库；用 LangChain 搭了检索问答，但没有做向量检索。",
+  requirements:[
+    {key:"llm_basics",label:"大模型原理与边界",weight:2,line:"1. 熟悉大模型原理与边界"},
+    {key:"prompt_eng",label:"提示词工程",weight:2,line:"2. 会做提示词工程"},
+    {key:"rag",label:"RAG / 检索增强",weight:2,line:"3. 有 RAG 项目经验"}
+  ], labels:{}
+};
+
+let cases=[];
+let idx=0;
+let focusIdx=0;
+let ann={};
+let annotator="a1";
+
+function storeKey(){ return "careerloop_bench_v1"; }
+function loadState(){
+  try{
+    const s=JSON.parse(localStorage.getItem(storeKey())||"{}");
+    if(s.ann) ann=s.ann;
+    if(s.annotator){ annotator=s.annotator; document.getElementById("annotator").value=annotator; }
+  }catch(e){}
+}
+function saveState(){
+  localStorage.setItem(storeKey(), JSON.stringify({annotator, ann}));
+}
+
+function labelsOf(c){ return ann[c.id] || (ann[c.id]={}); }
+function statusOf(c,key){
+  const l=labelsOf(c)[key];
+  return l?l.status:"";
+}
+function evidenceOf(c,key){
+  const l=labelsOf(c)[key];
+  return l?l.evidence||"":"";
+}
+function reviewed(c){
+  return c.requirements.length>0 && c.requirements.every(r=>statusOf(c,r.key));
+}
+
+function render(){
+  if(!cases.length) return;
+  const c=cases[idx];
+  document.getElementById("jd").textContent=c.jd;
+  document.getElementById("profile").textContent=c.profile;
+  const box=document.getElementById("reqs");
+  box.innerHTML="";
+  focusIdx=Math.min(focusIdx, c.requirements.length-1);
+
+  c.requirements.forEach((r,i)=>{
+    const row=document.createElement("div");
+    row.className="req"+(i===focusIdx?" focus":"");
+    row.dataset.i=i;
+
+    const left=document.createElement("div");
+    const name=document.createElement("span"); name.className="name"; name.textContent=r.label;
+    const key=document.createElement("span"); key.className="key"; key.textContent=r.key+" · w"+r.weight;
+    left.appendChild(name); left.appendChild(key);
+
+    const btns=document.createElement("div"); btns.className="btns";
+    ["full","partial","missing"].forEach((s,si)=>{
+      const b=document.createElement("button");
+      b.dataset.s=s;
+      b.textContent=(si+1)+" "+(s==="full"?"已具备":s==="partial"?"部分":"缺失");
+      if(statusOf(c,r.key)===s) b.classList.add("on");
+      b.onclick=()=>{ setStatus(c,r.key,s); };
+      btns.appendChild(b);
+    });
+
+    const line=document.createElement("div"); line.className="line"; line.textContent=r.line;
+
+    const ev=document.createElement("div"); ev.className="ev";
+    const inp=document.createElement("input");
+    inp.placeholder="证据（逐字摘自已给出 profile，可留空）";
+    inp.value=evidenceOf(c,r.key);
+    inp.oninput=()=>{ setEvidence(c,r.key,inp.value); };
+    inp.onfocus=()=>{ focusIdx=i; markFocus(); };
+    ev.appendChild(inp);
+
+    row.appendChild(left); row.appendChild(btns); row.appendChild(line); row.appendChild(ev);
+    row.onclick=(e)=>{ if(e.target.tagName!=="INPUT"){ focusIdx=i; markFocus(); } };
+    box.appendChild(row);
+  });
+
+  document.getElementById("progress").textContent =
+    `${idx+1} / ${cases.length} · 已完成 ${cases.filter(reviewed).length} · ${c.id}`;
+  markFocus();
+  saveState();
+}
+
+function markFocus(){
+  document.querySelectorAll(".req").forEach((el,i)=>el.classList.toggle("focus", i===focusIdx));
+}
+
+function setStatus(c,key,status){
+  const l=labelsOf(c)[key]||(labelsOf(c)[key]={status:"",evidence:""});
+  l.status=status;
+  render();
+}
+function setEvidence(c,key,text){
+  const l=labelsOf(c)[key]||(labelsOf(c)[key]={status:"",evidence:""});
+  l.evidence=text;
+  saveState();
+}
+
+function parseJSONL(text){
+  return text.split(/\r?\n/).filter(l=>l.trim()).map(l=>JSON.parse(l));
+}
+
+document.getElementById("file").addEventListener("change", async (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const text=await f.text();
+  cases=parseJSONL(text);
+  idx=0; focusIdx=0;
+  render();
+});
+
+document.getElementById("annotator").addEventListener("input",(e)=>{
+  annotator=e.target.value.trim()||"a1"; saveState();
+});
+
+document.getElementById("prev").onclick=()=>{ idx=(idx-1+cases.length)%cases.length; focusIdx=0; render(); };
+document.getElementById("next").onclick=()=>{ idx=(idx+1)%cases.length; focusIdx=0; render(); };
+
+document.getElementById("export").onclick=()=>{
+  const lines=[];
+  for(const c of cases){
+    const labels=labelsOf(c);
+    const clean={};
+    for(const r of c.requirements){
+      const l=labels[r.key];
+      if(l && l.status) clean[r.key]={status:l.status, evidence:(l.evidence||"").trim()};
+    }
+    lines.push(JSON.stringify({id:c.id, annotator, labels:clean, reviewed:reviewed(c)}));
+  }
+  const blob=new Blob([lines.join("\n")+"\n"],{type:"application/jsonl"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`annotations_${annotator}.jsonl`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+document.addEventListener("keydown",(e)=>{
+  const tag=(e.target.tagName||"").toLowerCase();
+  if(tag==="input"||tag==="textarea") return;
+  if(!cases.length) return;
+  const c=cases[idx]; const r=c.requirements[focusIdx];
+  if(!r) return;
+  if(e.key==="1"){ e.preventDefault(); setStatus(c,r.key,"full"); }
+  else if(e.key==="2"){ e.preventDefault(); setStatus(c,r.key,"partial"); }
+  else if(e.key==="3"){ e.preventDefault(); setStatus(c,r.key,"missing"); }
+  else if(e.key==="ArrowDown"){ e.preventDefault(); focusIdx=Math.min(c.requirements.length-1,focusIdx+1); markFocus(); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); focusIdx=Math.max(0,focusIdx-1); markFocus(); }
+  else if(e.key==="n"){ idx=(idx+1)%cases.length; focusIdx=0; render(); }
+  else if(e.key==="p"){ idx=(idx-1+cases.length)%cases.length; focusIdx=0; render(); }
+  else if(e.key==="e"){ e.preventDefault(); document.getElementById("export").click(); }
+});
+
+loadState();
+cases=[DEMO];
+annotator = document.getElementById("annotator").value.trim() || "a1";
+render();
+</script>
+</body>
+</html>
