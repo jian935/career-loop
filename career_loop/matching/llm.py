@@ -10,8 +10,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-DEFAULT_BASE = "https://api.deepseek.com/v1"
-DEFAULT_MODEL = "deepseek-chat"
+DEFAULT_BASE = "https://api.deepseek.com"
+DEFAULT_MODEL = "deepseek-flash"
 
 CACHE_DIR = Path(os.getenv("CAREER_LOOP_CACHE", Path.home() / ".career_loop" / "llm_cache"))
 

@@ -187,8 +187,8 @@ pip install streamlit
 
 ```bash
 export OPENAI_API_KEY=sk-...                 # 或 DEEPSEEK_API_KEY
-export OPENAI_BASE_URL=https://api.deepseek.com/v1
-export OPENAI_MODEL=deepseek-chat
+export OPENAI_BASE_URL=https://api.deepseek.com
+export OPENAI_MODEL=deepseek-flash
 career-loop doctor                           # 确认 LLM 是否已识别
 career-loop match --jd ... --profile ...     # 输出里模式会显示 llm
 ```
@@ -196,6 +196,7 @@ career-loop match --jd ... --profile ...     # 输出里模式会显示 llm
 - 结果缓存在 `~/.career_loop/llm_cache`（按 JD/经历哈希），重复分析不重复计费。
 - 想强制走规则：`CAREER_LOOP_NO_CACHE=1` 只关缓存；不配 Key 就是纯规则。
 - `doctor` 会打印 Python、DB、LLM、缓存、评测集状态，排查环境先跑它。
+- 各家 base URL / 模型名 / 免费额度 / 价格对比见 [docs/providers.md](docs/providers.md)（智谱 GLM-4-Flash 免费、SiliconFlow 有免费模型、DeepSeek Flash 约 ¥0.005/次）。
 
 ---
 
