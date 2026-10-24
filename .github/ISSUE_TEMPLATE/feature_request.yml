@@ -1,0 +1,42 @@
+name: Feature request
+description: Suggest a capability, a job family, or an evaluation case.
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of change?
+      options:
+        - New capability / vocabulary
+        - New job family
+        - Evaluation case / benchmark
+        - CLI or report output
+        - Browser demo
+        - Docs
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the job-search situation, not the implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example JD line(s)
+      description: Real phrasing you have seen, redacted.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Fit with project principles
+      options:
+        - label: Keeps the core dependency-free
+        - label: Evidence remains verbatim (no generated evidence)
+        - label: Does not claim real-world accuracy without data

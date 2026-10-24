@@ -29,11 +29,16 @@ NOISE_MARKERS = [
 
 
 def _looks_like_requirement(line: str) -> bool:
+    """在“职责/要求/优先”段里，只要不是噪声行，就当作要求。
+
+    不再要求出现固定动词——否则「能读论文并复现实验」「英语可作为工作语言」
+    这类没有标准动词的要求会被静默丢掉，跨行业覆盖就会漏。
+    """
     if len(line) < 6 or len(line) > 120:
         return False
     if any(n in line for n in NOISE_MARKERS):
         return False
-    return any(s in line for s in REQ_SIGNALS)
+    return True
 
 
 def _custom_label(line: str) -> str:

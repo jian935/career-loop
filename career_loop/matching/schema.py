@@ -143,9 +143,9 @@ DOMAIN_PACKS: dict[str, dict] = {
     },
     "finance": {
         "fin_accounting": {"label": "会计核算", "kw": ["会计", "记账", "凭证", "总账", "应收应付", "核算", "账务"]},
-        "fin_reporting": {"label": "财务报表", "kw": ["报表", "合并报表", "财务分析", "预算", "决算", "利润表", "资产负债表"]},
+        "fin_reporting": {"label": "财务报表", "kw": ["报表", "合并报表", "财务分析", "预算", "决算", "利润表", "资产负债表", "预测", "经营分析"]},
         "fin_tax": {"label": "税务", "kw": ["税务", "报税", "增值税", "汇算清缴", "纳税申报", "个税"]},
-        "fin_audit": {"label": "审计/内控", "kw": ["审计", "内控", "合规", "风控"]},
+        "fin_audit": {"label": "审计/内控", "kw": ["审计", "内控", "合规", "风控", "风险", "底稿"]},
         "fin_cert": {"label": "证书(CPA/ACCA)", "kw": ["cpa", "acca", "中级会计", "注会", "税务师"]},
         "fin_software": {"label": "财务软件(用友/金蝶/SAP)", "kw": ["用友", "金蝶", "sap", "erp", "财务软件"]},
     },
@@ -156,7 +156,7 @@ DOMAIN_PACKS: dict[str, dict] = {
     },
     "operations": {
         "ops_activity": {"label": "活动运营", "kw": ["活动策划", "活动运营", "执行落地", "活动复盘"]},
-        "ops_user": {"label": "用户运营", "kw": ["用户运营", "留存", "召回", "分层", "社群运营"]},
+        "ops_user": {"label": "用户运营", "kw": ["用户运营", "留存", "用户召回", "流失召回", "分层", "社群运营"]},
         "ops_content": {"label": "内容运营", "kw": ["内容运营", "选题", "编辑", "分发", "内容策划", "公众号"]},
     },
     "hr": {
@@ -176,10 +176,75 @@ DOMAIN_PACKS: dict[str, dict] = {
         "legal_contract": {"label": "合同/法务", "kw": ["合同", "法务", "诉讼", "仲裁", "合规审查"]},
     },
     "supply": {
-        "scm_supply": {"label": "供应链/采购", "kw": ["供应链", "采购", "仓储", "物流", "库存"]},
+        "scm_supply": {"label": "供应链/采购", "kw": ["供应链", "采购", "仓储", "物流", "库存", "供应商", "周转"]},
     },
     "manufacturing": {
-        "mfg_process": {"label": "工艺/生产", "kw": ["工艺", "生产", "设备", "质量", "cad", "solidworks"]},
+        "mfg_process": {"label": "工艺/生产", "kw": ["工艺", "生产", "设备", "质量管理", "cad", "solidworks"]},
+    },
+    # ---- AI 子领域 ----
+    "ai_nlp": {
+        "nlp_text": {"label": "NLP/文本处理", "kw": ["nlp", "自然语言", "分词", "命名实体", "文本分类", "情感分析", "bert", "transformer", "微调", "pytorch", "tensorflow"]},
+    },
+    "ai_cv": {
+        "cv_vision": {"label": "计算机视觉", "kw": ["图像", "目标检测", "语义分割", "ocr", "opencv", "yolo", "人脸识别", "pytorch", "tensorflow"]},
+    },
+    "ai_recsys": {
+        "rec_ranking": {"label": "推荐/搜索", "kw": ["推荐系统", "推荐算法", "排序模型", "召回策略", "特征工程", "ctr", "搜索排序", "个性化推荐"]},
+    },
+    "ai_mlops": {
+        "mlops_serve": {"label": "MLOps/模型部署", "kw": ["模型部署", "模型推理", "推理服务", "推理加速", "模型监控", "mlops", "kubernetes", "triton", "serving", "模型压缩"]},
+    },
+    "ai_solution": {
+        "sol_presales": {"label": "AI 解决方案/售前", "kw": ["解决方案", "售前", "poc", "方案演示", "客户需求", "投标"]},
+    },
+    "ai_ops": {
+        "aiops_label": {"label": "AI 运营/数据标注", "kw": ["数据标注", "标注规范", "训练师", "badcase", "评测集", "问题归因"]},
+    },
+    "ai_compliance": {
+        "aicomp_ethics": {"label": "AI 合规/伦理", "kw": ["算法备案", "ai 伦理", "数据合规", "隐私保护", "内容安全"]},
+    },
+    # ---- 工商管理大类补充 ----
+    "admin": {
+        "adm_office": {"label": "行政后勤", "kw": ["行政", "办公用品", "固定资产", "会议组织", "后勤", "前台", "员工活动"]},
+    },
+    "ecommerce": {
+        "ec_shop": {"label": "电商运营", "kw": ["店铺", "gmv", "天猫", "抖音小店", "直播", "详情页", "转化率"]},
+    },
+    "tourism": {
+        "tour_hotel": {"label": "旅游/酒店", "kw": ["酒店", "客房", "预订", "旅游", "导游", "前台接待"]},
+    },
+    "it_systems": {
+        "its_impl": {"label": "信息系统实施", "kw": ["erp", "系统实施", "需求调研", "系统配置", "上线支持", "信息系统"]},
+    },
+    "project_mgmt": {
+        "pmg_deliver": {"label": "项目管理", "kw": ["项目计划", "进度管控", "项目风险", "验收", "pmp", "里程碑", "跨部门协作"]},
+    },
+    "trade": {
+        "trade_export": {"label": "国际贸易", "kw": ["外贸", "报关", "信用证", "海外客户", "进出口", "询盘"]},
+    },
+    "asset_valuation": {
+        "av_valuation": {"label": "资产评估", "kw": ["资产评估", "尽调", "估值", "资产盘点", "评估报告"]},
+    },
+    "ai_speech": {
+        "speech_audio": {"label": "语音(ASR/TTS)", "kw": ["语音识别", "语音合成", "asr", "tts", "声学", "唤醒词"]},
+    },
+    "ai_multimodal": {
+        "mm_vision_lang": {"label": "多模态", "kw": ["多模态", "图文", "视觉语言", "vlm", "clip", "跨模态"]},
+    },
+    "ai_robotics": {
+        "robot_embodied": {"label": "具身智能/机器人", "kw": ["机器人", "具身", "ros", "运动控制", "slam", "机械臂"]},
+    },
+    "ai_data": {
+        "data_pipeline": {"label": "数据工程", "kw": ["数据清洗", "etl", "数据管道", "数仓", "特征平台", "数据治理"]},
+    },
+    "ai_testing": {
+        "ai_qa": {"label": "AI 测试/质量", "kw": ["模型测试", "ai 测试", "效果测试", "评测方案", "质量保障", "交付质量"]},
+    },
+    "property": {
+        "prop_estate": {"label": "物业/房地产", "kw": ["物业", "房地产", "楼盘", "招商", "租赁", "业主"]},
+    },
+    "construction": {
+        "con_build": {"label": "工程管理", "kw": ["施工", "工程管理", "造价", "招投标", "监理", "bim"]},
     },
 }
 

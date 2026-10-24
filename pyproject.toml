@@ -1,31 +1,50 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "career-loop"
-version = "0.1.0"
-description = "AI 求职漏斗 Agent：预测匹配 -> 记录投递 -> 回流结果 -> 校准模型。带标注评测集，规则基线 + LLM 模式。"
+version = "0.4.0"
+description = "Job-fit scoring you can falsify: JD x experience -> weighted score + gaps + counterfactual, then calibrate against real outcomes. Works for any role, ships a labeled eval set."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "your-name" }]
-keywords = ["job", "career", "agent", "llm", "resume", "eval", "calibration"]
+keywords = [
+    "job", "career", "resume", "job-matching", "eval", "calibration",
+    "agent", "llm", "counterfactual", "local-first",
+]
 classifiers = [
-  "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = []
 
 [project.optional-dependencies]
 ui = ["streamlit>=1.30"]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "build>=1.2"]
 
 [project.scripts]
 career-loop = "career_loop.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/your-name/career-loop"
+Repository = "https://github.com/your-name/career-loop"
+Issues = "https://github.com/your-name/career-loop/issues"
+Documentation = "https://github.com/your-name/career-loop/tree/main/docs"
+Changelog = "https://github.com/your-name/career-loop/blob/main/CHANGELOG.md"
 
-[tool.setuptools]
-packages = ["career_loop"]
+[tool.setuptools.packages.find]
+include = ["career_loop*"]
+
+[tool.setuptools.package-data]
+"career_loop" = ["py.typed"]

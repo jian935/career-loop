@@ -36,6 +36,14 @@ DOMAIN_CN = {
     "finance": "财务", "design": "设计", "operations": "运营", "hr": "人力",
     "education": "教育", "healthcare": "医疗", "legal": "法务",
     "supply": "供应链", "manufacturing": "制造",
+    "ai_nlp": "NLP", "ai_cv": "CV", "ai_recsys": "推荐/搜索", "ai_mlops": "MLOps",
+    "ai_solution": "AI方案", "ai_ops": "AI运营", "ai_compliance": "AI合规",
+    "admin": "行政", "ecommerce": "电商", "tourism": "旅游/酒店",
+    "it_systems": "信息管理", "project_mgmt": "项目管理", "trade": "外贸",
+    "asset_valuation": "资产评估",
+    "ai_speech": "语音", "ai_multimodal": "多模态", "ai_robotics": "具身/机器人",
+    "ai_data": "数据工程", "ai_testing": "AI测试",
+    "property": "物业/房地产", "construction": "工程管理",
 }
 
 

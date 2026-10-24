@@ -1,0 +1,52 @@
+name: Bug report
+description: Something behaved differently from what the docs say.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please redact personal data (names, phone numbers, emails) before pasting a JD or profile.
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      placeholder: "0.4.0 or commit sha"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options:
+        - Rules (no API key)
+        - LLM
+        - Browser demo
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command / steps
+      placeholder: |
+        python -m career_loop match --jd ... --profile ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal JD + profile (redacted)
+      description: A short reproducible snippet is worth more than a long description.
