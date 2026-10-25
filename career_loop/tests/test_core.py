@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from career_loop import calibrate, collect, explore, internship, matching, recommend, reflow, store
+from career_loop import calibrate, collect, dashdata, explore, internship, matching, recommend, reflow, store
 from career_loop.eval import load_dataset, run_eval
 
 
@@ -1484,9 +1484,50 @@ class TestDocsConsistency(unittest.TestCase):
     KEY_NUMBERS = (
         "66", "171", "60", "93.6%", "86.0%", "93.4%", "0.193", "56.6%", "73.5%",
         "52%", "78%", "70%", "83%", "45", "10,613", "13.8", "86.2%", "100.0%",
-        "1,167", "1,838", "138", "32", "75", "3%", "16", "50", "29", "0.694",
+        "1,167", "1,838", "32", "75", "3%", "16", "50", "29", "0.694",
         "-0.059", "0.03", "9,544", "122,560", "8,674", "35+",
     )
+
+    @staticmethod
+    def _count_tests() -> int:
+        """数出本模块里真实的测试方法数（不看文档怎么说）。
+
+        单测条数以前是写死在 KEY_NUMBERS 里的常量，结果很快就过时了
+        （加了新测试没人想起改 README，文档里一直是旧数字）。
+        改成从类里数，数字自己走，文档写错就红。
+        """
+        import inspect
+        mod = sys.modules[__name__]
+        total = 0
+        for _, obj in vars(mod).items():
+            if inspect.isclass(obj) and issubclass(obj, unittest.TestCase):
+                total += len([m for m in dir(obj) if m.startswith("test")])
+        return total
+
+    def test_version_is_consistent_across_manifests(self):
+        """版本号必须三处一致：pyproject / CHANGELOG 顶部 / 网页上的角标。
+
+        加这条是因为它真的漂移过——CHANGELOG 已经写到 0.8.21，
+        pyproject 还停在 0.8.18，`pip install -e .` 装的包版本是错的。
+        """
+        import re
+        pyproject = (self.ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        ver = re.search(r'^version = "([^"]+)"', pyproject, re.M).group(1)
+        top = re.search(r"^## \[([^\]]+)\]", (self.ROOT / "CHANGELOG.md").read_text(
+            encoding="utf-8"), re.M).group(1)
+        self.assertEqual(top, ver, f"CHANGELOG 顶部 {top} ≠ pyproject {ver}")
+        self.assertIn(f"v{ver}",
+                      (self.ROOT / "docs" / "index.html").read_text(encoding="utf-8"),
+                      f"网页角标没跟着升到 v{ver}")
+
+    def test_unit_test_count_matches_readme(self):
+        """README 里写的单测条数必须等于实际条数（含 badge）。"""
+        n = self._count_tests()
+        zh, en = self._read("README.md"), self._read("README.en.md")
+        # 用 assertTrue 而不是 assertIn：后者失败时会把整篇 README 打进回溯里
+        self.assertTrue(f"{n} 个单元测试" in zh, f"README.md 单测条数应写 {n}")
+        self.assertTrue(f"{n} unit tests" in en, f"README.en.md 单测条数应写 {n}")
+        self.assertTrue(f"tests-{n}%20passing" in en, "英文 README 徽章上的数字没跟着改")
 
     @classmethod
     def _read(cls, name: str) -> str:
@@ -1552,6 +1593,154 @@ class TestDocsConsistency(unittest.TestCase):
             text = self._read(name)
             self.assertNotIn("3 分钟演示视频", text, f"{name} 仍把视频写成 3 分钟")
             self.assertNotIn("3-minute demo video", text, f"{name} 仍把视频写成 3 分钟")
+
+
+class TestCorrelationCI(unittest.TestCase):
+    """置信区间：把「r 是多少」升级成「这个 r 有没有把 0 排除掉」。
+
+    只报一个 r 是没法证伪的——n=12 时能轻松跑出 0.29，也可能下一次是 -0.2。
+    区间跨不跨 0 才是能不能拿它做投递优先级的判据。
+    """
+
+    _xs = [52, 61, 70, 74, 80, 88, 91, 44, 57, 66]
+    _ps = [False, False, True, False, True, True, True, False, True, False]
+
+    def test_deterministic_across_calls(self):
+        """固定种子 → 同输入必同输出。否则同一份数据在报告里和看板上会不一样。"""
+        a = calibrate.pearson_ci(self._xs, self._ps)
+        b = calibrate.pearson_ci(self._xs, self._ps)
+        self.assertEqual((a.r, a.lo, a.hi, a.valid), (b.r, b.lo, b.hi, b.valid))
+
+    def test_too_few_samples_refuses_to_give_interval(self):
+        """样本太少时宁可不给数，也不给假精度。"""
+        ci = calibrate.pearson_ci([60, 70, 80], [False, True, True])
+        self.assertFalse(ci.available)
+        self.assertIn("不足", ci.verdict())
+
+    def test_strong_signal_excludes_zero(self):
+        xs = [20, 30, 40, 50, 60, 70, 80, 90, 95, 99]
+        ps = [False, False, False, False, True, True, True, True, True, True]
+        ci = calibrate.pearson_ci(xs, ps)
+        self.assertTrue(ci.available)
+        self.assertFalse(ci.crosses_zero)
+        self.assertGreater(ci.lo, 0)
+
+    def test_no_signal_spans_zero(self):
+        """正负交替 = 没有关系，区间必须跨 0（不能拍脑袋说"有点用处"）。"""
+        xs = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+        ps = [True, False] * 5
+        ci = calibrate.pearson_ci(xs, ps)
+        self.assertTrue(ci.crosses_zero)
+
+    def test_point_estimate_inside_interval(self):
+        ci = calibrate.pearson_ci(self._xs, self._ps)
+        self.assertTrue(ci.lo <= ci.r <= ci.hi)
+
+    def test_text_carries_the_numbers(self):
+        """图上的标题字符串必须自带样本量——截图发出去不会丢口径。"""
+        ci = calibrate.pearson_ci(self._xs, self._ps)
+        self.assertIn("95% CI", ci.text)
+        self.assertIn("n=10", ci.text)
+
+
+class TestDashboardData(unittest.TestCase):
+    """看板数据层。
+
+    这一层的 bug 有个共同特点：**图照样画得出来**。漏斗顺序错了、
+    口径判错了、层级降级成一句 caption 了，屏幕上都是一张正常的图。
+    所以只能靠断言把它钉住。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.demo = dashdata.build_board("demo", mode="early")
+
+    def test_demo_data_is_explicitly_flagged(self):
+        """演示数据是编的，必须写在数据里，看板躲不掉这条标注。"""
+        self.assertTrue(self.demo.is_demo)
+        self.assertTrue(any("编造" in w for w in self.demo.warnings))
+
+    def test_funnel_order_follows_mode_contract(self):
+        keys = [f.key for f in self.demo.funnel]
+        want = [k for k in reflow.FUNNEL_ORDER["early"] if k in keys]
+        self.assertEqual(keys, want)
+
+    def test_funnel_counts_sum_to_total(self):
+        self.assertEqual(sum(f.n for f in self.demo.funnel), self.demo.total)
+
+    def test_interview_counts_only_in_early_mode(self):
+        """口径差异最大的一条：面试邀约在 early 是正反馈，在 terminal 不是。"""
+        def build(mode):
+            rows = [dashdata.BoardRow(id="1", title="t", company="c", score=70,
+                                      status=reflow.STATUS_INTERVIEW, positive=False)]
+            return dashdata._finalize(rows, "db", mode)
+        self.assertTrue(build("early").rows[0].positive)
+        self.assertFalse(build("terminal").rows[0].positive)
+
+    def test_only_scored_rows_reach_the_scatter(self):
+        self.assertEqual(len(self.demo.scatter), len(self.demo.scored_rows))
+
+    def test_jitter_is_deterministic(self):
+        again = dashdata.build_board("demo", mode="early")
+        self.assertEqual([p.jitter for p in self.demo.scatter],
+                         [p.jitter for p in again.scatter])
+
+    def test_ci_is_wider_when_samples_are_few(self):
+        """同一份演示数据 n=12，区间必须跨 0——用来防止"演示数据看起来很有效"。"""
+        self.assertTrue(self.demo.ci.crosses_zero)
+
+    def test_unknown_mode_and_source_rejected(self):
+        with self.assertRaises(ValueError):
+            dashdata.build_board("demo", mode="maybe")
+        with self.assertRaises(ValueError):
+            dashdata.build_board("nowhere")
+
+    def test_missing_profile_warns_instead_of_crashing(self):
+        board = dashdata.build_board(
+            "records", records_path="examples/reflow_demo_records.csv", profile_path=""
+        )
+        self.assertEqual(board.rows, [])
+        self.assertTrue(board.warnings)
+
+    def test_unusable_db_degrades_to_warning(self):
+        """库不存在/没建表时不能让看板白屏，要变成一条能读的提示。"""
+        with tempfile.TemporaryDirectory() as td:
+            board = dashdata.build_board("db", db=str(Path(td) / "nope.db"))
+        self.assertEqual(board.rows, [])
+        self.assertTrue(board.warnings)
+
+    def test_svg_escapes_injected_markup(self):
+        """JD 和岗位名是外部输入：转义漏了，导出的图就是一个 XSS 载体。"""
+        row = dashdata.BoardRow(id="<script>x</script>", title="<b>粗体</b>",
+                                company="A&B", score=50,
+                                status=reflow.STATUS_APPLIED, positive=False)
+        board = dashdata.BoardData(
+            source="db", mode="early", rows=[row],
+            funnel=[dashdata.FunnelStage("applied", "<img src=x>", 1, 1)],
+            # 点的悬浮提示走 label：把带注入片段的岗位名喂进去
+            scatter=[dashdata.ScatterPoint(label=row.title, score=50,
+                                           positive=False, jitter=0.0)],
+            gaps=[dashdata.GapItem(key="k", label="<script>y</script>",
+                                   gained=1, unlocked=[])],
+        )
+        funnel_svg = dashdata.render_funnel_svg(board)
+        scatter_svg = dashdata.render_scatter_svg(board)
+        gaps_svg = dashdata.render_gaps_svg(board)
+        for svg in (funnel_svg, scatter_svg, gaps_svg):
+            self.assertNotIn("<script>", svg)
+            self.assertNotIn("<img", svg)
+        # 转义后的形态必须原样出现在对应那张图里
+        self.assertIn("&lt;img src=x&gt;", funnel_svg)
+        self.assertIn("&lt;b&gt;粗体&lt;/b&gt;", scatter_svg)
+        self.assertIn("&lt;script&gt;", gaps_svg)
+
+    def test_empty_board_renders_a_note_not_a_broken_svg(self):
+        board = dashdata.BoardData()
+        for svg in (dashdata.render_funnel_svg(board),
+                    dashdata.render_scatter_svg(board),
+                    dashdata.render_gaps_svg(board)):
+            self.assertTrue(svg.strip())
+            self.assertNotIn("<circle", svg)
 
 
 if __name__ == "__main__":

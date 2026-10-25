@@ -40,13 +40,16 @@ def gap_leverage(
     base = recommend(profile, jds, llm)
     base_scores = {b.title: b.score for b in base}
 
-    keys: set[str] = set()
+    # key -> 可读标签。custom:<hash> 这类项不在 TAXONOMY 里，
+    # 但 JD 抽出来的 Requirement 自带 label（原文片段），用它兜底，
+    # 否则排行榜上会显示一串哈希而不是人能读的话。
+    labels: dict[str, str] = {}
     for _, text in jds:
         for r in extract_requirements(text, llm)[0]:
-            keys.add(r.key)
+            labels.setdefault(r.key, getattr(r, "label", "") or r.key)
 
     leverage: list[dict] = []
-    for key in sorted(keys):
+    for key in sorted(labels):
         gained = 0
         unlocked: list[str] = []
         for title, text in jds:
@@ -66,7 +69,7 @@ def gap_leverage(
         leverage.append(
             {
                 "key": key,
-                "label": TAXONOMY.get(key, {}).get("label", key),
+                "label": TAXONOMY.get(key, {}).get("label") or labels.get(key, key),
                 "gained": gained,
                 "jds": unlocked,
                 "fix": TAXONOMY.get(key, {}).get("fix", ""),

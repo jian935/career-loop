@@ -496,13 +496,37 @@ def analyze_reflow(records: list[dict], profile: str, mode: str, llm=None) -> Re
 # 报告渲染
 # --------------------------------------------------------------------------
 
-_MODE_LABEL = {
+#: 漏斗的排列顺序与中文名。**口径只有这一份**：
+#: 看板（dashboard.py）与 Markdown 报告都从这里取，避免两边个说个话。
+#: early：看招聘方有没有动作；terminal：只看有没有录用（进面被刷是中间态）。
+MODE_LABEL = {
     "early": "早期互动信号（HR 有没有理我）",
     "terminal": "终局录取（有没有拿到 offer）",
 }
-_MODE_POSITIVE_DESC = {
+MODE_POSITIVE_DESC = {
     "early": "正反馈 = HR 沟通 / 感兴趣 / 初筛通过 / 面试邀约 / offer",
     "terminal": "正反馈 = 只有拿到 offer（进面试但淘汰是中间态，单列）",
+}
+
+FUNNEL_ORDER: dict[str, list[str]] = {
+    "terminal": [STATUS_OFFER, STATUS_INTERVIEW_ELIMINATED, STATUS_REJECTED, STATUS_SILENT],
+    "early": [STATUS_OFFER, STATUS_INTERVIEW, STATUS_REPLIED, STATUS_APPLIED, STATUS_SILENT],
+}
+
+STATUS_NAMES: dict[str, dict[str, str]] = {
+    "terminal": {
+        STATUS_OFFER: "拿到 offer",
+        STATUS_INTERVIEW_ELIMINATED: "进面试但淘汰",
+        STATUS_REJECTED: "简历关拒绝",
+        STATUS_SILENT: "沉默（结果未知）",
+    },
+    "early": {
+        STATUS_OFFER: "offer",
+        STATUS_INTERVIEW: "面试邀约",
+        STATUS_REPLIED: "HR 有实质沟通",
+        STATUS_APPLIED: "仅投递/已读，无动作",
+        STATUS_SILENT: "沉默（结果未知）",
+    },
 }
 
 
@@ -516,7 +540,7 @@ def render_report(
     """把 ReflowResult 渲染成 markdown 报告。"""
     L: list[str] = []
     L.append(f"# {title}\n")
-    L.append(f"> 口径：**{_MODE_LABEL[res.mode]}**　｜　{_MODE_POSITIVE_DESC[res.mode]}")
+    L.append(f"> 口径：**{MODE_LABEL[res.mode]}**　｜　{MODE_POSITIVE_DESC[res.mode]}")
     if data_note:
         L.append(f"> 数据：{data_note}")
     L.append(f"> 匹配分来源：{profile_label} × 各条 JD 原文（规则引擎，无模型 API）\n")
@@ -525,23 +549,8 @@ def render_report(
     L.append("## 1. 漏斗（硬数据，不依赖任何预测分）\n")
     total = res.total
     L.append(f"- 总投递：**{total}**")
-    if res.mode == "terminal":
-        order = [STATUS_OFFER, STATUS_INTERVIEW_ELIMINATED, STATUS_REJECTED, STATUS_SILENT]
-        names = {
-            STATUS_OFFER: "拿到 offer",
-            STATUS_INTERVIEW_ELIMINATED: "进面试但淘汰",
-            STATUS_REJECTED: "简历关拒绝",
-            STATUS_SILENT: "沉默（结果未知）",
-        }
-    else:
-        order = [STATUS_OFFER, STATUS_INTERVIEW, STATUS_REPLIED, STATUS_APPLIED, STATUS_SILENT]
-        names = {
-            STATUS_OFFER: "offer",
-            STATUS_INTERVIEW: "面试邀约",
-            STATUS_REPLIED: "HR 有实质沟通",
-            STATUS_APPLIED: "仅投递/已读，无动作",
-            STATUS_SILENT: "沉默（结果未知）",
-        }
+    order = FUNNEL_ORDER[res.mode]
+    names = STATUS_NAMES[res.mode]
     for k in order:
         n = res.status_counts.get(k, 0)
         if n:
@@ -669,7 +678,7 @@ def render_console_summary(res: ReflowResult) -> str:
     """控制台摘要（与报告同口径）。"""
     L = []
     L.append("=" * 56)
-    L.append(f"投递回流校准　口径：{_MODE_LABEL[res.mode]}")
+    L.append(f"投递回流校准　口径：{MODE_LABEL[res.mode]}")
     L.append("=" * 56)
     L.append(f"总记录 {res.total} 条 | 正反馈 {res.n_positive} 条 ({res.positive_rate * 100:.1f}%)")
     usable = res.scored_usable

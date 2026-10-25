@@ -21,7 +21,7 @@
   
   <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">
   
-  <img alt="tests" src="https://img.shields.io/badge/tests-138%20passing-4f46e5.svg">
+  <img alt="tests" src="https://img.shields.io/badge/tests-175%20passing-4f46e5.svg">
   
 </p>
 
@@ -208,7 +208,9 @@ turn better.**
   ranking, target-level down-weighting (intern/junior/mid/senior).
 - **JD collection & demand heatmap** (`collect` / `demand`).
 - **Local storage** — SQLite for candidates / JDs / applications, zero external deps.
-- **Optional dashboard** — `streamlit run career_loop/dashboard.py` when you want a UI.
+- **Optional dashboard (v0.8.22)** — `streamlit run career_loop/dashboard.py`:
+  application funnel, score × outcome scatter **with a 95% CI for r**, and a gap
+  ranking. Without real data it reads a fabricated sample and says so in red.
 
 ---
 
@@ -474,6 +476,34 @@ career-loop collect --dir examples/raw_jds --report demand.md
 career-loop demand --profile examples/profile_me.md
 ```
 
+### 7) Dashboard (optional): funnel + scatter with CI + gap ranking
+
+```bash
+career-loop dashboard                                            # auto-picks a source
+career-loop dashboard --records ledger.csv --profile my_cv.md    # your own data
+career-loop dashboard --port 8600
+```
+
+Three panels, each labelled with its own definition so screenshots never lose context:
+
+- **Funnel** — hard counts that depend on no score at all. Verify this layer first,
+  *then* talk about correlations.
+- **Calibration scatter** — one dot per application, a per-bucket positive-rate line on
+  top, and a **95% confidence interval for `r`** (paired bootstrap, fixed seed →
+  reproducible). **A single r is not falsifiable**: the bundled demo (n = 12) prints
+  r = +0.293 while its interval is `[-0.280, +0.854]` — it spans zero, meaning this
+  data cannot rule out "the score has nothing to do with the outcome".
+- **Gap ranking** — which capability would unlock the most JDs if you added it
+  (same algorithm as `recommend`).
+
+Switch aims in the sidebar (early signal vs. final offer) and everything recomputes.
+The demo data is **fabricated** — the board flags it in red. It is not evidence.
+
+> Because the dashboard is the only part with an optional third-party dependency, it
+> ships `scripts/smoke_dashboard.py`: AppTest runs the app headless (no browser),
+> asserts no exception and that key elements are present; `--self-test` proves the
+> checker itself can fail.
+
 ---
 
 ## Supports any job family (not just AI)
@@ -548,8 +578,9 @@ career-loop/
 │   ├── internship.py    # internship direction recommendation + term timeline
 │   ├── explore.py       # industry-wide scan: ranking, fit, level down-weighting
 │   ├── cli.py           # CLI entry point (init / doctor / add-* / match / whatif / apply / status / log / calibrate / eval / reflow / recommend / collect / demand / intern / scan / dashboard / domains / llm-proxy)
-│   ├── dashboard.py     # optional Streamlit dashboard
-│   └── tests/           # 138 unit tests
+│   ├── dashboard.py     # Streamlit rendering layer (optional dep; draws only)
+│   ├── dashdata.py      # board data layer: funnel / calibration / CI / gaps (zero-dep, tested)
+│   └── tests/           # 175 unit tests
 ├── docs/                # zero-install web demo (index.html) + screenshots / GIF / demo video; also the Pages site root
 ├── data/
 │   ├── eval_sample.jsonl        # 60-row control regression set
@@ -568,7 +599,7 @@ career-loop/
 
 ## Quality & self-checks
 
-- **138 unit tests** — matching, calibration, storage, recommendation, collection,
+- **175 unit tests** — matching, calibration, storage, recommendation, collection,
   counterfactuals, non-AI generalisation, internship ranking, industry scan and
   level detection, LLM wiring and self-created capabilities, the LLM family
   backend (fallback, auto/blend split, prompt covering every family), `.env`

@@ -4,6 +4,49 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.22] - 2026-10-25
+
+### W15：看板做实——把「一个 r」升级成「一条带置信区间的判据」
+
+README 早就写了「可选看板」，实际却只有一张分桶柱状图和一个明细表。
+这次把它做成承诺里说的那三块：**投递漏斗 + 匹配分×正反馈散点（含置信区间）+ 缺口排行**。
+
+**为什么给 r 加置信区间（`calibrate.pearson_ci`）**
+
+一个孤零零的 r 是没法证伪的：n=12 时能跑出 +0.293，换个 seed 可能就是 -0.2。
+现在用**成对 bootstrap**（固定种子 → 同一份数据每次同一结果，可写进单测）
+给出 95% 区间，判据只有一条：**区间跨不跨 0**。演示数据的区间是
+`[-0.280, +0.854]`，跨 0 → 「这份数据不能排除『匹配分和结果毫无关系』」。
+样本 < 8 时**直接不给区间**——那个量级下任何精度都是假的。
+
+**新增数据层 `career_loop/dashdata.py`（零第三方依赖，20 条单测）**
+
+看板的计算不写在 `dashboard.py` 里，是因为这类 bug 有个共同特点：
+**图照样画得出来**。漏斗顺序错了、口径判错了、异常被降级成一句 caption 了，
+屏幕上都是一张正常的图。抽出来之后可以断言：漏斗=口径常量顺序、
+`interview` 在 early 是正反馈但在 terminal 不是、抖动可复现、
+注入的 `<script>` 被转义（`_esc`，导出 SVG 分享时就是 XSS 载体）。
+
+三种数据源：显式记录文件 > 本地 SQLite > 演示数据。
+演示数据是**编造**的这条信息放在 `BoardData.warnings` 里，看板顶部红字躲不掉。
+
+**图表自己画 SVG，不引 pandas/altair**：少一层版本兼容问题，
+而且图前后或不失去指标定义——口径、样本量、置信区间直接写进图，
+截图发出去不会丢上下文。
+
+**新增 `scripts/smoke_dashboard.py`**：用 AppTest **不开浏览器**跑一遍看板，
+能抓住 `streamlit run` 特有的相对导入失效和 API 变更；自带 `--self-test`
+（喂坏代码必须报错），不是那种只会说"通过"的检查脚本。
+
+**顺手修掉两个真 bug**
+
+- `store.py` 异常路径没关 sqlite 连接 → Windows 上库文件被锁删不掉
+  （单测里 WinError 32 抓到的）。改成 `_fetchall/_fetchone` 统一 `finally: close()`。
+- `recommend.gap_leverage` 的自定义能力项显示成一串 MD5（「custom:6f4c28c5」），
+  CLI `recommend` 和看板都受影响；现在回退到 JD 抽出来的原文标签。
+
+单测 155 → **174**；`scripts/audit.py` 32/32；跨引擎 LLM 检查四项全绿。
+
 ## [0.8.21] - 2026-10-25
 
 ### W14：网页版接入 LLM 族识别（本机代理）

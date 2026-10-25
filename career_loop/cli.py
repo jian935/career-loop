@@ -336,10 +336,15 @@ def cmd_recommend(args) -> int:
 
 
 def cmd_dashboard(args) -> int:
+    """起 Streamlit 看板：漏斗 / 校准散点（带置信区间）/ 缺口排行。
+
+    数据源通过环境变量传给子进程（Streamlit 自己会重跑脚本，
+    命令行参数传不过去），看板侧从 env 里读默认值，也能在侧边栏手动改。
+    """
     try:
         import streamlit  # noqa: F401
     except ImportError:
-        print("未安装 streamlit，先 `pip install streamlit`。")
+        print("未安装 streamlit，先 `pip install streamlit`（或 pip install \"career-loop[ui]\"）。")
         return 1
     import os
     import subprocess
@@ -350,8 +355,15 @@ def cmd_dashboard(args) -> int:
     env = os.environ.copy()
     if args.db:
         env["CAREER_LOOP_DB"] = args.db
-    print(f"启动看板（演示数据）：streamlit run {path}")
-    return subprocess.run([sys.executable, "-m", "streamlit", "run", str(path)], env=env).returncode
+    env["CAREER_LOOP_BOARD_RECORDS"] = args.records or ""
+    env["CAREER_LOOP_BOARD_PROFILE"] = args.profile or "examples/profile_me.md"
+    cmd = [sys.executable, "-m", "streamlit", "run", str(path), "--server.headless=true"]
+    if args.port:
+        cmd += ["--server.port", str(args.port)]
+    src = args.records or (args.db or "本地库/演示数据")
+    print(f"启动看板　数据源：{src}")
+    print("（Ctrl+C 结束。数据源不对就在看板左侧改，改完即时重算。）")
+    return subprocess.run(cmd, env=env).returncode
 
 
 def cmd_scan(args) -> int:
@@ -563,7 +575,11 @@ def build_parser() -> argparse.ArgumentParser:
     ev.add_argument("--data", default="data/eval_sample.jsonl")
     ev.add_argument("--badcases", default="badcases.jsonl")
 
-    sub.add_parser("dashboard", help="启动 Streamlit 看板")
+    du = sub.add_parser("dashboard", help="启动看板：漏斗 + 校准散点 + 缺口排行")
+    du.add_argument("--records", help="回流记录文件（CSV/JSONL），优先级高于本地库")
+    du.add_argument("--profile", help="经历文件", default="examples/profile_me.md")
+    du.add_argument("--db", help="SQLite 路径（默认 ~/.career_loop/loop.db）")
+    du.add_argument("--port", type=int, help="端口（默认 8501）")
 
     wi = sub.add_parser("whatif", help="反事实：补上哪一项能力，匹配分涨最多")
     wi.add_argument("--jd", required=True)
