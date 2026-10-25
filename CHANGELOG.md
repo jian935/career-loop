@@ -4,6 +4,26 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.8] - 2026-10-25
+
+### 终局录取级校准（新增脚本）
+- `scripts/calibrate_admission.py`：真实简历 × 真实中文 JD → 预测分，终局口径（只有 offer 算正反馈）算 Pearson r 与 20 分桶。
+- 本批结论：**r = -0.016**（n=50），offer 率 14.0%，简历通过率 46.0%，面试→offer 转化 30.4%。
+- `scripts/analyze_funnel_attribution.py`：简历关归因（**15/23 = 65% 属 HC/学历/地点等不可控因素**）+ 方向对比 + 面试淘汰短板逐条列出。每行标注「样本可信度」，n<3 的方向明确标为仅供参考。
+
+### 修中文 JD 内联切分（真实数据暴露的召回缺陷）
+- 根因：中文 JD 常把整份压在一行（"岗位职责：1、…；2、…任职要求：1、…"），`_split_sections` 只按换行切 → 整段当一行 → 只命中一个词（实测这类 JD 平均只抽 1 个能力项）。
+- 新增 `_split_inline_segments` 按分号/句号/分节标题切出独立条目；50 条中文 JD 平均能力项 **4.40 → 6.36**。
+- 顺带修两处 bug："有K8s项目优先"里的"优先"被误当 nice 段标题；"跟进线上问题排查"因动词不在标题表被当成岗位名丢掉。
+
+### 补词与过泛词审计
+- 按真实中文 JD 补 backend/frontend/qa/devops/embedded/ai_cv/ai_recsys/ai_data/operations/marketing/security 词，custom 垃圾项 32% → 20%。
+- 审计剔除 5 个过泛英文短词（isp/tcp/poc/hdr/shell，均为子串误伤，shell 命中的是 "powershell"）。
+- **记录一条方法论**：族识别准确率会奖励过泛词（中途虚涨到 94.8%，剔除后回到真实值 93.6%），必须同时看反向测试与误伤审计。
+
+### 校验
+69 个单测全过（新增 8 条中文回归）、评测集 60 条一致率 1.0、`audit.py` 32/32、族识别 93.6%（真实值）。
+
 ## [0.8.7] - 2026-10-25
 
 ### 引擎三项修复（真实数据暴露的真问题）
