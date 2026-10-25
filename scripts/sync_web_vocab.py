@@ -19,8 +19,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from career_loop.cli import DOMAIN_CN                      # noqa: E402
+from career_loop.matching.boilerplate import BOILERPLATE_PATTERNS  # noqa: E402
 from career_loop.matching.schema import (                  # noqa: E402
-    CONTEXT_REQUIRED, DOMAIN_PACKS, GENERAL_DIMS, TAXONOMY,
+    AI_CORE_KW, CONTEXT_REQUIRED, DOMAIN_PACKS, GENERAL_DIMS, TAXONOMY,
 )
 
 HTML = ROOT / "docs" / "index.html"
@@ -58,6 +59,25 @@ def render_context() -> str:
     return "\n".join(lines)
 
 
+def render_ai_core() -> str:
+    """渲染 AI 父族硬核词表（v0.8.14 起 Python 侧 detect_domains 用它判 ai 族）。"""
+    ws = ",".join(js_str(k) for k in AI_CORE_KW)
+    return f"const AI_CORE_KW = [{ws}];"
+
+
+def render_boilerplate() -> str:
+    """渲染平台样板清除函数（v0.8.14 起两端都先剥样板再匹配）。
+
+    模式从 career_loop/matching/boilerplate.py 自动生成，避免两端漂移。
+    """
+    pats = ", ".join(f"/{p.pattern}/g" for p in BOILERPLATE_PATTERNS)
+    return (
+        f"const BOILERPLATE_PATTERNS = [{pats}];\n"
+        'function stripBoilerplate(t){ if(!t) return t; '
+        'for(const re of BOILERPLATE_PATTERNS){ t = t.replace(re, ""); } return t; }'
+    )
+
+
 def build_block() -> str:
     return (
         "/* VOCAB:BEGIN 由 scripts/sync_web_vocab.py 从 career_loop/matching/schema.py 自动生成，勿手改 */\n"
@@ -65,6 +85,8 @@ def build_block() -> str:
         f"const GENERAL_DIMS = {{\n{render_dims(GENERAL_DIMS)}\n}};\n"
         f"const DOMAIN_PACKS = {{\n{render_packs()}\n}};\n"
         f"const CONTEXT_REQUIRED = {{\n{render_context()}\n}};\n"
+        f"{render_ai_core()}\n"
+        f"{render_boilerplate()}\n"
         "/* VOCAB:END */\n"
     )
 

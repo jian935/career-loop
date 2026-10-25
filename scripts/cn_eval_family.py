@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import collections
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -137,13 +138,22 @@ def zh_ratio(s: str) -> float:
 
 
 def label_of(title: str) -> set[str] | None:
-    """用岗位名判族。判不出来就返回 None（不硬凑）。"""
+    """用岗位名判族。判不出来就返回 None（不硬凑）。
+
+    ASCII 关键词按词边界匹配。v0.8.14 修过一个真 bug：原来纯子串匹配，
+    "Abercrombie & Fitch" 因为含子串 "cro"（CRO=临床研究外包）被标成
+    healthcare，4 条服装导购 JD 混进了医疗族——标注错了，不是引擎错。
+    """
     if not title:
         return None
     low = title.lower()
     for kws, fams in TITLE_TO_FAMILY:
         for kw in kws:
-            if kw.lower() in low:
+            kwl = kw.lower()
+            if kwl.isascii():
+                if re.search(r"(?<![a-z0-9])" + re.escape(kwl) + r"(?![a-z0-9])", low):
+                    return fams
+            elif kwl in low:
                 return fams
     return None
 

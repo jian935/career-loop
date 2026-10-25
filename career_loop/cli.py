@@ -76,7 +76,7 @@ DOMAIN_CN = {
     "it_systems": "信息管理", "project_mgmt": "项目管理", "trade": "外贸",
     "asset_valuation": "资产评估",
     "ai_speech": "语音", "ai_multimodal": "多模态", "ai_robotics": "具身/机器人",
-    "ai_data": "数据工程", "ai_testing": "AI测试",
+    "ai_data": "数据工程", "ai_testing": "AI测试", "data_analysis": "数据分析",
     "property": "物业/房地产", "construction": "工程管理",
     # 0.8.0 新增岗位族
     "backend": "后端", "frontend": "前端", "qa": "测试", "devops": "运维",

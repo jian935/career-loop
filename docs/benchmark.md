@@ -94,16 +94,20 @@ tested on **real Chinese text**.
 all taken verbatim from the public `ngtranai09/china_job` dataset, covering
 **20 capabilities**. Accuracy **45/45 = 100%**.
 
-**Hold-out check (the part that carries the argument)** — 10,497 real JD lines that
+**Hold-out check (the part that carries the argument)** — 10,613 real JD lines that
 were **never annotated**, judged by a reproducible rule ("a line that hits exactly
 one capability should hit exactly that one"):
 
 | Configuration | Consistency |
 |---|---:|
 | With context guard | **100.0%** |
-| Without context guard | 85.7% |
+| Without context guard | 86.2% |
 
-**The context guard's real contribution: +14.3 percentage points.**
+**The context guard's real contribution: +13.8 percentage points.**
+(The hold-out grew from 10,497 to 10,613 lines in v0.8.14 because the extended
+vocabulary turned 116 previously zero-hit lines into single-hit lines. The
+with/without comparison is always made on the same fixed set, so the conclusion
+is unaffected.)
 Both numbers come from the hold-out set, not the annotated set — so this is not
 overfitting to the samples.
 
@@ -173,8 +177,8 @@ the fallback rate is measured instead of hidden.
   because the fallback keeps the original line verbatim; that is *not* the same
   as understanding it. Long-tail roles are where the LLM mode matters.
 
-Vocabulary size: **65 job families / 166 family-level capabilities**, plus 14 AI
-dimensions and 9 general dimensions (189 total).
+Vocabulary size: **66 job families / 171 family-level capabilities**, plus 14 AI
+dimensions and 9 general dimensions (194 total).
 
 ### LLM mode vs rule mode (same probe set)
 

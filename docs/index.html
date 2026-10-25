@@ -408,7 +408,7 @@
 </nav>
 
 <header class="hero">
-  <div class="pill"><span class="dot"></span>65 个岗位族 · 本地计算 · 零依赖核心</div>
+  <div class="pill"><span class="dot"></span>66 个岗位族 · 本地计算 · 零依赖核心</div>
   <h1>先别投。<br><span class="grad">先看清你到底差在哪。</span></h1>
   <p class="lead">粘贴 JD 和你的经历，10 秒得到加权匹配分、逐项缺口，以及「补哪一项分数涨最多」。数据不离开浏览器。</p>
   <div class="cta">
@@ -481,7 +481,7 @@
       <button id="exportBtn" class="btn-export">导出 Markdown 报告</button>
       <button id="batchSample" class="btn-ghost sm">载入示例</button>
     </div>
-    <p class="hint" id="batchHint">排序用「匹配分」给岗位打分并附最划算补强；全行业适配用你经历里的关键词覆盖 65 个岗位族的能力项。</p>
+    <p class="hint" id="batchHint">排序用「匹配分」给岗位打分并附最划算补强；全行业适配用你经历里的关键词覆盖 66 个岗位族的能力项。</p>
     <h3 style="font-size:13px;color:var(--sub);margin:18px 0 10px">该投哪些（按匹配分排序）</h3>
     <div class="rank-list" id="rankList"></div>
     <h3 style="font-size:13px;color:var(--sub);margin:20px 0 10px">你的经历适配哪些行业</h3>
@@ -492,7 +492,7 @@
     <div class="sec-head"><h2>验证闭环 · 证据墙</h2><span>匹配分不是玄学：公开数据可复现，失效区间也公开</span></div>
     <div class="ev-grid">
       <div class="ev-card"><div class="k">93.6<span class="u">%</span></div><div class="l">岗位族识别（英文 JD）</div><div class="n">1,167 条真实 JD · 公开数据集</div></div>
-      <div class="ev-card"><div class="k">77.8<span class="u">%</span></div><div class="l">岗位族识别（中文 JD）</div><div class="n">1,853 条真实 JD · 公开数据集</div></div>
+      <div class="ev-card"><div class="k">86.0<span class="u">%</span></div><div class="l">岗位族识别（中文 JD）</div><div class="n">1,838 条真实 JD · 公开数据集 · v0.8.14 从 77.8% 修到 86.0%</div></div>
       <div class="ev-card"><div class="k">0.193</div><div class="l">引擎分 ↔ 真实标注 Pearson r</div><div class="n">2,000 对 · 弱正相关（规则基线水位）</div></div>
       <div class="ev-card warn"><div class="k">−0.255</div><div class="l">作者私有 40 条真实投递</div><div class="n">关键词饱和导致反向 · 敢公开才叫可证伪</div></div>
     </div>
@@ -518,7 +518,7 @@
       <div class="cn-en-bars" id="cnEnTop"></div>
       <div class="cn-en-legend">
         <span><i class="e"></i>英文 JD · 1,167 条 · 5 个大类</span>
-        <span><i class="c"></i>中文 JD · 1,853 条 · 35 个族</span>
+        <span><i class="c"></i>中文 JD · 1,838 条 · 48 个族（样本≥5）</span>
       </div>
 
       <div class="cn-en-bars" id="cnEnByFamily" style="padding-top:6px"></div>
@@ -538,7 +538,7 @@
         <div class="cn-en-repro">
           <b>复现（无需 API Key）</b><br>
           python scripts/fetch_real_eval_data.py &nbsp;&amp;&nbsp; python scripts/real_eval_family.py &nbsp;→ 93.6%<br>
-          python scripts/fetch_cn_eval_data.py &nbsp;&amp;&nbsp; python scripts/cn_eval_family.py &nbsp;→ 77.8%<br>
+          python scripts/fetch_cn_eval_data.py &nbsp;&amp;&nbsp; python scripts/cn_eval_family.py &nbsp;→ 86.0%<br>
           两个数据集均不入库（data/real_eval、data/cn_eval 已在 .gitignore）
         </div>
       </div>
@@ -547,7 +547,7 @@
     <div class="lab">
       <div class="sec-head"><h2>中文抽取实验室</h2><span>亲手喂一段中文 JD，看引擎到底认出了什么、漏了什么</span></div>
       <p class="hint" style="margin-top:0;margin-bottom:14px">
-        上面 77.8% 是个汇总数字。这里把它拆开：<b>左边的黄色块是引擎没认出来的要求</b>——
+        上面 86.0% 是个汇总数字。这里把它拆开：<b>左边的黄色块是引擎没认出来的要求</b>——
         它们要么该补进词表，要么本来就该靠语义模型理解。<b>敢把漏的摆出来，才算真的在检验自己。</b>
       </p>
       <div class="lab-grid">
@@ -729,6 +729,7 @@ const DOMAIN_PACKS = {
     ops_activity:{label:"活动运营", kw:["活动策划","活动运营","执行落地","活动复盘","活动提报","用户触达","投放素材","商家运营","分层运营"]},
     ops_user:{label:"用户运营", kw:["用户运营","留存","用户召回","流失召回","分层","社群运营"]},
     ops_content:{label:"内容运营", kw:["内容运营","选题","编辑","分发","内容策划","公众号","短视频","作者维护","话题运营","财经内容","内容审核","违规样本","风控策略"]},
+    ops_seo:{label:"SEO/网站运营", kw:["seo","搜索引擎","关键词","网站优化","建站","网站架构","搜索排名","网站运营"]},
   },
   hr:{
     hr_recruit:{label:"招聘", kw:["招聘","面试","人才盘点","招聘渠道","recruitment","recruiting","sourcing","talent acquisition","hiring"]},
@@ -743,14 +744,14 @@ const DOMAIN_PACKS = {
     edu_exam:{label:"考试/测评", kw:["考务","阅卷","考试组织","学习效果","测验"]},
   },
   healthcare:{
-    med_clinical:{label:"临床/护理", kw:["临床","护理","诊断","病历","医嘱"]},
+    med_clinical:{label:"临床/护理", kw:["临床","护理","诊断","病历","医嘱","科室","儿科","门诊","住院","外科","手术"]},
     med_pharma:{label:"药学/医学", kw:["药学","药理","医学","gmp"]},
     med_device:{label:"医疗器械/注册", kw:["医疗器械","注册证","临床试验","器械注册"]},
     med_public:{label:"公共卫生/院感", kw:["公共卫生","流行病","疾控","院感","防疫"]},
   },
   legal:{
     legal_contract:{label:"合同/法务", kw:["合同","法务","合规审查","合同审核"]},
-    legal_litigation:{label:"诉讼/争议解决", kw:["诉讼","仲裁","争议解决","出庭","举证"]},
+    legal_litigation:{label:"诉讼/争议解决", kw:["诉讼","仲裁","争议解决","出庭","举证","律师","律所","案件","法学","办案","案源"]},
     legal_corp:{label:"公司法/投融资", kw:["公司法","股权","股权结构","并购","投融资"]},
     legal_ip:{label:"知识产权", kw:["知识产权","专利","商标","著作权","侵权"]},
   },
@@ -788,8 +789,8 @@ const DOMAIN_PACKS = {
     aicomp_ethics:{label:"AI 合规/伦理", kw:["算法备案","ai 伦理","数据合规","隐私保护","内容安全"]},
   },
   admin:{
-    adm_office:{label:"行政后勤", kw:["行政","办公用品","固定资产","会议组织","后勤","前台","员工活动"]},
-    adm_archive:{label:"档案/证照", kw:["档案","印章","证照","资质年检","用印"]},
+    adm_office:{label:"行政后勤", kw:["行政","办公用品","固定资产","会议组织","后勤","前台","员工活动","会议安排","日程","行程安排","总裁","秘书","发文"]},
+    adm_archive:{label:"档案/证照", kw:["档案","印章","证照","资质年检","用印","会议纪要","纪要","公文"]},
   },
   ecommerce:{
     ec_shop:{label:"电商运营", kw:["店铺","gmv","天猫","抖音小店","详情页","电商转化率","商品运营"]},
@@ -802,10 +803,10 @@ const DOMAIN_PACKS = {
   },
   it_systems:{
     its_impl:{label:"信息系统实施", kw:["erp","系统实施","需求调研","系统配置","上线支持","信息系统","系统上线","部署实施","客户培训","软件部署","system implementation","erp implementation","system configuration"]},
-    its_ops:{label:"系统运维/工单", kw:["系统运维","工单","故障处理","用户支持","权限管理","服务器运维","系统管理","it运维","技术支持","system administration","active directory","help desk","technical support","ticketing","incident management","vendor management","networking"]},
+    its_ops:{label:"系统运维/工单", kw:["系统运维","工单","故障处理","用户支持","权限管理","服务器运维","系统管理","it运维","技术支持","故障诊断","售后支持","system administration","active directory","help desk","technical support","ticketing","incident management","vendor management","networking"]},
   },
   project_mgmt:{
-    pmg_deliver:{label:"项目管理", kw:["项目计划","进度管控","项目风险","验收","pmp","里程碑","跨部门协作","项目进度","项目交付","项目管理经验","项目统筹","项目跟进","项目落地"]},
+    pmg_deliver:{label:"项目管理", kw:["项目计划","进度管控","项目风险","验收","pmp","里程碑","跨部门协作","项目进度","项目交付","项目管理经验","项目统筹","项目跟进","项目落地","项目生命周期","研发项目","危机管理"]},
     pmg_agile:{label:"敏捷/迭代管理", kw:["敏捷","scrum","sprint","迭代管理","站立会"]},
   },
   trade:{
@@ -827,6 +828,9 @@ const DOMAIN_PACKS = {
   },
   ai_data:{
     data_pipeline:{label:"数据工程", kw:["数据清洗","etl","数据管道","数仓","特征平台","数据治理","指标监控","异常波动","数据报送","特征构建","模型训练"]},
+  },
+  data_analysis:{
+    da_report:{label:"业务数据分析", kw:["业务分析","数据分析方法","报表体系","tableau","商业分析师"]},
   },
   ai_testing:{
     ai_qa:{label:"AI 测试/质量", kw:["模型测试","ai 测试","效果测试","评测方案","质量保障","交付质量","模型监控","漂移分析","模型评估"]},
@@ -883,13 +887,14 @@ const DOMAIN_PACKS = {
   },
   quality:{
     qm_system:{label:"质量体系", kw:["质量管理体系","iso9001","体系认证","内审","iatf"]},
-    qm_inspect:{label:"检验/统计", kw:["来料检验","出货检验","fmea","spc","抽检","不合格品"]},
+    qm_inspect:{label:"检验/统计", kw:["来料检验","出货检验","fmea","spc","抽检","不合格品","质量检验"]},
     qm_improve:{label:"持续改进", kw:["六西格玛","持续改进","质量改善","8d","pdca","精益"]},
   },
   banking:{
     bank_credit:{label:"信贷/授信", kw:["信贷","授信","贷前","贷后","征信","放款","信用卡","消费信贷","小微贷款","银行客户经理","贷款","逾期"]},
     bank_retail:{label:"零售/网点", kw:["理财","存款","网点","柜面","零售银行","客户经理","手机银行","网银","理财经理","存款营销","普惠金融"]},
     bank_risk:{label:"信用风险", kw:["信用风险","拨备","不良贷款","风险分类","贷后管理","风险控制","合规审查","反洗钱","资产质量"]},
+    bank_invest:{label:"投行/股权投资", kw:["投行","投资银行","投融资","尽职调查","股权投资","投后管理","投资经理","融资","股权","投资项目","募资","承做","ipo","并购","增资","减资"]},
   },
   insurance:{
     ins_underwrite:{label:"核保/承保", kw:["核保","承保","费率","再保","投保"]},
@@ -899,7 +904,7 @@ const DOMAIN_PACKS = {
   securities:{
     sec_research:{label:"行业研究", kw:["行业研究","行研","公司研究","调研纪要","深度报告"]},
     sec_valuation:{label:"估值建模", kw:["估值建模","dcf","财务模型","可比公司","wind"]},
-    sec_invest:{label:"投资/交易", kw:["投研","组合管理","二级市场","路演","投资建议"]},
+    sec_invest:{label:"投资/交易", kw:["投研","组合管理","二级市场","路演","投资建议","投资","融资","股权","投后管理","投资经理","投资项目","募资"]},
   },
   consulting:{
     csl_industry:{label:"商业分析/研究", kw:["管理咨询","商业分析","战略咨询","市场研究","咨询顾问","咨询公司","咨询项目","咨询服务","咨询方案","咨询岗","market research","commercial analysis","strategy consulting","business analysis"]},
@@ -913,9 +918,10 @@ const DOMAIN_PACKS = {
   film:{
     film_shoot:{label:"拍摄/编导", kw:["拍摄","分镜","编导","导演","脚本策划","制片","影视","节目制作","综艺","影视制作","摄影"]},
     film_post:{label:"剪辑/后期", kw:["剪辑","后期","调色","字幕","成片","影视后期","特效","包装","调音"]},
+    film_stream:{label:"直播/演艺", kw:["主播","直播","才艺","脱口秀","艺人","公会","播音"]},
   },
   game:{
-    game_design:{label:"游戏策划", kw:["游戏策划","关卡","数值","玩法","系统策划"]},
+    game_design:{label:"游戏策划", kw:["游戏策划","关卡","数值","玩法","系统策划","游戏开发","游戏引擎","手游","游戏项目","游戏客户端"]},
     game_ops:{label:"游戏运营", kw:["游戏运营","版本更新","付费率","arpu","玩家社区"]},
   },
   translation:{
@@ -924,7 +930,7 @@ const DOMAIN_PACKS = {
     tr_cat:{label:"CAT 工具", kw:["trados","cat 工具","语料","译后编辑","memoq"]},
   },
   service:{
-    cs_hotline:{label:"客服/工单", kw:["客服","呼叫中心","在线客服","话术","接线","客服专员","客服代表","在线服务","接待","咨询解答","客户咨询","工单处理","客服中心"]},
+    cs_hotline:{label:"客服/工单", kw:["客服","呼叫中心","在线客服","话术","接线","客服专员","客服代表","在线服务","咨询解答","客户咨询","工单处理","客服中心"]},
     cs_complaint:{label:"投诉/异常处理", kw:["投诉","客诉","异常处理","退款","赔付","售后","退换货","纠纷","客户问题处理"]},
     cs_quality:{label:"服务质检", kw:["质检","录音抽检","服务标准","满意度回访","服务培训","客户满意度","回访","服务态度"]},
   },
@@ -941,7 +947,7 @@ const DOMAIN_PACKS = {
     tour_guide:{label:"导游/讲解", kw:["讲解","带团","景区","游客服务"]},
   },
   energy:{
-    en_power:{label:"电力/电网", kw:["电力","电网","变电站","输配电","配电自动化"]},
+    en_power:{label:"电力/电网", kw:["电力","电网","变电站","输配电","配电自动化","发电","电厂","输变电"]},
     en_chem:{label:"化工/工艺安全", kw:["化工","反应釜","危化品","化工安全","工艺包"]},
     en_battery:{label:"新能源/储能", kw:["储能","锂电","光伏","电芯","bms","逆变器"]},
   },
@@ -956,6 +962,7 @@ const DOMAIN_PACKS = {
     ag_tech:{label:"智慧农业", kw:["农机","灌溉","土壤","无人机植保","智慧农业"]},
     ag_forestry:{label:"林业/草原", kw:["造林","森林","林地","草原","抚育采伐"]},
     ag_fishery:{label:"渔业/水产", kw:["捕捞","水产养殖","渔船","育苗","水质调控"]},
+    ag_product:{label:"农产品/食品", kw:["农产品","农业产业园","农产品加工","冷链物流","预制菜","中央厨房","团餐","农业行业"]},
   },
   domestic:{
     dm_housekeeping:{label:"家政/保洁", kw:["家政","保洁","保姆","月嫂","收纳"]},
@@ -972,7 +979,7 @@ const DOMAIN_PACKS = {
     rs_method:{label:"研究方法/统计", kw:["统计方法","计量模型","计量经济学","spss","stata","r 语言","问卷"]},
   },
   public_admin:{
-    pub_document:{label:"公文/政策", kw:["公文","行文","政务","汇报材料","政策法规","政策研究","政府关系","政府事务","政策制定","立法","人大","政协"]},
+    pub_document:{label:"公文/政策", kw:["公文","行文","政务","汇报材料","政策法规","政策研究","政府关系","政府事务","政策制定","立法","人大","政协","地方政府","地方经济"]},
     pub_service:{label:"窗口/基层服务", kw:["窗口服务","办事大厅","群众","基层","公共服务","街道办","社区工作","网格员","政务服务"]},
   },
   social:{
@@ -999,12 +1006,15 @@ const CONTEXT_REQUIRED = {
   "domain":["业务场景","行业场景","业务流程","业务痛点","业务模式","业务理解","行业理解","业务分析","行业分析","场景设计","痛点","留存","流失","成本结构","商业模式","梳理","理解"],
   "product_sense":["产品需求","需求文档","需求分析","需求评审","需求梳理","需求调研","用户需求","用户洞察","用户调研","用户访谈","访谈用户","产品设计","产品规划","交互","原型","prd","场景设计"],
 };
+const AI_CORE_KW = ["python","pandas","numpy","fastapi","django","gpt","large language model","llm","transformer","prompt engineering","rag","retrieval augmented","vector database","reranking","agent","multi-agent","orchestration","mlops","fine-tuning","pytorch","tensorflow","langchain","langgraph","nlp","natural language processing","computer vision","object detection","recommender","model deployment","kubernetes","etl","data pipeline","embedding","大模型","微调","智能体","检索增强","提示词","函数调用","多智能体"];
+const BOILERPLATE_PATTERNS = [/(?:该|此)?职位来源于[：:]?[^\s。，,；;！!？?]{2,16}/g, /以[^。；;\n]{0,15}理由索要财物[，,]?[^。；;\n]{0,25}涉嫌违法/g];
+function stripBoilerplate(t){ if(!t) return t; for(const re of BOILERPLATE_PATTERNS){ t = t.replace(re, ""); } return t; }
 /* VOCAB:END */
 const ALL_DIMS = Object.assign({}, TAXONOMY, GENERAL_DIMS);
 for(const pk in DOMAIN_PACKS){
   for(const k in DOMAIN_PACKS[pk]){ if(!ALL_DIMS[k]) ALL_DIMS[k]=DOMAIN_PACKS[pk][k]; }
 }
-const DOMAIN_CN={ai:"AI/技术",product:"产品",marketing:"市场",sales:"销售",finance:"财务",design:"设计",operations:"运营",hr:"人力",education:"教育",healthcare:"医疗",legal:"法务",supply:"供应链",manufacturing:"制造",ai_nlp:"NLP",ai_cv:"CV",ai_recsys:"推荐/搜索",ai_mlops:"MLOps",ai_solution:"AI方案",ai_ops:"AI运营",ai_compliance:"AI合规",admin:"行政",ecommerce:"电商",tourism:"旅游/酒店",it_systems:"信息管理",project_mgmt:"项目管理",trade:"外贸",asset_valuation:"资产评估",ai_speech:"语音",ai_multimodal:"多模态",ai_robotics:"具身/机器人",ai_data:"数据工程",ai_testing:"AI测试",property:"物业/房地产",construction:"工程管理",backend:"后端",frontend:"前端",qa:"测试",devops:"运维",security:"信息安全",embedded:"嵌入式",electrical:"电气",mechanical:"机械设计",quality:"质量",banking:"银行",insurance:"保险",securities:"证券",consulting:"咨询",media:"传媒",film:"影视",game:"游戏",translation:"翻译",service:"客服",retail:"零售",catering:"餐饮",tourism_cn:"导游/讲解",domestic:"居民服务",transport_ops:"运输操作",energy:"能源化工",automotive:"汽车",agriculture:"农林牧渔",research:"科研",public_admin:"公务/公共事务",social:"社工",psychology:"心理",sports:"体育",logistics:"物流"};
+const DOMAIN_CN={ai:"AI/技术",product:"产品",marketing:"市场",sales:"销售",finance:"财务",design:"设计",operations:"运营",hr:"人力",education:"教育",healthcare:"医疗",legal:"法务",supply:"供应链",manufacturing:"制造",ai_nlp:"NLP",ai_cv:"CV",ai_recsys:"推荐/搜索",ai_mlops:"MLOps",ai_solution:"AI方案",ai_ops:"AI运营",ai_compliance:"AI合规",admin:"行政",ecommerce:"电商",tourism:"旅游/酒店",it_systems:"信息管理",project_mgmt:"项目管理",trade:"外贸",asset_valuation:"资产评估",ai_speech:"语音",ai_multimodal:"多模态",ai_robotics:"具身/机器人",ai_data:"数据工程",ai_testing:"AI测试",data_analysis:"数据分析",property:"物业/房地产",construction:"工程管理",backend:"后端",frontend:"前端",qa:"测试",devops:"运维",security:"信息安全",embedded:"嵌入式",electrical:"电气",mechanical:"机械设计",quality:"质量",banking:"银行",insurance:"保险",securities:"证券",consulting:"咨询",media:"传媒",film:"影视",game:"游戏",translation:"翻译",service:"客服",retail:"零售",catering:"餐饮",tourism_cn:"导游/讲解",domestic:"居民服务",transport_ops:"运输操作",energy:"能源化工",automotive:"汽车",agriculture:"农林牧渔",research:"科研",public_admin:"公务/公共事务",social:"社工",psychology:"心理",sports:"体育",logistics:"物流"};
 const CUSTOM_STOP=new Set(["负责","经验","相关","工作","能力","要求","熟悉","了解","具备","完成","以及","进行","能够","优先","以上","学历","本科","专业","岗位","职责","任职","参与","独立","熟练","掌握","良好","一定","具有","使用"]);
 const REQ_SIGNALS=["熟悉","掌握","具备","能够","会","负责","了解","精通","熟练","经验","优先","要求","独立","完成","参与","维护","开发","设计","管理","推进","分析","制定","执行","对接","沟通","处理","操作","使用"];
 const NOISE_MARKERS=["薪资","福利","五险","双休","地点","地址","公司简介","融资","规模","简历投递","邮箱","微信","电话","官网","包吃","补贴","年终奖","团建","上班时间"];
@@ -1141,6 +1151,7 @@ function looksLikeTitle(line){
   return !["负责","要求","熟悉","掌握","具备","能够","参与","独立","优先","经验","熟练","了解","精通","使用","会"].some(v=>s.includes(v));
 }
 function parseJD(text){
+  text=stripBoilerplate(text);
   const lines=text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
   const req={}; let section="must"; let first=true;
   for(const raw of lines){
@@ -1226,15 +1237,18 @@ function scoreOf(reqs,matches){
   return tot ? Math.round(got/tot*1000)/10 : 0;
 }
 function detectDomains(text){
-  const low=text.toLowerCase(), scores={};
+  // 与 career_loop.matching.schema.detect_domains 保持一致（v0.8.14 对齐）：
+  // 先剥平台样板；ai 父族由 AI_CORE_KW≥2 或任一 ai_* 子族推导。
+  const low=stripBoilerplate(text).toLowerCase(), scores={};
   for(const name in DOMAIN_PACKS){
     let c=0;
     for(const k in DOMAIN_PACKS[name]){ for(const kw of DOMAIN_PACKS[name][k].kw){ if(low.includes(kw.toLowerCase())) c++; } }
     if(c) scores[name]=c;
   }
   let ai=0;
-  for(const k in TAXONOMY){ for(const kw of TAXONOMY[k].kw){ if(low.includes(kw.toLowerCase())) ai++; } }
-  if(ai>=2) scores.ai=ai;
+  for(const k of AI_CORE_KW){ if(low.includes(k.toLowerCase())) ai++; }
+  const subAi=Object.keys(scores).filter(n=>n.indexOf("ai_")===0);
+  if(ai>=2 || subAi.length) scores.ai = ai>=2 ? ai : Math.max.apply(null, subAi.map(n=>scores[n]));
   return Object.keys(scores).sort((a,b)=>scores[b]-scores[a]);
 }
 function compute(jdText, profileText){
@@ -1656,7 +1670,7 @@ function calDemo(){
    数字来自 scripts/real_eval_family.py 与 scripts/cn_eval_family.py
    （静态快照；两个数据集都不入库，脚本可自行下载复现）
    ============================================================ */
-const CN_FAMILY_ACC = [{"f":"data_analysis","n":29,"a":0.207},{"f":"ai_data","n":29,"a":0.207},{"f":"film","n":42,"a":0.5},{"f":"quality","n":25,"a":0.52},{"f":"service","n":69,"a":0.522},{"f":"project_mgmt","n":63,"a":0.54},{"f":"media","n":91,"a":0.659},{"f":"agriculture","n":44,"a":0.659},{"f":"product","n":71,"a":0.704},{"f":"banking","n":204,"a":0.706},{"f":"consulting","n":89,"a":0.719},{"f":"legal","n":68,"a":0.735},{"f":"public_admin","n":55,"a":0.745},{"f":"ai_solution","n":73,"a":0.753},{"f":"securities","n":162,"a":0.759},{"f":"it_systems","n":84,"a":0.786},{"f":"energy","n":68,"a":0.794},{"f":"finance","n":195,"a":0.795},{"f":"logistics","n":58,"a":0.81},{"f":"healthcare","n":117,"a":0.829},{"f":"marketing","n":117,"a":0.838},{"f":"ecommerce","n":117,"a":0.838},{"f":"operations","n":117,"a":0.838},{"f":"supply","n":84,"a":0.869},{"f":"education","n":63,"a":0.873},{"f":"property","n":40,"a":0.875},{"f":"retail","n":40,"a":0.875},{"f":"trade","n":47,"a":0.894},{"f":"manufacturing","n":45,"a":0.933},{"f":"admin","n":108,"a":0.935},{"f":"design","n":34,"a":0.941},{"f":"sales","n":190,"a":0.953}];
+const CN_FAMILY_ACC = [{"f":"service","n":69,"a":0.522},{"f":"translation","n":13,"a":0.615},{"f":"data_analysis","n":29,"a":0.621},{"f":"ai_data","n":29,"a":0.621},{"f":"project_mgmt","n":63,"a":0.698},{"f":"product","n":71,"a":0.704},{"f":"game","n":19,"a":0.737},{"f":"quality","n":25,"a":0.76},{"f":"consulting","n":89,"a":0.775},{"f":"mechanical","n":5,"a":0.8},{"f":"qa","n":5,"a":0.8},{"f":"logistics","n":58,"a":0.81},{"f":"public_admin","n":55,"a":0.818},{"f":"ai_solution","n":73,"a":0.822},{"f":"energy","n":68,"a":0.838},{"f":"it_systems","n":84,"a":0.845},{"f":"media","n":91,"a":0.868},{"f":"supply","n":84,"a":0.869},{"f":"admin","n":108,"a":0.87},{"f":"education","n":63,"a":0.873},{"f":"property","n":40,"a":0.875},{"f":"retail","n":40,"a":0.875},{"f":"operations","n":117,"a":0.88},{"f":"marketing","n":117,"a":0.88},{"f":"ecommerce","n":117,"a":0.88},{"f":"agriculture","n":44,"a":0.886},{"f":"banking","n":204,"a":0.892},{"f":"trade","n":47,"a":0.894},{"f":"hr","n":21,"a":0.905},{"f":"construction","n":23,"a":0.913},{"f":"backend","n":12,"a":0.917},{"f":"manufacturing","n":45,"a":0.933},{"f":"design","n":34,"a":0.941},{"f":"film","n":42,"a":0.952},{"f":"sales","n":190,"a":0.953},{"f":"finance","n":195,"a":0.99},{"f":"healthcare","n":106,"a":0.991},{"f":"securities","n":162,"a":0.994},{"f":"legal","n":68,"a":1.0},{"f":"insurance","n":13,"a":1.0},{"f":"devops","n":9,"a":1.0},{"f":"tourism","n":8,"a":1.0},{"f":"ai_recsys","n":7,"a":1.0},{"f":"ai_nlp","n":7,"a":1.0},{"f":"ai","n":7,"a":1.0},{"f":"ai_multimodal","n":7,"a":1.0},{"f":"ai_cv","n":7,"a":1.0},{"f":"frontend","n":5,"a":1.0}];
 function cnEnBar(kind, pct, label){
   const d=document.createElement("div");
   d.className="cn-en-bar "+kind;
@@ -1682,7 +1696,7 @@ function renderCnEn(){
     const r1=document.createElement("div"); r1.className="cn-en-row";
     r1.appendChild(cnEnLabel("族识别准确率"));
     r1.appendChild(cnEnBar("en",93.6,"93.6%"));
-    r1.appendChild(cnEnBar("cn",77.8,"77.8%"));
+    r1.appendChild(cnEnBar("cn",86.0,"86.0%"));
     top.appendChild(r1);
   }
   // 按族：中文真实 JD 的分族表现（弱族在前，如实暴露）

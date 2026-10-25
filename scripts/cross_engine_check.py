@@ -30,6 +30,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from career_loop.matching.extract import extract_requirements
+from career_loop.matching.schema import detect_domains
 
 NODE = r"C:\Users\llj12\.workbuddy\binaries\node\versions\22.22.2-6\node.exe"
 
@@ -74,7 +75,8 @@ const out = cases.map(t => {
     labels: reqs.map(r => r.label),
     weights: reqs.map(r => r.weight),
     custom: reqs.filter(r => r.custom).length,
-    quotes: reqs.map(r => r.quote)
+    quotes: reqs.map(r => r.quote),
+    domains: detectDomains(t)
   };
 });
 require("fs").writeFileSync(process.argv[3], JSON.stringify(out));
@@ -132,7 +134,9 @@ def main() -> int:
     same_count = 0
     same_custom = 0
     same_weight = 0
+    same_domains = 0
     diffs: list[tuple[int, dict, dict]] = []
+    dom_diffs: list[tuple[int, list[str], list[str]]] = []
 
     for i, t in enumerate(texts):
         py_reqs = extract_requirements(t, None)[0]
@@ -167,6 +171,14 @@ def main() -> int:
                           {"keys": js_keys, "custom": js_custom,
                            "n": len(js_keys), "w": js_w}))
 
+        # 族识别一致性（v0.8.14 新增比对项）：网页展示的岗位族必须与 CLI 相同
+        py_doms = sorted(detect_domains(t))
+        js_doms = sorted(js["domains"])
+        if py_doms == js_doms:
+            same_domains += 1
+        else:
+            dom_diffs.append((i, py_doms, js_doms))
+
     print("=" * 60)
     print("跨引擎一致性：Python 引擎 vs 网页 JS 引擎")
     print("=" * 60)
@@ -175,6 +187,14 @@ def main() -> int:
     print(f"  能力项数量一致  ：{same_count}/{total}  ({same_count / total * 100:.1f}%)")
     print(f"  custom 数量一致 ：{same_custom}/{total}  ({same_custom / total * 100:.1f}%)")
     print(f"  每项权重完全一致 ：{same_weight}/{total}  ({same_weight / total * 100:.1f}%)")
+    print(f"  岗位族识别一致   ：{same_domains}/{total}  ({same_domains / total * 100:.1f}%)")
+
+    if dom_diffs:
+        print(f"\n族识别不一致的条目（前 5 条）：")
+        for i, py_d, js_d in dom_diffs[:5]:
+            print(f"  #{i}")
+            print(f"    仅 Python 有: {sorted(set(py_d) - set(js_d))}")
+            print(f"    仅 JS 有    : {sorted(set(js_d) - set(py_d))}")
 
     if diffs:
         print(f"\n不一致的条目（前 5 条）：")
@@ -190,8 +210,8 @@ def main() -> int:
                 if py["w"][k] != js["w"][k]:
                     print(f"    权重不同 {k}: py={py['w'][k]} js={js['w'][k]}")
 
-    ok = same_set == total and same_weight == total
-    print("\n结论：" + ("两侧抽取结果完全一致 ✓" if ok else "存在差异，需要继续对齐 ✗"))
+    ok = same_set == total and same_weight == total and same_domains == total
+    print("\n结论：" + ("两侧抽取与族识别完全一致 ✓" if ok else "存在差异，需要继续对齐 ✗"))
     return 0 if ok else 1
 
 

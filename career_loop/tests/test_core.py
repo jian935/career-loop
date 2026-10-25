@@ -1114,5 +1114,108 @@ class TestRealJDExtractionSet(unittest.TestCase):
                                 f"只有 {numbered}/{len(self.rows)} 条带编号")
 
 
+class TestBoilerplateAndFamilyRecall(unittest.TestCase):
+    """v0.8.14：平台样板清除 + 弱族词表召回补充的行为契约。
+
+    背景：公开中文 JD 集里 75% 的 JD 带「职位来源于智联招聘」来源声明、
+    41% 带反诈免责声明，让 hr/admin 词表假命中；同时 banking/securities/
+    legal/healthcare 等族缺核心词（投资经理 JD 判不出 banking）。
+    """
+
+    def test_source_attribution_stripped(self):
+        from career_loop.matching.boilerplate import strip_boilerplate
+        out = strip_boilerplate("该职位来源于智联招聘。 岗位职责：负责档案管理。")
+        self.assertNotIn("智联招聘", out)
+        self.assertNotIn("招聘", out)
+        self.assertIn("档案管理", out)
+
+    def test_antifraud_disclaimer_stripped(self):
+        from career_loop.matching.boilerplate import strip_boilerplate
+        out = strip_boilerplate(
+            "任职要求：本科学历。以担保或任何理由索要财物，扣押证照，均涉嫌违法。")
+        self.assertNotIn("扣押证照", out)
+        self.assertIn("本科学历", out)
+
+    def test_real_archive_content_kept(self):
+        """真行政内容不能被误剥（清除器只认平台特有措辞）。"""
+        from career_loop.matching.boilerplate import strip_boilerplate
+        src = "负责公司证照、印章管理及年审，组织招聘配置工作。"
+        self.assertEqual(strip_boilerplate(src), src)
+
+    def test_boilerplate_does_not_fake_hr_or_admin(self):
+        """只有样板 + 中性内容的 JD，不该判出 hr/admin。"""
+        jd = "该职位来源于智联招聘。 岗位职责：负责客户对接与资料整理。"
+        doms = matching.detect_domains(jd)
+        self.assertNotIn("hr", doms)
+        self.assertNotIn("admin", doms)
+
+    def test_investment_jd_detects_banking(self):
+        """投资经理类 JD 必须判出 banking（修前 60 条 miss 的主类型）。"""
+        jd = ("岗位职责：负责投资项目的搜集、储备及筛选，参与尽职调查，"
+              "开展投后管理。任职要求：金融、经济相关专业。")
+        doms = matching.detect_domains(jd)
+        self.assertIn("banking", doms)
+        self.assertIn("securities", doms)
+
+    def test_law_firm_jd_detects_legal(self):
+        jd = ("岗位职责：独立承办诉讼案件，负责案源拓展。"
+              "任职要求：法学专业，持有律师执业证，熟悉律所工作。")
+        self.assertIn("legal", matching.detect_domains(jd))
+
+    def test_streamer_jd_detects_film(self):
+        """直播/才艺类 JD 文本不出现「主播」二字，也要能判出 film。"""
+        jd = "岗位职责：负责直播内容策划与才艺表演，维护粉丝关系。"
+        self.assertIn("film", matching.detect_domains(jd))
+
+    def test_seo_jd_detects_operations(self):
+        jd = ("岗位职责：负责网站SEO优化，提升搜索引擎排名与关键词覆盖。"
+              "任职要求：熟悉建站与网站架构。")
+        self.assertIn("operations", matching.detect_domains(jd))
+
+    def test_business_analysis_jd_detects_data_analysis(self):
+        """data_analysis 族 v0.8.14 才建成，此前标签不可达。"""
+        jd = ("岗位职责：负责业务分析与报表体系建设，沉淀数据分析方法。"
+              "任职要求：熟练使用 Tableau 与 SQL。")
+        self.assertIn("data_analysis", matching.detect_domains(jd))
+
+    def test_recsys_jd_detects_ai_parent(self):
+        """命中 ai_* 子族即应推出 ai 父族（对照集两个 MISS 的修法）。"""
+        jd = ("任职要求\n1. 熟悉推荐系统召回与排序链路\n"
+              "2. 有特征工程和模型调优经验\n3. 能用 SQL 做数据分析")
+        doms = matching.detect_domains(jd)
+        self.assertIn("ai_recsys", doms)
+        self.assertIn("ai", doms)
+
+    def test_reception_alone_is_not_service(self):
+        """「接待」已从 service 词表移除（精确率 2.4%，行政/酒店词）。"""
+        jd = "岗位职责：接待来访客户，做好会议服务与秩序维护。"
+        self.assertNotIn("service", matching.detect_domains(jd))
+
+    def test_service_jd_without_reception_still_detects_service(self):
+        """反向测试：删「接待」不能弄坏真客服 JD 的识别。"""
+        jd = ("岗位职责：1. 接听客户来电，处理客户投诉与售后问题 "
+              "2. 记录工单并跟进处理结果 3. 维护客户满意度")
+        self.assertIn("service", matching.detect_domains(jd))
+
+    def test_quote_excludes_boilerplate(self):
+        """抽取出的 quote 不该带免责声明（用户不该在证据里看到它）。"""
+        from career_loop.matching.extract import extract_by_rules
+        jd = ("该职位来源于智联招聘。\n岗位职责：负责公司档案、印章管理与证照年审。\n"
+              "以担保或任何理由索要财物，扣押证照，均涉嫌违法。")
+        reqs = extract_by_rules(jd)
+        self.assertTrue(reqs)
+        for r in reqs:
+            self.assertNotIn("扣押证照", r.quote)
+            self.assertNotIn("智联招聘", r.quote)
+
+    def test_disclaimer_does_not_create_archive_capability(self):
+        """免责声明里的「证照」不该抽出 adm_archive 能力项（修前精确率 8%）。"""
+        from career_loop.matching.extract import extract_by_rules
+        jd = ("任职要求：本科学历，专业不限。\n"
+              "以担保或任何理由索要财物，扣押证照，均涉嫌违法。")
+        keys = [r.key for r in extract_by_rules(jd)]
+        self.assertNotIn("adm_archive", keys)
+
+
 if __name__ == "__main__":
     unittest.main()

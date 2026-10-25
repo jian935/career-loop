@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import re
 
+from .boilerplate import strip_boilerplate
 from .llm import LLM, LLMError
 from .schema import ALL_DIMS, Requirement, canonical_hits
 
@@ -285,7 +286,12 @@ def extract_by_rules(jd_text: str) -> list[Requirement]:
 
     对词表未覆盖的要求行，不再丢弃，而是生成一条 custom 要求，
     由匹配阶段按文本相似度判断——这样会计/销售/设计等非 AI 岗位也能被分析。
+
+    入口先剥平台样板（来源声明/反诈免责声明，见 boilerplate.py）：
+    这些句子会带着「证照」「招聘」等词误命中能力项，且不该出现在
+    给用户看的 quote 里。
     """
+    jd_text = strip_boilerplate(jd_text)
     best: dict[str, Requirement] = {}
     for section, line in _split_sections(jd_text):
         weight = _weight_for(section, line)
