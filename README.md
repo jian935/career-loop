@@ -280,9 +280,17 @@ r 偏低且为正，符合预期：引擎当前是**规则关键词基线**，�
 二者方向一致但解释力有限。完整方法、检验驱动修复的真实 bug、以及诚实边界见
 [`docs/real_eval_report.md`](docs/real_eval_report.md)。
 
+**证据墙（想给评审 / 面试官看的那一页）**：把上面这两个数字、一张真实散点图、三步闭环，
+以及「作者私有 40 条真实投递 `r = -0.255`（关键词饱和导致反向）的失效区间」整理在一处
+→ [`docs/evidence.md`](docs/evidence.md)。
+核心理念：**一个敢被真实数据打脸的分数，才值得你信它准的时候。**
+
+![引擎匹配分 vs 真实匹配标注（2,000 对）](docs/evidence-scatter.png)
+
 ```bash
-python scripts/real_eval_family.py                       # 族识别准确率（真实 JD）
-python scripts/real_eval_calibrate.py --n 2000 --seed 7   # 真实 r（2,000 配对）
+python scripts/real_eval_family.py                        # 族识别准确率（真实 JD）
+python scripts/real_eval_calibrate.py --n 2000 --seed 7    # 真实 r（2,000 配对）
+python scripts/real_eval_scatter.py  --n 2000 --seed 7     # 重画 docs/evidence-scatter.png
 ```
 
 ### 4) 真实闭环：记录投递 → 回流结果 → 校准

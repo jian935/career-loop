@@ -51,6 +51,11 @@ career-loop 面向所有岗位求职者（尤其应届生），解决一个真�
 - **社媒分享（+30）**：见 `docs/share-kit.md`——已配 OG/Twitter 富预览卡片（og-cover.png）、
   一键复制链接按钮、各平台现成文案与必带话题；发布后按点赞 + 收藏冲人气分。
 
+> **加分点·证据墙**：`docs/evidence.md` 把「匹配分可证伪」做成**可复现证据**——
+> 公开数据集族识别 **91.9%**、引擎分↔真实标注 **r=0.193**（附真实散点图 `docs/evidence-scatter.png`），
+> 并**主动公开**作者私有 40 条投递 **r=-0.255** 的失效区间。评委/面试官可一键
+> `python scripts/real_eval_family.py` / `real_eval_calibrate.py` 复现。网页底部也内嵌了这个「验证闭环 · 证据墙」区块。
+
 ## 7. GitHub Pages 部署（你部署后把链接填进第 3 节）
 仓库根 `.gitignore` 已排除个人数据；`docs/` 即站点根：
 1. GitHub 仓库 → Settings → Pages → Source: Deploy from a branch → Branch: `main`, Folder: `/docs`。

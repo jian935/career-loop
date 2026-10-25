@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.3] - 2026-10-25
+
+### Added (证据墙：把「可证伪」变成看得见的证据)
+- **`docs/evidence.md` 证据墙**：公开数据集族识别 **91.9%**、引擎分↔真实标注 **r=0.193**、
+  三步闭环（apply → log → calibrate），并**主动公开**作者私有 40 条投递 **r=-0.255** 的失效区间
+  （只公开聚合统计，不含个人信息 / 公司名 / JD 原文）。
+- **`scripts/real_eval_scatter.py`**：用公开 2,000 对真实 (简历, JD) 重画校准散点图
+  `docs/evidence-scatter.png`（深色主题、趋势线、r 标注），可第三方复现。
+- **网页新增「验证闭环 · 证据墙」区块**：三个关键数字卡 + 真实散点图 + 三步闭环，
+  并在导航加入「证据墙」锚点；hero 统计新增「91.9% 真实 JD 族识别」。
+- README / `docs/submission.md` / `docs/share-kit.md` 均加入证据墙入口与配图建议。
+
 ## [0.8.2] - 2026-10-25
 
 ### Added (1024 造物挑战投稿就绪)

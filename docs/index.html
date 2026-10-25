@@ -188,6 +188,28 @@
   .linkbtn{background:none;border:none;color:var(--violet);font:inherit;font-size:12px;
     padding:0;margin:0;cursor:pointer}
   .linkbtn:hover{color:var(--cyan)}
+
+  .evidence{margin-top:26px;padding-top:24px;border-top:1px solid var(--line)}
+  .ev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+  @media(max-width:720px){.ev-grid{grid-template-columns:1fr}}
+  .ev-card{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);padding:16px 18px}
+  .ev-card .k{font:800 30px/1 var(--mono);letter-spacing:-1px;color:var(--ink)}
+  .ev-card .k .u{font-size:14px;color:var(--muted);margin-left:2px}
+  .ev-card .l{font-size:12.5px;color:var(--sub);margin-top:8px}
+  .ev-card .n{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:6px}
+  .ev-card.warn{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.05)}
+  .ev-card.warn .k{color:var(--amber)}
+  .ev-figure{margin:16px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#07070A}
+  .ev-figure img{display:block;width:100%;height:auto}
+  .ev-figure figcaption{font-size:11.5px;color:var(--muted);padding:10px 14px;border-top:1px solid var(--line);font-family:var(--mono)}
+  .ev-loop{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+  @media(max-width:720px){.ev-loop{grid-template-columns:1fr}}
+  .ev-step{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);padding:14px 16px}
+  .ev-step .i{font:800 12px var(--mono);color:var(--violet);letter-spacing:.5px}
+  .ev-step h4{margin:6px 0 6px;font-size:13.5px;color:var(--ink)}
+  .ev-step p{margin:0;font-size:12px;color:var(--sub);line-height:1.55}
+  .evidence code{font-family:var(--mono);font-size:11.5px;color:var(--cyan);
+    background:rgba(34,211,238,.08);padding:1px 5px;border-radius:5px}
   @media(max-width:720px){.nav-links{display:none}.hero{padding-top:52px}.stats{gap:26px}}
 
 </style>
@@ -210,6 +232,7 @@
   </a>
   <div class="nav-links">
     <a href="#app">Demo</a>
+    <a href="#evidence">证据墙</a>
     <a href="https://github.com/jian35/career-loop/tree/main/benchmark">Benchmark</a>
     <a href="https://github.com/jian35/career-loop/tree/main/docs">Docs</a>
   </div>
@@ -227,6 +250,7 @@
   <div class="stats">
     <div><b>65</b><span>岗位族</span></div>
     <div><b>42</b><span>评测集</span></div>
+    <div><b>91.9%</b><span>真实JD族识别</span></div>
     <div><b>0</b><span>核心依赖</span></div>
     <div><b>100%</b><span>本地计算</span></div>
   </div>
@@ -269,6 +293,25 @@
   <section class="interns">
     <div class="sec-head"><h2>实习方向推荐</h2><span>目标：AI 产品 · 先看目标契合，再看匹配分</span></div>
     <div class="intern-list" id="interns"></div>
+  </section>
+
+  <section class="evidence" id="evidence">
+    <div class="sec-head"><h2>验证闭环 · 证据墙</h2><span>匹配分不是玄学：公开数据可复现，失效区间也公开</span></div>
+    <div class="ev-grid">
+      <div class="ev-card"><div class="k">91.9<span class="u">%</span></div><div class="l">岗位族识别准确率</div><div class="n">1,167 条真实 JD · 公开数据集</div></div>
+      <div class="ev-card"><div class="k">0.193</div><div class="l">引擎分 ↔ 真实标注 Pearson r</div><div class="n">2,000 对 · 弱正相关（规则基线水位）</div></div>
+      <div class="ev-card warn"><div class="k">−0.255</div><div class="l">作者私有 40 条真实投递</div><div class="n">关键词饱和导致反向 · 敢公开才叫可证伪</div></div>
+    </div>
+    <figure class="ev-figure">
+      <img src="evidence-scatter.png" alt="引擎匹配分与真实匹配标注的散点图，Pearson r = 0.193" loading="lazy">
+      <figcaption>2,000 对公开 (简历, JD)：引擎分 vs 数据集真实标注。趋势线向上但很缓——方向对、解释力有限，未美化。</figcaption>
+    </figure>
+    <div class="ev-loop">
+      <div class="ev-step"><div class="i">① APPLY</div><h4>投递即算分</h4><p>按 JD × 你的经历算出预测匹配分，写进本地库。</p></div>
+      <div class="ev-step"><div class="i">② LOG</div><h4>真实结果回流</h4><p>已读 / 沟通 / 面试 / offer 如实记录，只有 HR 真动起来才算正反馈。</p></div>
+      <div class="ev-step"><div class="i">③ CALIBRATE</div><h4>Pearson r 打脸</h4><p>样本到量后检验预测分准不准：准就信，不准就反过来改权重。</p></div>
+    </div>
+    <p class="hint" style="margin-top:12px">公开数据来自 HuggingFace <code>nonameee12233/job-resume-matching</code>（CC BY，无 PII）。复现：<code>python scripts/real_eval_family.py</code> · <code>python scripts/real_eval_calibrate.py</code>。作者私有测试只公开聚合统计，不含任何个人信息。</p>
   </section>
 </main>
 
