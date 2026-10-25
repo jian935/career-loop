@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.5] - 2026-10-25
+
+### 社媒传播素材（W8 复盘长文）
+- 新增 `docs/retro.md`：项目复盘长文（约 2000 字），含「被真实数据打脸」叙事、诚实边界、数据教我的真实求职建议；全文脱敏（只出聚合数字，无简历/公司名）。
+- `docs/share-kit.md` 新增「复盘长文发布」章节（分渠道建议 + 钩子 + 诚信底线）。
+- `README.md` 接入 retro.md 链接、W8 标记完成。
+
 ## [0.8.4] - 2026-10-25
 
 ### 网页 demo 升级为「工具」（投稿功能扩展）
