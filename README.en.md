@@ -21,7 +21,7 @@
   
   <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">
   
-  <img alt="tests" src="https://img.shields.io/badge/tests-175%20passing-4f46e5.svg">
+  <img alt="tests" src="https://img.shields.io/badge/tests-192%20passing-4f46e5.svg">
   
 </p>
 
@@ -208,6 +208,10 @@ turn better.**
   ranking, target-level down-weighting (intern/junior/mid/senior).
 - **JD collection & demand heatmap** (`collect` / `demand`).
 - **Local storage** — SQLite for candidates / JDs / applications, zero external deps.
+- **Daily application list** (`daily`, v0.8.23) — a batch of JDs becomes today's
+  to-do list: role + score + **cheapest fix (with the resulting score)** + **due date**;
+  exportable to a Markdown checklist, CSV, or **ICS** (imports into calendar/task apps).
+  Due dates are heuristic and always state their source.
 - **Optional dashboard (v0.8.22)** — `streamlit run career_loop/dashboard.py`:
   application funnel, score × outcome scatter **with a 95% CI for r**, and a gap
   ranking. Without real data it reads a fabricated sample and says so in red.
@@ -504,6 +508,34 @@ The demo data is **fabricated** — the board flags it in red. It is not evidenc
 > asserts no exception and that key elements are present; `--self-test` proves the
 > checker itself can fail.
 
+### 8) Daily application list: what to send today, and what to fix first
+
+```bash
+career-loop daily --profile profile_me.md --jds my_shortlist --top 5
+career-loop daily ... --out today.md                 # Markdown checklist
+career-loop daily ... --out today.csv --format csv   # spreadsheet / Notion
+career-loop daily ... --out today.ics --format ics   # calendar & task apps (with due dates)
+```
+
+Every row carries four things — **miss one and it stops being a list and becomes a
+leaderboard**: the role, the score, the **cheapest fix** (actually recomputed through
+`counterfactual`, so it reads "66.7% → 76.2%" rather than "you should improve X"), and
+the **due date**.
+
+```
+ 1.  66.7%  Agent Application Engineer (intern / new grad)   due 2027-02-28 (from the JD)
+      add "Agent" → 76.2%  (+9.5)
+```
+
+Ordering: roles with a due date first, earliest first; the rest after, by score desc.
+Each line also says *why it made today's list* (days left, what the top fix buys you).
+
+> ⚠️ **Due dates are heuristic.** They are only picked up near cues like
+> "deadline" / "截止" / "有效期至", and every row states where it came from
+> (from the JD / `--due` fallback / not given). **Check the original posting before
+> relying on it.** A JD that says "until the role is filled" is reported as *no date*
+> rather than a guess.
+
 ---
 
 ## Supports any job family (not just AI)
@@ -577,10 +609,11 @@ career-loop/
 │   ├── collect.py       # bulk JD collection + demand heatmap
 │   ├── internship.py    # internship direction recommendation + term timeline
 │   ├── explore.py       # industry-wide scan: ranking, fit, level down-weighting
-│   ├── cli.py           # CLI entry point (init / doctor / add-* / match / whatif / apply / status / log / calibrate / eval / reflow / recommend / collect / demand / intern / scan / dashboard / domains / llm-proxy)
+│   ├── cli.py           # CLI entry point (init / doctor / add-* / match / whatif / apply / status / log / calibrate / eval / reflow / recommend / collect / demand / intern / scan / dashboard / domains / llm-proxy / daily)
 │   ├── dashboard.py     # Streamlit rendering layer (optional dep; draws only)
 │   ├── dashdata.py      # board data layer: funnel / calibration / CI / gaps (zero-dep, tested)
-│   └── tests/           # 175 unit tests
+│   ├── daily.py         # daily list: ranking + due-date parsing + md/csv/ics export
+│   └── tests/           # 192 unit tests
 ├── docs/                # zero-install web demo (index.html) + screenshots / GIF / demo video; also the Pages site root
 ├── data/
 │   ├── eval_sample.jsonl        # 60-row control regression set
@@ -589,9 +622,11 @@ career-loop/
 ├── examples/
 │   ├── profile_me.md            # sample experience
 │   ├── jds/                     # cleaned sample JDs
+│   ├── daily_jds/               # sample JDs for `daily` (with due dates / "until filled")
 │   └── raw_jds/                 # raw JDs with job-board noise (for collect)
 └── scripts/
     ├── gen_eval.py              # regenerates the 60-row control set (byte-reproducible)
+    ├── smoke_dashboard.py       # headless dashboard smoke test (AppTest), with --self-test
     └── ...                      # eval / collection / calibration / vocab sync / anonymisation audit tools
 ```
 
@@ -599,14 +634,15 @@ career-loop/
 
 ## Quality & self-checks
 
-- **175 unit tests** — matching, calibration, storage, recommendation, collection,
+- **192 unit tests** — matching, calibration, storage, recommendation, collection,
   counterfactuals, non-AI generalisation, internship ranking, industry scan and
   level detection, LLM wiring and self-created capabilities, the LLM family
   backend (fallback, auto/blend split, prompt covering every family), `.env`
   parsing, and the CLI `--db` routing (prevents cross-database mix-ups).
-- **32 end-to-end CLI audit checks** — happy path + edge cases (invalid ids, empty
+- **40 end-to-end CLI audit checks** — happy path + edge cases (invalid ids, empty
   JD, insufficient samples, empty DB, empty directory, duplicate collection,
-  illegal states) + `doctor` + `scan`.
+  illegal states, malformed due dates) + `doctor` + `scan` + all three `daily`
+  exports must run and produce non-empty files.
 - **Cross-engine parity** — the browser demo reimplements the rules in JavaScript.
   `scripts/cross_engine_check.py` compares both engines on real Chinese and English
   JDs, capability extraction *and* family identification, and the vocabulary is

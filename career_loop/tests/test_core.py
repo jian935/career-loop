@@ -5,11 +5,12 @@ import os
 import sys
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from career_loop import calibrate, collect, dashdata, explore, internship, matching, recommend, reflow, store
+from career_loop import calibrate, collect, daily, dashdata, explore, internship, matching, recommend, reflow, store
 from career_loop.eval import load_dataset, run_eval
 
 
@@ -1484,7 +1485,7 @@ class TestDocsConsistency(unittest.TestCase):
     KEY_NUMBERS = (
         "66", "171", "60", "93.6%", "86.0%", "93.4%", "0.193", "56.6%", "73.5%",
         "52%", "78%", "70%", "83%", "45", "10,613", "13.8", "86.2%", "100.0%",
-        "1,167", "1,838", "32", "75", "3%", "16", "50", "29", "0.694",
+        "1,167", "1,838", "40", "75", "3%", "16", "50", "29", "0.694",
         "-0.059", "0.03", "9,544", "122,560", "8,674", "35+",
     )
 
@@ -1593,6 +1594,132 @@ class TestDocsConsistency(unittest.TestCase):
             text = self._read(name)
             self.assertNotIn("3 分钟演示视频", text, f"{name} 仍把视频写成 3 分钟")
             self.assertNotIn("3-minute demo video", text, f"{name} 仍把视频写成 3 分钟")
+
+
+class TestDailyPlan(unittest.TestCase):
+    """每日投递清单。
+
+    这块最容易出错的是**日期**：从 JD 里抓截止日是启发式，
+    抓错比抓不到更糟（用户会照着错的日期安排投递）。所以边界用例写得多。
+    """
+
+    DAY = date(2026, 10, 26)
+
+    def test_full_date_near_cue(self):
+        got = daily.find_deadline("投递截止：2026年11月30日，逾期不再接受。", self.DAY)
+        self.assertEqual(got, ("2026-11-30", "JD 原文"))
+
+    def test_dashed_and_slashed_formats(self):
+        self.assertEqual(daily.find_deadline("截止 2026-11-30", self.DAY)[0], "2026-11-30")
+        self.assertEqual(daily.find_deadline("deadline: 2026/12/01", self.DAY)[0], "2026-12-01")
+
+    def test_year_omitted_uses_this_year(self):
+        """JD 常写「11月30日截止」不带年份——默认今年。"""
+        self.assertEqual(daily.find_deadline("简历投递截止 11月30日", self.DAY)[0], "2026-11-30")
+
+    def test_year_omitted_rolls_to_next_year_if_past(self):
+        """写「1月5日」而今天已经过了 1 月 → 应该是明年，不是「已过期」的今年。"""
+        got = daily.find_deadline("截止 1月5日", self.DAY)
+        self.assertEqual(got, ("2027-01-05", "JD 原文"))
+
+    def test_open_ended_means_no_date(self):
+        """「招满为止」没给具体日期：返回 None + 一句来源说明，绝不猜一个。"""
+        due, note = daily.find_deadline("本岗位招满为止，建议尽早投递。", self.DAY)
+        self.assertIsNone(due)
+        self.assertIn("招满为止", note)
+
+    def test_real_date_wins_over_open_ended_in_the_same_sentence(self):
+        """真 bug：JD 常写「截止日期：2027-02-28（招满为止不做另行通知）」。
+
+        里面既有具体日期又有「招满为止」。先判「招满为止」会把真实日期吃掉，
+        于是清单上少一条截止日——这是**静默丢信息**，比猜错更隐蔽。
+        """
+        due, note = daily.find_deadline(
+            "简历投递截止日期：2027-02-28（招满为止不做另行通知）。", self.DAY)
+        self.assertEqual(due, "2027-02-28")
+        self.assertEqual(note, "JD 原文")
+
+    def test_random_date_in_body_is_not_a_deadline(self):
+        """发布日期 / 公司成立日期不能当成投递截止日。"""
+        for text in ("发布时间：2026-10-01", "公司成立于 2015 年，2025 年营收过亿。"):
+            self.assertIsNone(daily.find_deadline(text, self.DAY)[0], text)
+
+    def test_no_cue_no_date(self):
+        self.assertEqual(daily.find_deadline("要求熟悉 Python。", self.DAY), (None, ""))
+
+    def test_plan_sorts_due_before_score(self):
+        """有截止日的先到期排前；没截止日的排后面、按分降序。"""
+        jds = [
+            daily.Job(title="高分无期限", text="要求：熟悉 Python、有后端项目经验。"),
+            daily.Job(title="急的低分", text="要求：会用 SQL 查数据。截止时间：2026-10-28"),
+            daily.Job(title="晚的", text="要求：懂大模型原理。截止日期 2026-12-20"),
+        ]
+        plan = daily.build_plan(jds, "我用 Python 写过后端服务，也懂大模型原理和 SQL。",
+                                today=self.DAY)
+        self.assertEqual([i.title for i in plan.items][:2], ["急的低分", "晚的"])
+        self.assertEqual(plan.items[-1].title, "高分无期限")
+
+    def test_min_score_filters(self):
+        jds = [daily.Job(title="够不着", text="要求：精通 Kubernetes、熟悉服务网格与内核调优。")]
+        plan = daily.build_plan(jds, "我会写 Python。", today=self.DAY, min_score=60.0)
+        self.assertEqual(plan.items, [])
+
+    def test_default_due_only_when_jd_has_none(self):
+        """--due 是兜底：JD 自己写了日期时不能被覆盖。"""
+        jds = [daily.Job(title="自带截止", text="要求：会 Python。截止 2026-11-11")]
+        plan = daily.build_plan(jds, "我用 Python 写过服务。", today=self.DAY,
+                                default_due="2026-10-30")
+        self.assertEqual(plan.items[0].due, "2026-11-11")
+        self.assertEqual(plan.items[0].due_source, "JD 原文")
+
+    def test_best_fix_has_positive_gain(self):
+        jds = [daily.Job(title="AI 岗", text="要求：熟悉 Python、了解 RAG 与提示词工程。")]
+        plan = daily.build_plan(jds, "我用 Python 做过项目。", today=self.DAY)
+        self.assertIsNotNone(plan.items[0].best_fix)
+        name, base, new = plan.items[0].best_fix
+        self.assertGreater(new, base)
+
+    def test_markdown_is_a_real_checklist(self):
+        jds = [daily.Job(title="X 岗", text="要求：会 Python。截止 2026-11-01")]
+        plan = daily.build_plan(jds, "我用 Python 写过服务。", today=self.DAY)
+        md = daily.to_markdown(plan)
+        self.assertIn("- [ ] ", md)
+        self.assertIn("2026-11-01", md)
+        self.assertIn("JD 原文", md)  # 日期来源必须出现在清单里
+
+    def test_csv_row_count(self):
+        jds = [daily.Job(title="X 岗", text="要求：会 Python。"),
+               daily.Job(title="Y 岗", text="要求：会 SQL。")]
+        plan = daily.build_plan(jds, "我用 Python 和 SQL 做过项目。", today=self.DAY)
+        rows = [r for r in daily.to_csv(plan).splitlines() if r.strip()]
+        self.assertEqual(len(rows), len(plan.items) + 1)  # 含表头
+
+    def test_ics_is_well_formed(self):
+        jds = [daily.Job(title="X 岗", text="要求：会 Python。截止 2026-11-01")]
+        plan = daily.build_plan(jds, "我用 Python 写过服务。", today=self.DAY)
+        ics = daily.to_ics(plan)
+        self.assertTrue(ics.startswith("BEGIN:VCALENDAR\r\n"))
+        self.assertTrue(ics.endswith("END:VCALENDAR\r\n"))
+        self.assertEqual(ics.count("BEGIN:VTODO"), ics.count("END:VTODO") == 1 or 1)
+        self.assertIn("DUE;VALUE=DATE:20261101", ics)
+        self.assertIn("STATUS:NEEDS-ACTION", ics)
+
+    def test_ics_escapes_reserved_characters(self):
+        """SUMMARY / DESCRIPTION 里的逗号、分号、换行必须转义，否则整个文件解析失败。"""
+        plan = daily.DailyPlan(day="2026-10-26", items=[
+            daily.DailyItem(title="产品, 高级; 岗", score=50.0, due="2026-11-01",
+                            due_source="JD 原文", best_fix=("缺, 项", 50.0, 60.0)),
+        ])
+        ics = daily.to_ics(plan)
+        self.assertIn("\\,", ics)
+        self.assertIn("\\;", ics)
+        self.assertNotIn("SUMMARY:产品, 高级", ics)
+
+    def test_empty_profile_is_not_scored(self):
+        plan = daily.build_plan([daily.Job(title="X", text="要求：会 Python。")], " ",
+                                today=self.DAY)
+        self.assertEqual(plan.items, [])
+        self.assertTrue(plan.notes)
 
 
 class TestCorrelationCI(unittest.TestCase):

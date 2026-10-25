@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import sys
+from datetime import date
 from pathlib import Path
 
 from . import calibrate as calib_mod
@@ -335,6 +336,49 @@ def cmd_recommend(args) -> int:
     return 0
 
 
+def cmd_daily(args) -> int:
+    """今日投递清单：今天先投哪个、投之前先改哪一句。"""
+    from . import daily as daily_mod
+
+    src = Path(args.jds)
+    if not src.exists():
+        print(f"路径不存在：{src}"); return 1
+    jobs = daily_mod.load_jobs(src)
+    if not jobs:
+        print(f"没有读到任何 JD：{src}"); return 1
+    profile = _read(args.profile)
+    if not profile.strip():
+        print("经历文件为空，无法打分", file=sys.stderr); return 1
+
+    if args.due:
+        try:
+            date.fromisoformat(args.due)
+        except ValueError:
+            print(f"--due 需要 YYYY-MM-DD 格式：{args.due}"); return 1
+
+    llm = _make_llm(args)
+    plan = daily_mod.build_plan(
+        jobs, profile, top=args.top, min_score=args.min_score,
+        default_due=args.due or None, llm=llm,
+    )
+    plan.profile_label = Path(args.profile).stem
+
+    print(daily_mod.render_console(plan))
+    if args.out:
+        fmt = args.format
+        if fmt == "auto":
+            fmt = Path(args.out).suffix.lstrip(".").lower() or "md"
+        if fmt not in daily_mod.EXPORTERS:
+            print(f"不支持的格式：{fmt}（支持 {' / '.join(daily_mod.EXPORTERS)}）"); return 1
+        out = Path(args.out)
+        if out.parent != Path(""):
+            out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(daily_mod.EXPORTERS[fmt](plan), encoding="utf-8")
+        print(f"\n清单已导出（{fmt}）→ {out}"
+              + ("　ICS 可直接导入日历 / 待办 App。" if fmt == "ics" else ""))
+    return 0
+
+
 def cmd_dashboard(args) -> int:
     """起 Streamlit 看板：漏斗 / 校准散点（带置信区间）/ 缺口排行。
 
@@ -575,6 +619,17 @@ def build_parser() -> argparse.ArgumentParser:
     ev.add_argument("--data", default="data/eval_sample.jsonl")
     ev.add_argument("--badcases", default="badcases.jsonl")
 
+    dl = sub.add_parser("daily", help="今日投递清单：岗位 + 匹配分 + 最划算补强 + 截止日")
+    dl.add_argument("--profile", required=True, help="你的经历文件")
+    dl.add_argument("--jds", required=True, help="JD 来源：目录（.md/.txt）或 JSONL / CSV")
+    dl.add_argument("--top", type=int, default=10, help="清单最多几条（默认 10）")
+    dl.add_argument("--min-score", type=float, default=0.0, help="低于这个匹配分的岗位直接不看")
+    dl.add_argument("--due", default=None, help="统一截止日 YYYY-MM-DD（JD 里没写时用）")
+    dl.add_argument("--format", choices=["auto", "md", "csv", "ics"], default="auto",
+                    help="导出格式（默认按 --out 的扩展名猜）")
+    dl.add_argument("--out", default=None, help="导出文件；不填就只打印")
+    dl.add_argument("--no-llm", action="store_true", help="强制规则模式（离线可复现）")
+
     du = sub.add_parser("dashboard", help="启动看板：漏斗 + 校准散点 + 缺口排行")
     du.add_argument("--records", help="回流记录文件（CSV/JSONL），优先级高于本地库")
     du.add_argument("--profile", help="经历文件", default="examples/profile_me.md")
@@ -637,7 +692,7 @@ def main(argv: list[str] | None = None) -> int:
         "match": cmd_match, "apply": cmd_apply, "status": cmd_status,
         "log": cmd_log, "calibrate": cmd_calibrate, "eval": cmd_eval,
         "reflow": cmd_reflow,
-        "dashboard": cmd_dashboard, "recommend": cmd_recommend,
+        "dashboard": cmd_dashboard, "recommend": cmd_recommend, "daily": cmd_daily,
         "collect": cmd_collect, "demand": cmd_demand, "whatif": cmd_whatif,
         "intern": cmd_intern, "scan": cmd_scan, "domains": cmd_domains,
         "llm-proxy": cmd_llm_proxy,

@@ -112,6 +112,33 @@ def main() -> int:
         name="collect(missing dir)")
     run(["log", "--app-id", "1", "--status", "bad"], expect=2, name="log(bad status)")
 
+    # daily：三种导出都得在同一份数据上跑得通，且文件非空
+    daily_out = tmp / "today.md"
+    run(["daily", "--profile", "examples/profile_me.md", "--jds", "examples/daily_jds",
+         "--top", "3", "--out", str(daily_out)],
+        contains=["今日投递清单", "截止"], name="daily(md)")
+    RESULTS.append(("daily(md file written)",
+                    daily_out.exists() and "- [ ] " in daily_out.read_text(encoding="utf-8"),
+                    f"exists={daily_out.exists()}"))
+    csv_out = tmp / "today.csv"
+    run(["daily", "--profile", "examples/profile_me.md", "--jds", "examples/daily_jds",
+         "--out", str(csv_out), "--format", "csv"], name="daily(csv)")
+    RESULTS.append(("daily(csv has rows)",
+                    csv_out.exists() and len(csv_out.read_text(encoding="utf-8").splitlines()) > 1,
+                    f"exists={csv_out.exists()}"))
+    ics_out = tmp / "today.ics"
+    run(["daily", "--profile", "examples/profile_me.md", "--jds", "examples/daily_jds",
+         "--out", str(ics_out), "--format", "ics"], name="daily(ics)")
+    ok = False
+    if ics_out.exists():
+        body = ics_out.read_text(encoding="utf-8")
+        ok = body.startswith("BEGIN:VCALENDAR") and body.rstrip().endswith("END:VCALENDAR")
+    RESULTS.append(("daily(ics well formed)", ok, "missing or malformed"))
+    run(["daily", "--profile", "examples/profile_me.md", "--jds", str(tmp / "nope")],
+        expect=1, contains="路径不存在", name="daily(missing dir)")
+    run(["daily", "--profile", "examples/profile_me.md", "--jds", "examples/daily_jds",
+         "--due", "2026-13-40"], expect=1, contains="YYYY-MM-DD", name="daily(bad due)")
+
     check_eval_baseline()
 
     passed = sum(1 for _, ok, _ in RESULTS if ok)
