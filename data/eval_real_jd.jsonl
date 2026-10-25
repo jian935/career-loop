@@ -1,0 +1,45 @@
+{"id": "P01", "kind": "positive", "text": "7.对数据库的设计和使用有基本的了解", "expect": ["engineering"]}
+{"id": "P02", "kind": "positive", "text": "熟悉WCF、Webapi开发", "expect": ["engineering"]}
+{"id": "P03", "kind": "positive", "text": "具有较强的技术工程能力和技能", "expect": ["engineering"]}
+{"id": "P04", "kind": "positive", "text": "3、负责公司电子档案的建立、分类及管理", "expect": ["adm_archive"]}
+{"id": "P05", "kind": "positive", "text": "6、负责本部门业务资料、文件的管理和档案建设工作", "expect": ["adm_archive"]}
+{"id": "P06", "kind": "positive", "text": "16、负责设备资料的收集、交接，确保设备档案齐全", "expect": ["adm_archive"]}
+{"id": "P07", "kind": "positive", "text": "熟悉物流管理的业务流程", "expect": ["domain"]}
+{"id": "P08", "kind": "positive", "text": "4、熟悉快速消费品物流管理业务流程，有丰富的流程管理操作技能", "expect": ["domain"]}
+{"id": "P09", "kind": "positive", "text": "负责物流部组织架构建设，职能职责、流程梳理", "expect": ["domain"]}
+{"id": "P10", "kind": "positive", "text": "2、具备出色的产品思维和用户洞察力，能够从用户角度出发设计产品", "expect": ["product_sense"]}
+{"id": "P11", "kind": "positive", "text": "4、了解用户及用户需求，注重用户感受及体验", "expect": ["product_sense"]}
+{"id": "P12", "kind": "positive", "text": "负责物流计划的制定和执行", "expect": ["exec_project"]}
+{"id": "P13", "kind": "positive", "text": "负责跟踪电商分销数据，定期汇报并协助公司分析电商经营情况", "expect": ["writing"]}
+{"id": "P14", "kind": "positive", "text": "3、了解市场信息（了解竞争对手情况等），完成公司要求的报告", "expect": ["writing"]}
+{"id": "P15", "kind": "positive", "text": "5.每天监控统计后台数据，针对点击率、反馈率、旺铺转化率等定期进行系统分析并作优化调整", "expect": ["data_analysis"]}
+{"id": "P16", "kind": "positive", "text": "4、会运用数据分析", "expect": ["data_analysis"]}
+{"id": "P17", "kind": "positive", "text": "5、负责VIP客户、渠道经销商的开拓、维护及管理工作", "expect": ["customer"]}
+{"id": "P18", "kind": "positive", "text": "1、负责收集相关信息，对目标市场调研与分析，开发目标客户，维护老客户", "expect": ["customer"]}
+{"id": "P19", "kind": "positive", "text": "3、素质要求：性格开朗，细心认真，责任心、抗压力强，喜欢接受挑战", "expect": ["ownership"]}
+{"id": "P20", "kind": "positive", "text": "6、高度的责任心和抗压能力： 适应快消行业的快节奏和高要求", "expect": ["ownership"]}
+{"id": "P21", "kind": "positive", "text": "5、能与海关海关建立良好的沟通渠道，有海关工作经验/AEO高认经验优先考虑", "expect": ["communication"]}
+{"id": "P22", "kind": "positive", "text": "吃苦耐劳，有良好的团队合作精神和组织协调能力，沟通表达能力强", "expect": ["communication"]}
+{"id": "P23", "kind": "positive", "text": "1.英语四级及以上，不要求口语，但是书写、阅读能力强", "expect": ["language"]}
+{"id": "P24", "kind": "positive", "text": "具有优秀的英语听说读写能力，掌握其他小语种者更佳", "expect": ["language"]}
+{"id": "P25", "kind": "positive", "text": "4、熟练掌握office办公软件", "expect": ["office"]}
+{"id": "P26", "kind": "positive", "text": "电脑操作熟练，能熟练运用互联网及EXCEL、PS等软件", "expect": ["office"]}
+{"id": "P27", "kind": "positive", "text": "2.10年以上工作经验，至少5年以上驻海外经验，3年以上团队管理经验", "expect": ["leadership"]}
+{"id": "P28", "kind": "positive", "text": "此岗位需要具备技术素养与项目领导能力，能带领跨职能、跨地域团队开展工作", "expect": ["leadership"]}
+{"id": "P29", "kind": "positive", "text": "本科及以上学历 有独立思考的能力，善于分析、判断及解决问题", "expect": ["problem_solving"]}
+{"id": "P30", "kind": "positive", "text": "能够根据产品开发需要进行独立分析和解决问题", "expect": ["problem_solving"]}
+{"id": "P31", "kind": "positive", "text": "具备较强的学习能力，能够不断吸收新知识，提升自身综合素质", "expect": ["learning"]}
+{"id": "P32", "kind": "positive", "text": "5、较强的学习能力和实操能力，能快速掌握新知识，解决现场问题", "expect": ["learning"]}
+{"id": "P33", "kind": "positive", "text": "一、负责公司新业务、新员工的培训及考核工作", "expect": ["hr_training"]}
+{"id": "P34", "kind": "positive", "text": "5、负责输出各国家通关手册，为各部门海外通关提供参考依据，开展培训赋能", "expect": ["hr_training"]}
+{"id": "P35", "kind": "positive", "text": "3、熟悉选厂的生产运作和管理、拥有丰富的生产管理、成本控制、质量管理、物流管理等经验", "expect": ["mfg_process"]}
+{"id": "P36", "kind": "positive", "text": "负责对应研发产品的技术标准、工艺标准化指导和评审", "expect": ["mfg_process"]}
+{"id": "P37", "kind": "positive", "text": "负责工程集采中心海外备品，备件、撬块、小型EPC等，5年以上采购经验", "expect": ["scm_purchase"]}
+{"id": "P38", "kind": "positive", "text": "与国内供应商、国际承运商等建立并维护良好的合作关系", "expect": ["scm_purchase"]}
+{"id": "P39", "kind": "positive", "text": "熟悉进出口报关、订舱、空运操作等业务知识，跨境电商相关的行业政策法规及行业规则", "expect": ["pub_document", "trade_export"]}
+{"id": "N01", "kind": "negative", "text": "1、2026届应届本科毕业生及以上学历", "expect": []}
+{"id": "N02", "kind": "negative", "text": "经验与技能： 2年及以上物流行业相关经验", "expect": []}
+{"id": "N03", "kind": "negative", "text": "职位要求： 1、本科及以上学历，专业不限，物流管理专业优先", "expect": []}
+{"id": "N04", "kind": "negative", "text": "以担保或任何理由索要财物，扣押证照，均涉嫌违法", "expect": []}
+{"id": "N05", "kind": "negative", "text": "本科以上学历，具有5年以上项目物流管理经验", "expect": []}
+{"id": "N06", "kind": "negative", "text": "2、在主管的指导下做好船舶营运调度工作", "expect": []}

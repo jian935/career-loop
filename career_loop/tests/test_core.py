@@ -990,5 +990,129 @@ class TestAnonymizationAudit(unittest.TestCase):
         self.assertEqual(self._audit(text, self.rows), [])
 
 
+class TestGenericWordContextGuard(unittest.TestCase):
+    """过泛词的语境约束（v0.8.13）。
+
+    背景：真实中文 JD 实测发现，「服务」在 465 条 JD 里是"服务质量/服务标准"
+    （物流运营语境），却被算成「工程落地与部署」；
+    「证照」多为"资质证件"而非「档案管理」。
+    实测误抽率：engineering 精确率 44%、adm_archive 仅 8%。
+    修复后：92.7% / 92.1%，且召回几乎没损失。
+    """
+
+    def _keys(self, jd: str) -> set:
+        reqs, _ = matching.extract_requirements(jd, None)
+        return {r.key for r in reqs}
+
+    def test_service_quality_is_not_engineering(self):
+        jd = "岗位职责：提升服务质量、建立服务标准，打造热心的服务团队。"
+        self.assertNotIn("engineering", self._keys(jd))
+
+    def test_real_engineering_still_recognized(self):
+        jd = "任职要求：熟悉后端开发，熟练使用 Docker 部署数据库服务。"
+        self.assertIn("engineering", self._keys(jd))
+
+    def test_license_is_not_archive_management(self):
+        # 「办理证照」是资质事务，不是档案管理——语境表里不能有「年检」这种会误判的词
+        jd = "岗位职责：负责公司各类证照的办理与变更对接。"
+        self.assertNotIn("adm_archive", self._keys(jd))
+
+    def test_license_archive_management_is_recognized(self):
+        # 真正做资质档案管理的还是要认出来
+        jd = "岗位职责：负责资质证照的档案归档与用印管理。"
+        self.assertIn("adm_archive", self._keys(jd))
+
+    def test_real_archive_still_recognized(self):
+        jd = "岗位职责：负责档案归档、印章用印管理与档案借阅登记。"
+        self.assertIn("adm_archive", self._keys(jd))
+
+    def test_generic_word_alone_does_not_trigger(self):
+        # 「业务」单独出现不应触发 domain
+        jd = "岗位职责：负责业务对接与客户服务。"
+        self.assertNotIn("domain", self._keys(jd))
+
+    def test_domain_context_still_recognized(self):
+        jd = "需要深入理解某业务场景的痛点与流程。"
+        self.assertIn("domain", self._keys(jd))
+
+    def test_context_guard_is_synced_to_webpage(self):
+        """语境约束表必须同步到网页，否则两边结果会不一致。"""
+        from pathlib import Path
+
+        root = Path(__file__).parent.parent.parent
+        html = (root / "docs" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("const CONTEXT_REQUIRED", html)
+        self.assertIn("function contextOk", html)
+        # 表里不能出现能力项自己的泛词（否则等于没约束）
+        from career_loop.matching.schema import CONTEXT_REQUIRED
+
+        for key, words in CONTEXT_REQUIRED.items():
+            generic = {"engineering": "服务", "domain": "业务",
+                       "product_sense": "需求", "adm_archive": "证照"}[key]
+            self.assertNotIn(generic, words,
+                             f"{key} 的语境表里不能含自己的泛词 {generic!r}")
+
+
+class TestRealJDExtractionSet(unittest.TestCase):
+    """真实中文 JD 抽取评测集（v0.8.13，W6 核心）。
+
+    合成短句集（eval_sample.jsonl）测的是"引擎会不会处理这句话"，
+    这套测的是"引擎在**真实中文 JD 文本**上抽得准不准"——
+    真实 JD 有模板噪声、福利条款、学历要求、跨行内联，合成短句测不出这些。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.rows = [
+            json.loads(l)
+            for l in (Path(__file__).parent.parent.parent
+                      / "data" / "eval_real_jd.jsonl").read_text(encoding="utf-8").splitlines()
+            if l.strip()
+        ]
+
+    def _keys(self, text: str) -> list[str]:
+        reqs, _ = matching.extract_requirements(text, None)
+        return sorted({r.key for r in reqs if not r.key.startswith("custom:")})
+
+    def test_set_is_not_empty_and_has_both_kinds(self):
+        kinds = {r["kind"] for r in self.rows}
+        self.assertEqual(kinds, {"positive", "negative"}, kinds)
+        self.assertGreaterEqual(len(self.rows), 40)
+
+    def test_all_annotated_rows_match(self):
+        bad = []
+        for r in self.rows:
+            got = self._keys(r["text"])
+            if got != r["expect"]:
+                bad.append((r["id"], r["expect"], got))
+        self.assertEqual(bad, [], f"{len(bad)} 条与标注不一致：{bad[:3]}")
+
+    def test_negative_cases_extract_nothing(self):
+        """负例：真实 JD 里的非能力行（学历/福利/法律声明）不该抽出能力项。"""
+        neg = [r for r in self.rows if r["kind"] == "negative"]
+        self.assertGreaterEqual(len(neg), 5)
+        for r in neg:
+            self.assertEqual(self._keys(r["text"]), [], r["text"])
+
+    def test_covers_many_capabilities(self):
+        caps = {k for r in self.rows for k in r["expect"]}
+        self.assertGreaterEqual(len(caps), 15, sorted(caps))
+
+    def test_texts_are_real_not_synthetic(self):
+        """这些样本应该像真实 JD（带序号、带标点、口语化），不是玩具句子。"""
+        import re
+
+        for r in self.rows:
+            self.assertGreaterEqual(len(r["text"]), 8, r["text"])
+        # 至少一半带真实 JD 的编号格式（全角「3、」或半角「3.」都行）
+        numbered = sum(
+            1 for r in self.rows
+            if re.match(r"^\s*\d+[、.．)）]", r["text"])
+            or re.match(r"^[（(]\d+[)）]", r["text"])
+        )
+        self.assertGreaterEqual(numbered, len(self.rows) // 3,
+                                f"只有 {numbered}/{len(self.rows)} 条带编号")
+
+
 if __name__ == "__main__":
     unittest.main()

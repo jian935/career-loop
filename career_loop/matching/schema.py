@@ -560,16 +560,97 @@ STATUS_LABEL = {"full": "已具备", "partial": "部分具备", "missing": "缺�
 STATUS_ICON = {"full": "🟢", "partial": "🟡", "missing": "🔴"}
 
 
-def canonical_hits(text: str, dims: dict[str, dict] | None = None) -> dict[str, list[str]]:
+# ---------------------------------------------------------------------------
+# 过泛词的语境约束（v0.8.13，真实中文 JD 实测得出）
+# ---------------------------------------------------------------------------
+# 问题：某些词单独看太泛，命中它们不等于命中该能力项。
+#   「服务」在 465 条真实中文 JD 里是"服务质量/服务标准/服务团队"（物流运营语境），
+#   不是"工程落地与部署"；「证照」多是"资质证件"而非"档案管理"。
+#   实测误抽率：engineering 精确率仅 44%、adm_archive 仅 8%。
+#
+# 为什么不用"直接删词"：删了会连带漏掉真正需要它的句子
+# （「需要把项目服务化部署」「要做证照年审」）。
+#
+# 规则：下面这些词**只有在同一行还出现语境词时**才算命中该能力项。
+# 语境词用「任一命中」即可，命中不到就不算——宁可漏，不可乱报。
+#
+# ⚠️ 语境词表里**不能包含该能力项自己的泛词**，
+# 否则等于没约束（"业务"既是 domain 的泛词、又在语境表里 → 永远通过）。
+# 所以每张表只列**强语境词**。
+CONTEXT_REQUIRED: dict[str, tuple[str, ...]] = {
+    # engineering：泛词「服务」「上线」需伴随工程语境
+    "engineering": (
+        "后端", "前端", "全栈", "微服务", "服务化", "docker", "容器", "k8s",
+        "kubernetes", "数据库", "数据仓库", "架构", "接口", "api", "代码",
+        "编程", "服务器", "运维", "部署", "工程化", "工程落地",
+        "工程能力", "工程实践", "开发", "研发", "技术栈",
+    ),
+    # adm_archive：泛词「证照」需伴随档案/用印语境
+    "adm_archive": (
+        "档案", "归档", "存档", "印章", "用印", "盖章", "证照管理", "证照年审",
+        "资质年检", "年检", "许可证", "营业执照",
+    ),
+    # domain：泛词「业务」「场景」「行业」「流程」需伴随理解语境。
+    # 注意「痛点/留存/流失/成本结构」本身就是 domain 的**专有词**，
+    # 它们出现时说明文本确实在谈业务理解，不需要额外语境。
+    "domain": (
+        "业务场景", "行业场景", "业务流程", "业务痛点", "业务模式", "业务理解",
+        "行业理解", "业务分析", "行业分析", "场景设计", "痛点", "留存",
+        "流失", "成本结构", "商业模式", "梳理", "理解",
+    ),
+    # product_sense：泛词「需求」「访谈」需伴随产品语境
+    "product_sense": (
+        "产品需求", "需求文档", "需求分析", "需求评审", "需求梳理", "需求调研",
+        "用户需求", "用户洞察", "用户调研", "用户访谈", "访谈用户",
+        "产品设计", "产品规划", "交互", "原型", "prd", "场景设计",
+    ),
+}
+
+
+def _context_ok(key: str, line_low: str, doc_low: str = "") -> bool:
+    """该能力项在这行是否成立（过泛词需要语境支撑）。
+
+    语境词在**同一行**找不到时，再退一步看**整篇文档**——
+    JD 里常见「要求行」和「说明行」分开写的情况：
+    「需要深入理解某业务场景的痛点与流程」这行本身没有强语境词，
+    但「业务场景」「痛点」已经足够表意，不该判成缺失。
+    """
+    req = CONTEXT_REQUIRED.get(key)
+    if not req:
+        return True
+    if any(w.lower() in line_low for w in req):
+        return True
+    if doc_low and any(w.lower() in doc_low for w in req):
+        return True
+    return False
+
+
+def canonical_hits(
+    text: str, dims: dict[str, dict] | None = None, doc: str = ""
+) -> dict[str, list[str]]:
     """返回 text 中命中的能力 key 及其命中的原始词。
 
     默认用全量词表（AI + 通用 + 各岗位族），因此非 AI 岗位也能命中。
+
+    过泛词按**语境**判定：`CONTEXT_REQUIRED` 里列的能力项，
+    泛词只有在同行（或整篇文档 `doc`）伴随语境词时才算命中——
+    避免"服务质量"被当成工程能力、"证照"被当成档案管理。
+
+    `doc` 传全文时，语境判定会放宽到整篇；
+    只传单行时则严格按同行判定（更保守，适合逐行认领）。
     """
     table = dims if dims is not None else ALL_DIMS
     low = text.lower()
+    doc_low = doc.lower() if doc else low
     hits: dict[str, list[str]] = {}
     for key, spec in table.items():
-        found = [kw for kw in spec["kw"] if kw.lower() in low]
+        found: list[str] = []
+        for kw in spec["kw"]:
+            if kw.lower() not in low:
+                continue
+            if CONTEXT_REQUIRED.get(key) and not _context_ok(key, low, doc_low):
+                continue
+            found.append(kw)
         if found:
             hits[key] = found
     return hits

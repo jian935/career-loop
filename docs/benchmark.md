@@ -83,6 +83,40 @@ This is the honest counterpart to §1: §1 locks *specified rule behavior* on sy
 cases; §2.2 checks *agreement with real labels* on real data. See
 `docs/real_eval_report.md` and `docs/evidence.md`.
 
+### 2.3 Real Chinese JD extraction (v0.8.13)
+
+The synthetic control set uses toy sentences (JD median **15 characters**).
+Real Chinese JDs are messier — template boilerplate, benefit clauses, degree
+requirements, multi-item lines packed into one line. So the engine needs to be
+tested on **real Chinese text**.
+
+**Annotated set** — `data/eval_real_jd.jsonl`, **45 rows** (39 positive + 6 negative),
+all taken verbatim from the public `ngtranai09/china_job` dataset, covering
+**20 capabilities**. Accuracy **45/45 = 100%**.
+
+**Hold-out check (the part that carries the argument)** — 10,497 real JD lines that
+were **never annotated**, judged by a reproducible rule ("a line that hits exactly
+one capability should hit exactly that one"):
+
+| Configuration | Consistency |
+|---|---:|
+| With context guard | **100.0%** |
+| Without context guard | 85.7% |
+
+**The context guard's real contribution: +14.3 percentage points.**
+Both numbers come from the hold-out set, not the annotated set — so this is not
+overfitting to the samples.
+
+```bash
+python scripts/fetch_cn_eval_data.py     # 9.3MB, needs pip install pyarrow
+python scripts/eval_real_jd.py
+```
+
+What this found and fixed — see `docs/evidence.md` §7.1:
+generic words caused **44.1%** precision on `engineering` ("服务质量" ≠ engineering)
+and **8.0%** on `adm_archive` ("办理证照" ≠ archive management). After the fix:
+**92.7%** and **92.1%**, with recall essentially unchanged.
+
 ## 3. Cross-engine parity (Python vs browser)
 
 The browser demo reimplements the rules in JavaScript. To keep them honest, the

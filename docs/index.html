@@ -993,6 +993,12 @@ const DOMAIN_PACKS = {
     log_customs:{label:"关务/报关", kw:["关务","清关","关税","保税","舱单"]},
   },
 };
+const CONTEXT_REQUIRED = {
+  "engineering":["后端","前端","全栈","微服务","服务化","docker","容器","k8s","kubernetes","数据库","数据仓库","架构","接口","api","代码","编程","服务器","运维","部署","工程化","工程落地","工程能力","工程实践","开发","研发","技术栈"],
+  "adm_archive":["档案","归档","存档","印章","用印","盖章","证照管理","证照年审","资质年检","年检","许可证","营业执照"],
+  "domain":["业务场景","行业场景","业务流程","业务痛点","业务模式","业务理解","行业理解","业务分析","行业分析","场景设计","痛点","留存","流失","成本结构","商业模式","梳理","理解"],
+  "product_sense":["产品需求","需求文档","需求分析","需求评审","需求梳理","需求调研","用户需求","用户洞察","用户调研","用户访谈","访谈用户","产品设计","产品规划","交互","原型","prd","场景设计"],
+};
 /* VOCAB:END */
 const ALL_DIMS = Object.assign({}, TAXONOMY, GENERAL_DIMS);
 for(const pk in DOMAIN_PACKS){
@@ -1059,12 +1065,21 @@ function detectSection(line){
   }
   return null;
 }
-function hitsOf(line){
-  const low=line.toLowerCase(), out=[];
+// 过泛词的语境约束（与 Python 侧 CONTEXT_REQUIRED 同一份数据，由 sync_web_vocab.py 生成）
+// 泛词只有在同行（或整篇文档）伴随语境词时才算命中该能力项。
+function contextOk(key, lineLow, docLow){
+  const req=CONTEXT_REQUIRED[key];
+  if(!req) return true;
+  for(const w of req){ if(lineLow.includes(w.toLowerCase())) return true; }
+  if(docLow){ for(const w of req){ if(docLow.includes(w.toLowerCase())) return true; } }
+  return false;
+}
+function hitsOf(line, doc){
+  const low=line.toLowerCase(), docLow=(doc||line).toLowerCase(), out=[];
   for(const k in ALL_DIMS){
     let mx=0;
     for(const kw of ALL_DIMS[k].kw){ if(low.includes(kw.toLowerCase())) mx=Math.max(mx,kw.length); }
-    if(mx>0) out.push({key:k,maxLen:mx});
+    if(mx>0 && contextOk(k, low, docLow)) out.push({key:k,maxLen:mx});
   }
   return out;
 }
@@ -1141,7 +1156,7 @@ function parseJD(text){
       const s=seg.trim();
       if(s.length<4) continue;
       // 内联段来自明确编号的列表，本身就是要求项，不该再套标题规则
-      const hits=hitsOf(s);
+      const hits=hitsOf(s, text);
       const w=weightOf(section,s);
       if(hits.length){
         for(const h of hits){
@@ -1163,7 +1178,7 @@ function parseProfile(text){
     .map(stripLine).filter(l=>l.length>=6);
   const owned={};
   for(const line of lines){
-    const hits=hitsOf(line).sort((a,b)=>b.maxLen-a.maxLen).slice(0,4);
+    const hits=hitsOf(line, text).sort((a,b)=>b.maxLen-a.maxLen).slice(0,4);
     for(const h of hits){
       if(h.maxLen<2) continue;
       (owned[h.key]=owned[h.key]||[]).push(line);

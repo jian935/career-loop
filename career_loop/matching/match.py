@@ -310,16 +310,19 @@ def _profile_lines(profile: str) -> list[str]:
     return lines
 
 
-def _claim_lines(lines: list[str]) -> dict[str, list[str]]:
+def _claim_lines(lines: list[str], doc: str = "") -> dict[str, list[str]]:
     """把每一行归属给命中的能力。
 
     规则：命中词长度必须 >= 2；同一行里长度处于同一档（top-1 或 top-2）的能力都能认领，
     只有当某能力命中词明显更短（比最长短 2 以上）时才丢弃，避免一行后端描述把
     Python 和工程都算上，也避免几个平级能力互相挤掉。
+
+    `doc` 传简历全文时，过泛词的语境判定会放宽到整篇简历
+    （"有服务意识"是通用能力，不该被算成工程落地）。
     """
     owned: dict[str, list[str]] = {}
     for line in lines:
-        hits = canonical_hits(line)
+        hits = canonical_hits(line, doc=doc or line)
         if not hits:
             continue
         ranked = sorted(
@@ -342,7 +345,7 @@ def _claim_lines(lines: list[str]) -> dict[str, list[str]]:
 
 def match_by_rules(requirements: list[Requirement], profile: str) -> dict[str, MatchResult]:
     lines = _profile_lines(profile)
-    owned = _claim_lines(lines)
+    owned = _claim_lines(lines, doc=profile)
     results: dict[str, MatchResult] = {}
     for req in requirements:
         if req.key.startswith("custom:"):

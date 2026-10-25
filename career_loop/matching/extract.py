@@ -132,15 +132,42 @@ def _detect_section(line: str) -> str | None:
 
 
 def _looks_like_title(line: str) -> bool:
-    """JD 第一行常常是岗位名（没有 # 号），不能当成要求。"""
+    """JD 第一行常常是岗位名（没有 # 号），不能当成要求。
+
+    判定用**双向判据**，不能只靠"含要求动词就不算标题"：
+    只做否定判断时，遇到动词表以外的动词就一律误判成标题——
+    实测真实中文 JD 里「具有较强的技术工程能力和技能」
+    「吃苦耐劳，有良好的团队合作精神和组织协调能力」
+    「与国内供应商建立并维护良好的合作关系」三条都被当成岗位名丢掉。
+
+    规则：
+    1. 太长 / 带句号 → 不是标题（要求行长这样）
+    2. 含要求动词 → 不是标题
+    3. **看起来像个岗位名**（短、以常见岗位后缀结尾、或就是职位名）→ 是标题
+    4. 其余 → **不是标题**（宁可留，不可丢）
+    """
     s = line.strip(" #*【】")
+    # 去掉括号补充说明（"Java开发工程师（双休）" 的职位主体是"Java开发工程师"）
+    s = re.split(r"[（(【\[]", s)[0].strip() or line.strip(" #*【】")
     if len(s) > 30:
         return False
     if any(p in s for p in "。；;！？"):
         return False
     verbs = ("负责", "要求", "熟悉", "掌握", "具备", "能够", "参与", "独立",
              "优先", "经验", "熟练", "了解", "精通", "使用", "会")
-    return not any(v in s for v in verbs)
+    if any(v in s for v in verbs):
+        return False
+    # 常见岗位名后缀 / 职位名形态 —— 只有这些才判成标题
+    title_suffixes = ("工程师", "经理", "主管", "专员", "助理", "实习生", "顾问",
+                      "总监", "组长", "部长", "代表", "开发", "设计", "运营",
+                      "销售", "采购", "翻译", "教师", "讲师", "分析师", "BD")
+    if any(s.endswith(x) for x in title_suffixes):
+        return True
+    # 极短的孤立词组（如「前端开发」「数据分析」）——但要含职位感
+    if len(s) <= 8 and any(k in s for k in ("开发", "设计", "运营", "分析", "测试", "前端", "后端")):
+        return True
+    # 其余默认不是标题
+    return False
 
 
 def _split_inline_segments(line: str) -> list[str]:
@@ -262,7 +289,7 @@ def extract_by_rules(jd_text: str) -> list[Requirement]:
     best: dict[str, Requirement] = {}
     for section, line in _split_sections(jd_text):
         weight = _weight_for(section, line)
-        hits = canonical_hits(line)
+        hits = canonical_hits(line, doc=jd_text)
         if hits:
             for key in hits:
                 existing = best.get(key)

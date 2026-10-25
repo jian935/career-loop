@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from career_loop.cli import DOMAIN_CN                      # noqa: E402
 from career_loop.matching.schema import (                  # noqa: E402
-    DOMAIN_PACKS, GENERAL_DIMS, TAXONOMY,
+    CONTEXT_REQUIRED, DOMAIN_PACKS, GENERAL_DIMS, TAXONOMY,
 )
 
 HTML = ROOT / "docs" / "index.html"
@@ -49,12 +49,22 @@ def render_packs() -> str:
     return "\n".join(lines)
 
 
+def render_context() -> str:
+    """渲染过泛词的语境约束表（Python ↔ 网页必须一致，否则两边结果不同）。"""
+    lines = []
+    for key, words in CONTEXT_REQUIRED.items():
+        ws = ",".join(js_str(w) for w in words)
+        lines.append(f'  {js_str(key)}:[{ws}],')
+    return "\n".join(lines)
+
+
 def build_block() -> str:
     return (
         "/* VOCAB:BEGIN 由 scripts/sync_web_vocab.py 从 career_loop/matching/schema.py 自动生成，勿手改 */\n"
         f"const TAXONOMY = {{\n{render_dims(TAXONOMY)}\n}};\n"
         f"const GENERAL_DIMS = {{\n{render_dims(GENERAL_DIMS)}\n}};\n"
         f"const DOMAIN_PACKS = {{\n{render_packs()}\n}};\n"
+        f"const CONTEXT_REQUIRED = {{\n{render_context()}\n}};\n"
         "/* VOCAB:END */\n"
     )
 
