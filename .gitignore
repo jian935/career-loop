@@ -18,5 +18,7 @@ benchmark/real_jds*.jsonl
 benchmark/target_jds*.jsonl
 # 真实公开评测数据集（250MB+，由 scripts/fetch_real_eval_data.py 下载，不入库）
 data/real_eval/
+# 中文公开 JD 评测数据集（9.3MB，由 scripts/fetch_cn_eval_data.py 下载，不入库）
+data/cn_eval/
 # 个人真实投递校准数据（含岗位/公司/渠道，绝不入库；用 scripts/run_calibration.py 跑）
 data/calibration/

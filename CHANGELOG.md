@@ -4,6 +4,25 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.9] - 2026-10-25
+
+### 中文真实 JD 族识别检验（新增，公开可复现）
+- 新增 `scripts/cn_eval_family.py` + `scripts/fetch_cn_eval_data.py`：基于公开数据集 HuggingFace `ngtranai09/china_job`（8,674 条真实中文招聘 JD）。
+- **标签用岗位名而非数据集自带的 `searched_job_title`**：后者是采集时的搜索词，噪声极高（搜 "Program Development" 的 30 条里只有 1 条岗位名对得上），拿它当 ground truth 会得出错误结论。
+- 只统计中文 JD（中文字符 ≥ 15%）、只统计岗位名可明确判族的记录 → 可检验样本 1,853 条。
+- **中文族识别 72.2% → 77.8%**；英文公开集保持 93.6% 不变。
+
+### 补中文词表（按"禁用过泛词"铁律）
+- 补 service / project_mgmt / consulting / ai_solution / it_systems / media / banking / public_admin / film / product / education 等族的中文职能词。
+- **「咨询」「顾问」被判定为过泛并剔除**：出现在 9.3% 的中文 JD 里（保险咨询 / 招聘咨询都算），换成「咨询顾问 / 管理咨询 / 咨询项目」等具体组合——准确率只掉 0.3 个点但词表干净得多。
+
+### 两个被证伪的想法（已回滚，记录在案）
+- **按词长加权提升判别力**：假设「3 字以上专有词更可靠、2 字通用词降权」，实测中文 top1 准确率反从 41.9% 掉到 40.5% → 长度不等于判别力，已回滚。
+- **用 `searched_job_title` 当标签**：噪声太高，会得出完全错误的结论。
+
+### 校验
+75 个单测全过（新增 6 条中文词表回归）、评测集 60 条一致率 1.0、`audit.py` 32/32、英文族识别 93.6% 无回归、网页词表已同步。
+
 ## [0.8.8] - 2026-10-25
 
 ### 终局录取级校准（新增脚本）

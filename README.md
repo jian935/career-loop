@@ -292,7 +292,8 @@ career-loop calibrate --data data/demo_applications.jsonl
 **真实数据检验（可复现）：** 用公开数据集 `job-resume-matching`（1,167 真实 JD + 9,544 真实简历
 + 122,560 真实匹配标注）跑出：
 
-- 族识别准确率 **93.6%**（FINANCE 96.6% / HR 99.5% / BUSINESS-DEVELOPMENT 100% / IT 93.3% / SALES 78.4%）
+- 族识别准确率 **93.6%**（英文 1,167 条：FINANCE 96.6% / HR 99.5% / BUSINESS-DEVELOPMENT 100% / IT 93.3% / SALES 78.4%）
+- 中文族识别 **77.8%**（1,853 条真实中文 JD，公开数据集 `ngtranai09/china_job`）——中文场景更难，如实并列
 - 匹配分 ↔ 真实标注 `final_score` 的 Pearson **r = 0.193**（2,000 真实配对，弱正相关）
 
 r 偏低且为正，符合预期：引擎当前是**规则关键词基线**，而 `final_score` 是**多维语义匹配**，

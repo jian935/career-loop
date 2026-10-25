@@ -679,5 +679,50 @@ class TestChineseVocabFromRealData(unittest.TestCase):
         self.assertNotIn("fe_framework", {r.key for r in reqs})
 
 
+class TestChineseVocabularyCoverage(unittest.TestCase):
+    """用公开中文 JD 数据集补的词，要能命中，且不误伤其他族。
+
+    公开数据集：HuggingFace ngtranai09/china_job（8,674 条真实中文招聘 JD）。
+    中文族识别从 72.2% 提到 77.8% 就是靠这批词。
+    """
+
+    def _detect(self, text: str) -> list[str]:
+        from career_loop.matching.schema import detect_domains
+
+        return detect_domains(text)
+
+    def test_customer_service_words_hit(self):
+        jd = "岗位职责：1、负责在线客户咨询解答，处理工单记录与客户问题跟进。"
+        self.assertIn("service", self._detect(jd))
+
+    def test_project_management_words_hit(self):
+        jd = "岗位职责：1、负责项目进度管理与项目交付，协调资源确保项目按期落地。"
+        self.assertIn("project_mgmt", self._detect(jd))
+
+    def test_banking_words_hit(self):
+        jd = "岗位职责：1、负责信用卡消费信贷审批与贷后管理，排查逾期风险。"
+        self.assertIn("banking", self._detect(jd))
+
+    def test_legal_words_hit(self):
+        jd = "岗位职责：1、负责合同起草与审核，参与知识产权相关法务工作。"
+        self.assertIn("legal", self._detect(jd))
+
+    def test_generic_consulting_word_is_not_used(self):
+        # 「咨询」在 9.3% 的中文 JD 里都出现（含保险咨询/招聘咨询），过泛，
+        # 只能用「咨询顾问/管理咨询/咨询项目」这类具体组合
+        from career_loop.matching.schema import DOMAIN_PACKS
+
+        csl = DOMAIN_PACKS["consulting"]
+        kws = {k for spec in csl.values() for k in spec["kw"]}
+        self.assertNotIn("咨询", kws)
+        self.assertNotIn("顾问", kws)
+        self.assertIn("咨询顾问", kws)
+
+    def test_new_words_do_not_steal_ai_roles(self):
+        jd = "岗位职责：1、负责大模型算法研发，训练推荐模型并搭建 RAG 检索链路。"
+        preds = self._detect(jd)
+        self.assertIn("ai", preds, preds)
+
+
 if __name__ == "__main__":
     unittest.main()

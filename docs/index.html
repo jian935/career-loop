@@ -388,7 +388,8 @@
   <section class="evidence" id="evidence">
     <div class="sec-head"><h2>验证闭环 · 证据墙</h2><span>匹配分不是玄学：公开数据可复现，失效区间也公开</span></div>
     <div class="ev-grid">
-      <div class="ev-card"><div class="k">93.6<span class="u">%</span></div><div class="l">岗位族识别准确率</div><div class="n">1,167 条真实 JD · 公开数据集</div></div>
+      <div class="ev-card"><div class="k">93.6<span class="u">%</span></div><div class="l">岗位族识别（英文 JD）</div><div class="n">1,167 条真实 JD · 公开数据集</div></div>
+      <div class="ev-card"><div class="k">77.8<span class="u">%</span></div><div class="l">岗位族识别（中文 JD）</div><div class="n">1,853 条真实 JD · 公开数据集</div></div>
       <div class="ev-card"><div class="k">0.193</div><div class="l">引擎分 ↔ 真实标注 Pearson r</div><div class="n">2,000 对 · 弱正相关（规则基线水位）</div></div>
       <div class="ev-card warn"><div class="k">−0.255</div><div class="l">作者私有 40 条真实投递</div><div class="n">关键词饱和导致反向 · 敢公开才叫可证伪</div></div>
     </div>
@@ -469,8 +470,8 @@ office:{label:"办公软件", kw:["excel","word","ppt","wps","office","表格","
 };
 const DOMAIN_PACKS = {
   product:{
-    prod_prd:{label:"PRD/需求文档", kw:["prd","需求文档","需求分析","原型","axure","墨刀"]},
-    prod_roadmap:{label:"产品规划", kw:["产品规划","路线图","版本规划","迭代规划"]},
+    prod_prd:{label:"PRD/需求文档", kw:["prd","需求文档","需求分析","原型","axure","墨刀","需求评审","需求梳理","功能设计","原型图","用户故事","竞品分析"]},
+    prod_roadmap:{label:"产品规划", kw:["产品规划","路线图","版本规划","迭代规划","产品设计","产品迭代","灰度发布","上线复盘","产品经理"]},
   },
   marketing:{
     mkt_content:{label:"内容/文案", kw:["文案","内容运营","选题","脚本","种草","小红书","抖音","content marketing","copywriting","social media","blog"]},
@@ -509,9 +510,9 @@ const DOMAIN_PACKS = {
     hr_labor:{label:"劳动法/社保用工", kw:["劳动法","社保","公积金","用工","劳动关系","入离职","labor law","employment law","employee relations","onboarding","offboarding","hr compliance"]},
   },
   education:{
-    edu_teach:{label:"教学/授课", kw:["教学","授课","备课","课堂","学员"]},
-    edu_curriculum:{label:"课程/教研", kw:["课程","教研","教案","课纲"]},
-    edu_student:{label:"学员/班级管理", kw:["班主任","学生管理","家校","学员服务","班级"]},
+    edu_teach:{label:"教学/授课", kw:["教学","授课","备课","课堂","学员","教师岗","任课","授课教师","教研活动"]},
+    edu_curriculum:{label:"课程/教研", kw:["课程","教研","教案","课纲","课程研发","课程设计","教材","教研员"]},
+    edu_student:{label:"学员/班级管理", kw:["班主任","学生管理","家校","学员服务","班级","招生","续费","学员运营"]},
     edu_exam:{label:"考试/测评", kw:["考务","阅卷","考试组织","学习效果","测验"]},
   },
   healthcare:{
@@ -551,7 +552,7 @@ const DOMAIN_PACKS = {
     mlops_serve:{label:"MLOps/模型部署", kw:["模型部署","模型推理","推理服务","推理加速","模型监控","mlops","kubernetes","triton","serving","模型压缩"]},
   },
   ai_solution:{
-    sol_presales:{label:"AI 解决方案/售前", kw:["解决方案","售前","poc","方案演示","客户需求","投标"]},
+    sol_presales:{label:"AI 解决方案/售前", kw:["解决方案","售前","poc","方案演示","客户需求","投标","方案设计","需求分析","技术方案","解决方案设计","标书"]},
   },
   ai_ops:{
     aiops_label:{label:"AI 运营/数据标注", kw:["数据标注","标注规范","训练师","badcase","评测集","问题归因"]},
@@ -573,11 +574,11 @@ const DOMAIN_PACKS = {
     tour_travel:{label:"旅游/计调", kw:["旅游","导游","线路","计调","地接","组团"]},
   },
   it_systems:{
-    its_impl:{label:"信息系统实施", kw:["erp","系统实施","需求调研","系统配置","上线支持","信息系统","system implementation","erp implementation","system configuration"]},
-    its_ops:{label:"系统运维/工单", kw:["系统运维","工单","故障处理","用户支持","权限管理","system administration","active directory","help desk","technical support","ticketing","incident management","vendor management","networking"]},
+    its_impl:{label:"信息系统实施", kw:["erp","系统实施","需求调研","系统配置","上线支持","信息系统","系统上线","部署实施","客户培训","软件部署","system implementation","erp implementation","system configuration"]},
+    its_ops:{label:"系统运维/工单", kw:["系统运维","工单","故障处理","用户支持","权限管理","服务器运维","系统管理","it运维","技术支持","system administration","active directory","help desk","technical support","ticketing","incident management","vendor management","networking"]},
   },
   project_mgmt:{
-    pmg_deliver:{label:"项目管理", kw:["项目计划","进度管控","项目风险","验收","pmp","里程碑","跨部门协作"]},
+    pmg_deliver:{label:"项目管理", kw:["项目计划","进度管控","项目风险","验收","pmp","里程碑","跨部门协作","项目进度","项目交付","项目管理经验","项目统筹","项目跟进","项目落地"]},
     pmg_agile:{label:"敏捷/迭代管理", kw:["敏捷","scrum","sprint","迭代管理","站立会"]},
   },
   trade:{
@@ -659,9 +660,9 @@ const DOMAIN_PACKS = {
     qm_improve:{label:"持续改进", kw:["六西格玛","持续改进","质量改善","8d","pdca","精益"]},
   },
   banking:{
-    bank_credit:{label:"信贷/授信", kw:["信贷","授信","贷前","贷后","征信","放款"]},
-    bank_retail:{label:"零售/网点", kw:["理财","存款","网点","柜面","零售银行","客户经理"]},
-    bank_risk:{label:"信用风险", kw:["信用风险","拨备","不良贷款","风险分类","贷后管理"]},
+    bank_credit:{label:"信贷/授信", kw:["信贷","授信","贷前","贷后","征信","放款","信用卡","消费信贷","小微贷款","银行客户经理","贷款","逾期"]},
+    bank_retail:{label:"零售/网点", kw:["理财","存款","网点","柜面","零售银行","客户经理","手机银行","网银","理财经理","存款营销","普惠金融"]},
+    bank_risk:{label:"信用风险", kw:["信用风险","拨备","不良贷款","风险分类","贷后管理","风险控制","合规审查","反洗钱","资产质量"]},
   },
   insurance:{
     ins_underwrite:{label:"核保/承保", kw:["核保","承保","费率","再保","投保"]},
@@ -674,17 +675,17 @@ const DOMAIN_PACKS = {
     sec_invest:{label:"投资/交易", kw:["投研","组合管理","二级市场","路演","投资建议"]},
   },
   consulting:{
-    csl_industry:{label:"商业分析/研究", kw:["管理咨询","商业分析","战略咨询","市场研究","market research","commercial analysis","strategy consulting","business analysis"]},
-    csl_delivery:{label:"咨询交付", kw:["咨询项目","客户访谈","汇报材料","驻场","顾问项目"]},
+    csl_industry:{label:"商业分析/研究", kw:["管理咨询","商业分析","战略咨询","市场研究","咨询顾问","咨询公司","咨询项目","咨询服务","咨询方案","咨询岗","market research","commercial analysis","strategy consulting","business analysis"]},
+    csl_delivery:{label:"咨询交付", kw:["咨询项目","客户访谈","汇报材料","驻场","顾问项目","客户需求调研","咨询顾问","咨询公司","咨询服务","咨询团队","咨询业务"]},
     csl_strategy:{label:"战略/组织", kw:["战略规划","商业模式","组织设计","流程再造","对标分析","strategic planning","business strategy","organizational design","benchmarking"]},
   },
   media:{
-    med_pr:{label:"公关/媒体关系", kw:["媒体关系","新闻稿","舆情","发布会","媒体投放"]},
-    med_edit:{label:"编辑/校对", kw:["编辑","校对","稿件","选题策划","内容审核"]},
+    med_pr:{label:"公关/媒体关系", kw:["媒体关系","新闻稿","舆情","发布会","媒体投放","品牌传播","媒体资源","危机公关","广告投放"]},
+    med_edit:{label:"编辑/校对", kw:["编辑","校对","稿件","选题策划","内容审核","文案撰","内容创作","文章撰写","图文编辑","推文","资讯编辑"]},
   },
   film:{
-    film_shoot:{label:"拍摄/编导", kw:["拍摄","分镜","编导","导演","脚本策划"]},
-    film_post:{label:"剪辑/后期", kw:["剪辑","后期","调色","字幕","成片"]},
+    film_shoot:{label:"拍摄/编导", kw:["拍摄","分镜","编导","导演","脚本策划","制片","影视","节目制作","综艺","影视制作","摄影"]},
+    film_post:{label:"剪辑/后期", kw:["剪辑","后期","调色","字幕","成片","影视后期","特效","包装","调音"]},
   },
   game:{
     game_design:{label:"游戏策划", kw:["游戏策划","关卡","数值","玩法","系统策划"]},
@@ -696,9 +697,9 @@ const DOMAIN_PACKS = {
     tr_cat:{label:"CAT 工具", kw:["trados","cat 工具","语料","译后编辑","memoq"]},
   },
   service:{
-    cs_hotline:{label:"客服/工单", kw:["客服","呼叫中心","在线客服","话术","接线"]},
-    cs_complaint:{label:"投诉/异常处理", kw:["投诉","客诉","异常处理","退款","赔付"]},
-    cs_quality:{label:"服务质检", kw:["质检","录音抽检","服务标准","满意度回访","服务培训"]},
+    cs_hotline:{label:"客服/工单", kw:["客服","呼叫中心","在线客服","话术","接线","客服专员","客服代表","在线服务","接待","咨询解答","客户咨询","工单处理","客服中心"]},
+    cs_complaint:{label:"投诉/异常处理", kw:["投诉","客诉","异常处理","退款","赔付","售后","退换货","纠纷","客户问题处理"]},
+    cs_quality:{label:"服务质检", kw:["质检","录音抽检","服务标准","满意度回访","服务培训","客户满意度","回访","服务态度"]},
   },
   retail:{
     rt_store:{label:"门店/连锁", kw:["门店","连锁","陈列","导购","巡店","店长"]},
@@ -744,8 +745,8 @@ const DOMAIN_PACKS = {
     rs_method:{label:"研究方法/统计", kw:["统计方法","计量模型","计量经济学","spss","stata","r 语言","问卷"]},
   },
   public_admin:{
-    pub_document:{label:"公文/政策", kw:["公文","行文","政务","汇报材料","政策法规","政策研究"]},
-    pub_service:{label:"窗口/基层服务", kw:["窗口服务","办事大厅","群众","基层","公共服务"]},
+    pub_document:{label:"公文/政策", kw:["公文","行文","政务","汇报材料","政策法规","政策研究","政府关系","政府事务","政策制定","立法","人大","政协"]},
+    pub_service:{label:"窗口/基层服务", kw:["窗口服务","办事大厅","群众","基层","公共服务","街道办","社区工作","网格员","政务服务"]},
   },
   social:{
     soc_case:{label:"个案/社区工作", kw:["个案","小组工作","社区","帮扶","走访"]},
