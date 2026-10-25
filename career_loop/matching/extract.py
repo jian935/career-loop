@@ -9,10 +9,43 @@ from .llm import LLM, LLMError
 from .schema import ALL_DIMS, Requirement, canonical_hits
 
 SECTION_MARKERS = {
-    "job": ["岗位职责", "工作职责", "工作内容", "职位描述", "你将", "职责"],
-    "must": ["任职要求", "岗位要求", "任职资格", "基础要求", "要求"],
-    "nice": ["优先条件", "加分项", "优先", "bonus"],
+    "job": ["岗位职责", "工作职责", "工作内容", "职位描述", "你将", "职责",
+            "essential duties", "essential functions", "job duties", "responsibilities",
+            "what you will do", "the role", "your impact", "about the role",
+            "position summary", "role overview", "job description"],
+    "must": ["任职要求", "岗位要求", "任职资格", "基础要求", "要求",
+             "requirements", "required", "qualifications", "minimum qualifications",
+             "must have", "you have", "who you are", "minimum education",
+             "basic qualifications", "we are looking for", "you should have"],
+    "nice": ["优先条件", "加分项", "优先", "bonus",
+             "nice to have", "preferred", "preferred qualifications", "plus",
+             "good to have", "desirable", "extra credit"],
 }
+
+# 英文 JD 里大量"看起来像标题"的行：全大写段落名、URL、栏目标签。
+# 它们会被规则基线当成一条"要求"，产出 custom 垃圾能力项
+# （实测公开英文数据集上 custom 项占抽取总数 29.5%，严重稀释匹配分区分度）。
+EN_NOISE_PATTERNS = [
+    re.compile(r"https?://", re.I),
+    re.compile(r"www\.", re.I),
+    re.compile(r"^[A-Z0-9\s/&'()\-.,:#]{3,}$"),   # 全大写行
+    re.compile(r"^(e-?mail|email)\s*[:：]?\s*\S+", re.I),
+    re.compile(r"^(phone|tel|address|location|salary|posted|date)\s*[:：]", re.I),
+    re.compile(r"^\W*$"),
+    re.compile(r"[$¥€£]\s?\d"),                       # 薪资数字行
+]
+
+# 全大写标题判定：字母里 90% 以上是大写 → 是栏目标题，不是能力要求。
+# 比字符白名单正则稳，因为标题里常有中文标点、弯引号、& 等杂字符。
+_UPPER_RATIO = 0.9
+
+# 英文 JD 常见的"栏目式"要求行（本身是模板文字，不是具体能力要求）
+EN_TEMPLATE_PHRASES = [
+    "hello folks", "hope you are", "we are looking for", "we want you",
+    "please apply", "click here", "join our", "about us", "why you",
+    "what we offer", "what we do", "our team", "our mission", "equal opportunity",
+    "salary is", "benefits include", "how to apply", "good luck",
+]
 
 STRONG_WORDS = ["精通", "深入", "独立", "主导", "熟练掌握", "扎实", "闭环", "从0到1", "从 0 到 1"]
 
@@ -28,6 +61,39 @@ NOISE_MARKERS = [
 ]
 
 
+def _is_upper_heading(line: str) -> bool:
+    """全大写标题行（ESSENTIAL DUTIES / MINIMUM EDUCATION…）判定。
+
+    要求：字母数 >= 4，且其中 90% 以上是大写。
+    中文行不含英文字母，天然不满足，不会误伤。
+    """
+    letters = [c for c in line if c.isalpha() and c.isascii()]
+    if len(letters) < 4:
+        return False
+    upper = sum(1 for c in letters if c.isupper())
+    return upper / len(letters) >= _UPPER_RATIO
+
+
+def _is_noise_line(line: str) -> bool:
+    """判断一行是不是 JD 模板噪声（URL、全大写标题、栏目标签、招呼语）。
+
+    英文招聘 JD 有大量这类行。不滤掉的话，规则基线会把它们当成"要求"，
+    产出一堆 custom 垃圾能力项，实测占抽取总数的 29.5%。
+    """
+    stripped = line.strip()
+    if not stripped:
+        return True
+    low = stripped.lower()
+    if any(p in low for p in EN_TEMPLATE_PHRASES):
+        return True
+    if _is_upper_heading(stripped):
+        return True
+    for pat in EN_NOISE_PATTERNS:
+        if pat.search(stripped):
+            return True
+    return False
+
+
 def _looks_like_requirement(line: str) -> bool:
     """在“职责/要求/优先”段里，只要不是噪声行，就当作要求。
 
@@ -37,6 +103,8 @@ def _looks_like_requirement(line: str) -> bool:
     if len(line) < 6 or len(line) > 120:
         return False
     if any(n in line for n in NOISE_MARKERS):
+        return False
+    if _is_noise_line(line):
         return False
     return True
 

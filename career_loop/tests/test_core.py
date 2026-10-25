@@ -483,5 +483,125 @@ class TestCliDbRouting(unittest.TestCase):
             self.assertEqual(rc, 1)
 
 
+class TestNegationScope(unittest.TestCase):
+    """否定辖域判定：否定词 + 动作词 不能被当成正向证据。
+
+    早期实现用固定短语表穷举否定词（"没做过"/"没用过"…），
+    于是「没搭建过工作流」「没独立负责过项目」「没写过正式文档」
+    这类**否定词 + 动作词**的组合因为没被短语表覆盖，被判成了 full。
+    改成按辖域判定后这类句子一律降级，且不能误伤肯定句。
+    """
+
+    JD = "需要有 Agent 开发经验，能搭建多智能体工作流。"
+
+    def _status(self, profile: str, jd: str | None = None) -> str:
+        reqs, _ = matching.extract_requirements(jd or self.JD, None)
+        got = matching.match_by_rules(reqs, profile).get("agent")
+        return got.status if got else "missing"
+
+    def test_negated_action_is_not_full(self):
+        self.assertNotEqual(self._status("没搭建过多智能体工作流"), "full")
+
+    def test_negated_action_is_partial(self):
+        self.assertEqual(self._status("没搭建过多智能体工作流"), "partial")
+
+    def test_negation_scope_spans_filler_words(self):
+        # 「没自己独立搭建过」——否定词与动作词之间隔着填充词，辖域仍成立
+        self.assertEqual(
+            self._status("了解 Agent 的基本概念，跟过教程但没自己独立搭建过工作流。"),
+            "partial",
+        )
+
+    def test_limiter_weakens_evidence(self):
+        # 「只在课程作业里跑通过」——动作被"只"限定，不算完整落地
+        self.assertEqual(
+            self._status("没搭建过多智能体工作流，只在课程作业里跑通过单 Agent 例子。"),
+            "partial",
+        )
+
+    def test_inhibitors_are_not_negation(self):
+        # 「不仅…还…」/「不断…」/「未来…」整体是肯定语义
+        for profile in (
+            "不仅实现了 Agent 工作流，还落地到生产环境",
+            "不断迭代优化了 Agent 流程",
+        ):
+            self.assertEqual(self._status(profile), "full", profile)
+
+    def test_positive_sentence_still_full(self):
+        self.assertEqual(self._status("独立搭建过多智能体 Agent 工作流并上线"), "full")
+
+    def test_other_capability_action_does_not_leak(self):
+        # 后半句的"落地"属于别的能力，不能拿来给 Agent 当正向证据
+        jd = "需要有良好的文案与文档撰写能力。"
+        reqs, _ = matching.extract_requirements(jd, None)
+        got = matching.match_by_rules(reqs, "没写过正式文档，但独立落地过内容运营项目。")
+        self.assertEqual(got["writing"].status, "partial")
+
+
+class TestEnglishJDNoise(unittest.TestCase):
+    """英文 JD 的模板噪声不能变成能力要求。
+
+    实测公开英文数据集：custom 垃圾项占抽取总数 29.5%，
+    严重稀释匹配分的区分度（缺口清单里全是 "ESSENTIAL DUTIES" 这类标题）。
+    """
+
+    def _custom_labels(self, jd: str) -> list[str]:
+        reqs, _ = matching.extract_requirements(jd, None)
+        return [r.label for r in reqs if r.key.startswith("custom:")]
+
+    def test_uppercase_heading_is_not_a_requirement(self):
+        # 标题行本身被滤掉，但下面那句真实要求仍要抽出来（custom 项）
+        jd = "MINIMUM EDUCATION\nBachelor's degree required."
+        labels = self._custom_labels(jd)
+        self.assertEqual(len(labels), 1, labels)
+        self.assertNotIn("MINIMUM EDUCATION", labels[0])
+
+    def test_url_line_is_not_a_requirement(self):
+        jd = "APPLY HERE\nHTTPS://WWW.INDEED.COM/JOB/DIRECTOR-9C0196508A30CB63"
+        self.assertEqual(self._custom_labels(jd), [])
+
+    def test_greeting_line_is_not_a_requirement(self):
+        jd = "HELLO FOLKS,HOPE YOU ARE HAVING A GREAT DAY."
+        self.assertEqual(self._custom_labels(jd), [])
+
+    def test_real_requirement_still_extracted(self):
+        jd = "ESSENTIAL DUTIES\nManage a team of 5-25 executive consultants in marketing."
+        reqs, _ = matching.extract_requirements(jd, None)
+        customs = [r for r in reqs if r.key.startswith("custom:")]
+        self.assertEqual(len(customs), 1, [r.label for r in customs])
+        self.assertIn("consultants", customs[0].quote)
+        self.assertNotIn("ESSENTIAL DUTIES", customs[0].quote)
+
+
+class TestSalesFamilyDiscriminators(unittest.TestCase):
+    """sales 族用真实数据补的判别词，不许误伤别的族。
+
+    这些词来自公开数据集 SALES 类的 clean_skills 统计，
+    补进来后 SALES 族识别从 69.8% 提到 78.4%（总体 91.9% → 93.6%）。
+    """
+
+    def test_sales_jd_detected_as_sales(self):
+        from career_loop.matching.schema import detect_domains
+
+        jd = (
+            "Job title: Sales Representative Category: SALES "
+            "Skills: relationship building, customer relationship management, "
+            "lead generation, b2b sales, sales techniques, account management."
+        )
+        self.assertIn("sales", detect_domains(jd))
+
+    def test_new_sales_words_do_not_steal_hr(self):
+        from career_loop.matching.schema import detect_domains
+
+        jd = "Job title: HR Manager Category: HR Skills: recruiting, employee engagement, training."
+        self.assertIn("hr", detect_domains(jd))
+
+    def test_new_sales_words_do_not_steal_finance(self):
+        from career_loop.matching.schema import detect_domains
+
+        jd = "Job title: Accountant Category: FINANCE Skills: accounting, budgeting, tax, gaap."
+        self.assertIn("finance", detect_domains(jd))
+
+
 if __name__ == "__main__":
     unittest.main()

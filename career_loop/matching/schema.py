@@ -139,9 +139,9 @@ DOMAIN_PACKS: dict[str, dict] = {
         "mkt_private": {"label": "私域/社群", "kw": ["私域", "社群", "企微", "用户运营"]},
     },
     "sales": {
-        "sales_bd": {"label": "客户开发/BD", "kw": ["客户开发", "拓客", "bd", "商务拓展", "渠道开发", "销售", "业绩", "大客户", "电话销售", "面销"]},
-        "sales_negotiation": {"label": "商务谈判", "kw": ["谈判", "商务", "签约", "报价", "招投标"]},
-        "sales_crm": {"label": "CRM/客户管理", "kw": ["crm", "客户管理", "客户维护", "续约", "回款"]},
+        "sales_bd": {"label": "客户开发/BD", "kw": ["客户开发", "拓客", "bd", "商务拓展", "渠道开发", "销售", "业绩", "大客户", "电话销售", "面销", "lead generation", "prospecting", "new business", "business development", "b2b sales"]},
+        "sales_negotiation": {"label": "商务谈判", "kw": ["谈判", "商务", "签约", "报价", "招投标", "negotiation", "closing", "contract", "quota"]},
+        "sales_crm": {"label": "CRM/客户管理", "kw": ["crm", "客户管理", "客户维护", "续约", "回款", "customer relationship management", "account management", "customer engagement", "customer focus", "salesforce", "crm software"]},
     },
     "finance": {
         "fin_accounting": {"label": "会计核算", "kw": ["会计", "记账", "凭证", "总账", "应收应付", "核算", "账务"]},
