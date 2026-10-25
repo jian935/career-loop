@@ -118,7 +118,7 @@ replies", not "the score caused the reply".
 
 ## 6. Evaluation set
 
-`data/eval_sample.jsonl` contains 42 rows (14 capabilities × full/partial/missing).
+`data/eval_sample.jsonl` contains 50 rows: 16 capabilities (14 `TAXONOMY` AI/tech + 2 `GENERAL_DIMS` general: `writing`, `exec_project`) × full/partial/missing, plus 8 extra coverage/boundary cases.
 Each row is `{id, capability, expected, jd, profile}`. `run_eval` checks the
 predicted status **for that capability only** and reports per-capability accuracy
 plus badcases.
@@ -126,6 +126,12 @@ plus badcases.
 The set is a **regression lock**: it prevents rule changes from silently breaking
 known cases. It is synthetic and boundary-focused; it is **not** a claim of
 real-world accuracy.
+
+Separately, real-world end-to-end agreement is validated on the public
+`job-resume-matching` dataset (family-identification accuracy **91.9%**; engine score
+vs. the dataset's `final_score` gives Pearson **r = 0.193** over 2,000 real pairs).
+That is a real-label check on real data — a different, honest claim from "this score
+predicts your offer". See `docs/benchmark.md` §2.2.
 
 ## 7. Ambiguous keywords
 

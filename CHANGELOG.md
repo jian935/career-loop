@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.6] - 2026-10-25
+
+### 评测体系升级（W6）
+- 控制回归集 `data/eval_sample.jsonl` 从 42 条扩到 **50 条**：新增 `GENERAL_DIMS` 通用能力覆盖（writing、exec_project）+ 8 条边界/覆盖样本；规则基线一致率仍 1.0。
+- 正式把公开 HF 集的真实端到端验证（族识别 91.9% / r=0.193）列为评测体系第二支柱（`docs/benchmark.md` §2.2）。
+- 修正口径：不再把合成控制集夸大为「真实人工标注」；如实记录引擎已知局限（否定语境动作词消解弱），并列为后续修复项。
+- 同步更新 benchmark.md / methodology.md / README / submission.md / evidence.md。
+
 ## [0.8.5] - 2026-10-25
 
 ### 社媒传播素材（W8 复盘长文）

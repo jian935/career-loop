@@ -11,23 +11,26 @@ python -m career_loop eval --data data/eval_sample.jsonl --badcases badcases.jso
 Expected:
 
 ```
-评测集 42 条　规则基线一致率 1.0
+评测集 50 条　规则基线一致率 1.0
 逐能力：
-  agent              1.0  (3/3)
+  agent              1.0  (4/4)
   coding_tools       1.0  (3/3)
   ...
-  14 个能力均为 1.0
+  16 个能力均为 1.0
 无 badcase。
 ```
 
 | Property | Value |
 | --- | --- |
-| Cases | 42 (14 capabilities × full / partial / missing) |
+| Cases | 50 (16 capabilities × full / partial / missing, + 8 coverage / boundary cases) |
 | Baseline accuracy | 1.0 |
 | Badcases | 0 |
 
 **What this number means.** The set is hand-built to cover boundary behavior
-(negation, "did a demo only", headings that look like requirements). Passing it
+(negation, "did a demo only", headings that look like requirements). It now spans
+the 14 `TAXONOMY` AI/tech capabilities **plus 2 `GENERAL_DIMS` general capabilities**
+(writing, exec_project) and 8 extra coverage/boundary cases, so the regression lock
+also guards the general-capability path and a few "missing-vs-partial" edges. Passing it
 means the rules still behave as specified. It is a **regression lock**, not a
 claim that the engine is 100% accurate on real JDs.
 
@@ -35,7 +38,7 @@ claim that the engine is 100% accurate on real JDs.
 normal and welcome change — fix the rule or mark the case, then document the new
 number.
 
-## 2. Calibration demo (synthetic)
+### 2.1 Calibration demo (synthetic)
 
 ```bash
 python -m career_loop calibrate --data data/demo_applications.jsonl
@@ -56,11 +59,29 @@ These are **synthetic demo data** used to show how to read the report. They are
 not the author's job-search statistics. With real data, run `calibrate` without
 `--data`.
 
-**Real-data check:** on the public `job-resume-matching` dataset (1,167 real JDs +
-9,544 real résumés + 122,560 real match labels), family-identification accuracy is
-**91.9%** and the engine score vs. the dataset's `final_score` gives Pearson **r = 0.193**
-(2,000 real pairs, weak positive). The engine is a rule baseline; a weak-but-positive
-r is expected next to a multi-dimensional semantic label. See `docs/real_eval_report.md`.
+### 2.2 Real-world end-to-end validation (public dataset)
+
+This is the **second pillar** of evaluation: instead of hand-built boundary cases,
+we score real (JD, résumé) pairs from a public, labeled corpus and check whether
+the engine agrees with the corpus's own human/algorithmic `final_score`.
+
+```bash
+python scripts/real_eval_family.py                       # family-identification accuracy on 1,167 real JDs
+python scripts/real_eval_calibrate.py --n 2000 --seed 7  # engine score vs real final_score, Pearson r
+```
+
+On the public `job-resume-matching` dataset (1,167 real JDs +
+9,544 real résumés + 122,560 real match labels, CC BY, no PII):
+
+- **Family-identification accuracy: 91.9%** (1072/1167) — FINANCE 96.6 / HR 99.5 /
+  BD 100 / IT 93.3 / SALES 69.8 (known weak spot).
+- **Engine score vs. the dataset's `final_score`: Pearson r = 0.193** (2,000 real
+  pairs, weak positive, reproducible with `--seed 7`). The engine is a rule baseline;
+  a weak-but-positive r is expected next to a multi-dimensional semantic label.
+
+This is the honest counterpart to §1: §1 locks *specified rule behavior* on synthetic
+cases; §2.2 checks *agreement with real labels* on real data. See
+`docs/real_eval_report.md` and `docs/evidence.md`.
 
 ## 3. Cross-engine parity (Python vs browser)
 
@@ -171,8 +192,10 @@ The mapping is heuristic keyword matching, not official data.
 
 ## 7. What we deliberately do not report
 
-- No "accuracy on real job postings" claim: we have no public, labeled, real-world
-  corpus.
+- No "end-to-end accuracy on *private* job-search outcomes" claim: we do **not**
+  publish the author's own application results (PII, gitignored). What we validate
+  on real data is *agreement with a public labeled corpus* (§2.2) — a different,
+  honest claim from "this score predicts your offer."
 - No ranking against career-ops or Resume-Matcher: they solve a different problem
   (full application pipeline / resume tailoring). Comparing scores across engines
   would require a shared labeled outcome dataset, which does not exist yet.
