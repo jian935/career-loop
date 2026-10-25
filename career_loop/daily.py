@@ -37,8 +37,12 @@ DEADLINE_CUES = ("截止时间", "截止日期", "截止", "截至", "deadline",
 #: 「招满为止」这类写法没有具体日期，单独识别，好明确告诉用户「JD 没给」
 OPEN_ENDED = ("招满为止", "长期有效", "长期招聘", "额满为止")
 
+# 正则为什么写成 `(?:^|[^\d])` 而不是更直观的 `(?<!\d)`：
+# 网页 demo 要复用同一份 pattern（由 sync_web_vocab.py 导出给 JS），
+# 而 JS 的 lookbehind 直到 Safari 16.4 才支持——用了它，老 Safari 上
+# `new RegExp()` 直接抛错，整页功能全挂。**为跨引擎一致宁可写得丑一点。**
 _DATE_FULL = re.compile(r"(\d{4})\s*[年\-/.]\s*(\d{1,2})\s*[月\-/.]\s*(\d{1,2})")
-_DATE_SHORT = re.compile(r"(?<!\d)(\d{1,2})\s*[月/.-]\s*(\d{1,2})\s*日?(?!\d)")
+_DATE_SHORT = re.compile(r"(?:^|[^0-9])(\d{1,2})\s*[月/.-]\s*(\d{1,2})\s*日?(?!\d)")
 
 
 @dataclass
@@ -179,7 +183,12 @@ def _first_date(window: str, today: Optional[date] = None) -> Optional[str]:
                 got = _mk_date(year, month, day)
                 if got and date.fromisoformat(got) >= today:
                     return got
-            return _mk_date(today.year, month, day, today)
+            # 走到这里只可能是两年都算不出合法日期（如 2/30）：
+            # today.year+1 的那天一定 >= today，所以正常情况上面已经返回了。
+            # 这一行以前写成 `_mk_date(today.year, month, day, today)`——
+            # 多传一个参数是清签名时的漏网，且这条分支直到跨引擎检查
+            # 拿「2026-02-30」去喂才被踩到（会抛 TypeError）。
+            return None
     return None
 
 

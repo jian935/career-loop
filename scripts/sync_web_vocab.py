@@ -94,6 +94,61 @@ def render_family_keys() -> str:
     return f"const FAMILY_KEYS = [{','.join(js_str(k) for k in keys)}];"
 
 
+def render_daily_rules() -> str:
+    """截止日抽取规则（线索词 / 「招满为止」 / 两条日期正则）——给网页的 daily 用。
+
+    **pattern 本身也导出**，而不是在网页里手写一份：手写必漂移，
+    而漂移的表现是「网页说 11 月 30 截止、CLI 说没截止」，用户当场失去信任。
+    注意两边都用同一个 pattern，所以 daily.py 里的正则必须避开 JS 不支持的
+    语法（lookbehind 在 Safari 16.4 之前会整段崩）。
+    """
+    from career_loop.daily import (
+        DEADLINE_CUES, OPEN_ENDED, _DATE_FULL, _DATE_SHORT,
+    )
+
+    cues = ",".join(js_str(c) for c in DEADLINE_CUES)
+    open_ended = ",".join(js_str(c) for c in OPEN_ENDED)
+    return (
+        f"const DAILY_CUES = [{cues}];\n"
+        f"const DAILY_OPEN_ENDED = [{open_ended}];\n"
+        f"const RE_DATE_FULL = {js_str(_DATE_FULL.pattern)};\n"
+        f"const RE_DATE_SHORT = {js_str(_DATE_SHORT.pattern)};"
+    )
+
+
+def render_occupations() -> str:
+    """职业分类覆盖面的**计算结果**（不是原始数据）——给网页的对账表用。
+
+    这里刻意导出**算好的** summary 而不是让网页自己数：算两次的必然结果是
+    慢慢漂移，而 Python 是唯一的计算方（`taxonomy_cn.coverage_summary`）。
+    网页侧只负责渲染。
+    """
+    from career_loop.matching.taxonomy_cn import (
+        MIDS_IN_DICTIONARY_2022, coverage_matrix, coverage_summary,
+    )
+    rows = []
+    for r in coverage_matrix():
+        packs = ",".join(js_str(p) for p in r["packs"])
+        rows.append(
+            f'  {{code:{js_str(r["code"])},label:{js_str(r["label"])},'
+            f'mapped:{r["mid_mapped"]},total:{r["mid_total"]},packs:[{packs}]}},')
+    s = coverage_summary()
+    # 网页的第三个 metric 卡要渲染"职业大类"个数，所以 big_classes 必须一起导出。
+    # 曾经漏过它 —— 网页直接渲染出 "undefined"，而当时的跨引擎检查只比了
+    # 另外五个 key，所以没抓到。**凡是网页会读的 key，这里一个都不能少。**
+    summary = (
+        f'  listed_total:{s["listed_total"]}, listed_mapped:{s["listed_mapped"]},'
+        f' dictionary_total:{s["dictionary_total"]},'
+        f' big_classes:{s["big_classes"]},'
+        f' completeness:{round(s["completeness"], 4)}, breadth:{round(s["breadth"], 4)}'
+    )
+    return (
+        "const OCC_COVERAGE = [\n" + "\n".join(rows) + "\n];\n"
+        f"const OCC_SUMMARY = {{\n{summary}\n}};\n"
+        f"const OCC_DICTIONARY_VINTAGE = {js_str(str(MIDS_IN_DICTIONARY_2022))};"
+    )
+
+
 def build_block() -> str:
     return (
         "/* VOCAB:BEGIN 由 scripts/sync_web_vocab.py 从 career_loop/matching/schema.py 自动生成，勿手改 */\n"
@@ -105,6 +160,8 @@ def build_block() -> str:
         f"{render_boilerplate()}\n"
         f"{render_family_prompt()}\n"
         f"{render_family_keys()}\n"
+        f"{render_daily_rules()}\n"
+        f"{render_occupations()}\n"
         "/* VOCAB:END */\n"
     )
 

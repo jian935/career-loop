@@ -21,7 +21,7 @@
   
   <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">
   
-  <img alt="tests" src="https://img.shields.io/badge/tests-212%20passing-4f46e5.svg">
+  <img alt="tests" src="https://img.shields.io/badge/tests-216%20passing-4f46e5.svg">
   
 </p>
 
@@ -211,7 +211,11 @@ turn better.**
 - **Daily application list** (`daily`, v0.8.23) — a batch of JDs becomes today's
   to-do list: role + score + **cheapest fix (with the resulting score)** + **due date**;
   exportable to a Markdown checklist, CSV, or **ICS** (imports into calendar/task apps).
-  Due dates are heuristic and always state their source.
+  Due dates are heuristic and always state their source. **The web demo has it too**
+  ("③ Sort by due date" in the batch section re-ranks by deadline and exports all three
+  formats) — the same rule set is generated into the page's JS by `sync_web_vocab.py`
+  and diffed case-by-case by `scripts/cross_engine_daily_check.py` (which has a
+  `--self-test` mode proving injected divergences are actually caught).
 - **Optional dashboard (v0.8.22)** — `streamlit run career_loop/dashboard.py`:
   application funnel, score × outcome scatter **with a 95% CI for r**, and a gap
   ranking. Without real data it reads a fabricated sample and says so in red.
@@ -565,6 +569,10 @@ Four layers of vocabulary, and **nothing outside it is thrown away**:
    > mid-classes in the Dictionary (40 still have no vocabulary at all).
 
    A real run of that table: [`docs/occupation-coverage.md`](docs/occupation-coverage.md).
+   The web page's "Occupation classification · coverage reconciliation" block renders
+   the very same numbers (computed here, pushed to the page — the page deliberately
+   carries no algorithm), so it **cannot** drift from the CLI; that too is locked by
+   the cross-engine check above.
 5. **Custom fallback** — a requirement that no vocabulary hits is kept verbatim and
    compared by text similarity, marked *"needs manual confirmation"*.
 
@@ -623,7 +631,7 @@ career-loop/
 │   ├── dashboard.py     # Streamlit rendering layer (optional dep; draws only)
 │   ├── dashdata.py      # board data layer: funnel / calibration / CI / gaps (zero-dep, tested)
 │   ├── daily.py         # daily list: ranking + due-date parsing + md/csv/ics export
-│   └── tests/           # 212 unit tests
+│   └── tests/           # 216 unit tests
 ├── docs/                # zero-install web demo (index.html) + screenshots / GIF / demo video; also the Pages site root
 ├── data/
 │   ├── eval_sample.jsonl        # 60-row control regression set
@@ -644,7 +652,7 @@ career-loop/
 
 ## Quality & self-checks
 
-- **212 unit tests** — matching, calibration, storage, recommendation, collection,
+- **216 unit tests** — matching, calibration, storage, recommendation, collection,
   counterfactuals, non-AI generalisation, internship ranking, industry scan and
   level detection, LLM wiring and self-created capabilities, the LLM family
   backend (fallback, auto/blend split, prompt covering every family), `.env`
@@ -653,6 +661,13 @@ career-loop/
   JD, insufficient samples, empty DB, empty directory, duplicate collection,
   illegal states, malformed due dates, occupation reconciliation) + `doctor` + `scan` + all three `daily`
   exports must run and produce non-empty files.
+- **Web end-to-end smoke** (`python scripts/smoke_web.py`) — loads the **entire
+  `<script>`** of `docs/index.html` into Node and clicks every entry point (18 of
+  them: single JD, batch ranking, daily list, three exports, industry scan,
+  internships, occupation reconciliation, extraction lab, calibration board).
+  It covers what pure-function parity cannot: a page printing `undefined`, or an
+  export button throwing. Its `--self-test` requires all four injected breakages
+  to be caught.
 - **Cross-engine parity** — the browser demo reimplements the rules in JavaScript.
   `scripts/cross_engine_check.py` compares both engines on real Chinese and English
   JDs, capability extraction *and* family identification, and the vocabulary is

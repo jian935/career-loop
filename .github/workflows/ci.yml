@@ -38,6 +38,20 @@ jobs:
       # 所以能进 CI：网页与 CLI 判的族必须是同一件事。
       - name: Cross-engine check (LLM family)
         run: python scripts/cross_engine_llm_check.py
+      # 网页的「今日清单」与 `career-loop daily` 必须抽到同一个截止日：
+      # 启发式解析最容易两边各写一遍然后悄悄漂移，差一天用户就不知道该信哪个。
+      # --self-test 单独跑，确保这个比对本身有牙齿（注入的偏差必须被抓出来）。
+      - name: Cross-engine check (daily deadline + occupation summary)
+        run: python scripts/cross_engine_daily_check.py
+      - name: Cross-engine daily check self-test
+        run: python scripts/cross_engine_daily_check.py --self-test
+      # 整段网页 JS 端到端冒烟：把 docs/index.html 的 <script> 在 Node 里跑起来，
+      # 挨个点每个入口（含三种导出）。纯函数级的比对看不到 "页面上印 undefined"
+      # 和 "导出按钮抛异常" 这类问题，这两类都在本机真的发生过。
+      - name: Web demo end-to-end smoke
+        run: python scripts/smoke_web.py
+      - name: Web smoke self-test
+        run: python scripts/smoke_web.py --self-test
       # 离线静态校验：本机通常没有 docker，靠这一步挡住最常见的腐坏
       # （COPY 源改名、运行时资产目录漏 COPY、ENTRYPOINT 与 pyproject 不一致）。
       - name: Dockerfile static check

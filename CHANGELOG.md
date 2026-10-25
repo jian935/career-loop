@@ -4,6 +4,66 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.25] - 2026-10-26
+
+### 网页与 CLI 的能力差：`daily` 和 `occupations` 上墙，并锁死不会漂移
+
+体检清单的 P4。网页 demo 长期以来比 CLI 少两块能力（`daily` / `occupations`），
+这次补上；但真正值钱的不是"又多了两个按钮"，而是**补完之后两边不可能各说各话**。
+
+**1. 网页新增两块（都不自己算算法，只渲染 Python 同步过去的结果）**
+- 「批量岗位」区块加「③ 按今日清单排序」+ 三种格式导出：先到期先投，和
+  `career-loop daily` 是同一条排序规则。
+- 新增「职业分类 · 覆盖面对账」区块：**映射完整度 39/39** 与 **覆盖广度 39/79 = 49%**
+  两个数字在同一个通栏里，避免再出现"只引用 100%"的口径误导。
+  网页不做任何计算—— summary 由 `sync_web_vocab.py` 生成进去，
+  所以"网页看到的"和"CLI 跑出来的"在结构上就是同一个数。
+
+**2. 新增 `scripts/cross_engine_daily_check.py`：启发式最容易两边写两遍**
+截止日解析是启发式，22 条边界文本（标准写法 / 英文 deadline / 点分隔 / 同句既有日期
+又有"招满为止" / 发布日期与公司成立年份不该被抓 / 非法日期 2 月 30 / 短日期过期推明年）
+逐条比对 Python `find_deadline` 与网页 `findDeadline`，**连同"没日期"的来源文案一起比**。
+已进 CI 与单测。
+
+**3. 顺手被这次对拍抓出来的两个真问题**
+- `daily._first_date` 的兜底分支写成 `_mk_date(today.year, month, day, today)`——
+  `_mk_date` 只收 3 个参数。这条分支要走到，得先构造出一个两年都不合法的日期
+  （如 2 月 30 日），所以手点页面碰不到，但只要碰到就是 TypeError。
+- `TestCrossEngineConsistency.test_cross_engine_check_passes` 里仓库根少算一层
+  （`parent.parent` 而不是 `parent.parent.parent`）→ 脚本永远找不到 → 永远 `skipTest`。
+  **一条假装通过的一致性锁比没有锁更糟**，现在缺脚本直接判定失败而不是跳过。
+
+**4. 为跨引擎一致，正则故意写丑一点**
+`_DATE_SHORT` 从 `(?<!\d)` 改成 `(?:^|[^0-9])`：**JS 的 lookbehind 到 Safari 16.4 才支持**，
+用了它，老 Safari 上 `new RegExp()` 直接抛错、整页功能全挂。Python 侧 17/17 行为不变。
+（代价是 pattern 不那么直观，代码里写明了原因，免得有人"顺手改回去"。）
+
+**5. 纯函数全绿 ≠ 页面能用，所以补了整页冒烟 `scripts/smoke_web.py`**
+前面的问题都是纯函数层面的比对发现的；但比对只验到函数返回值，**页面照样可以是
+坏的**。把整段 `<script>` 加载进 Node、挨个点过每个入口之后（18 个），又冒出三个
+真实缺陷：
+- **`OCC_SUMMARY` 漏导出 `big_classes`** → 网页第三张指标卡当场印 `undefined`。
+  （顺手把 summary 的比对改成枚举全部 key，不再"挑几个比"。）
+- **「先点③今日清单、再点导出报告」会抛 TypeError**：`exportReport()` 是从 DOM
+  读标题/缺口的，而今日清单的卡片没有 `.job-gap`，写死的 `.textContent` 直接炸，
+  结果是什么都没下载。改成 `_txt()` 取不到就给空串，并按当前视图换标题。
+- **网页的岗位名带着 Markdown 的 `#`**（"# Agent 应用开发工程师"），而 CLI 那侧是
+  干净的（Python `extract_title` 会剥）。同一个产品两种叫法最伤信任 → 对齐，
+  并把岗位名也纳入跨引擎比对（Python `extract_title` ↔ 网页 `titleOf`）。
+
+自检：单测 212→**216**；`scripts/audit.py` 41/41；跨引擎三套全绿
+（能力项 51/51、LLM 四后端、daily 22 条 + 岗位名 + 职业分类 summary）；
+**网页端到端冒烟 18/18**，且它的 `--self-test` 要求四种注入坏法全被抓到
+（漏字段 / DOM 不判空 / JS 语法错 / 岗位名忘了剥 `#`），跑完还要把 index.html
+还原成原样（有单测盯着，免得自测污染工作区）。
+
+**6. 两个检查脚本都得自证有牙齿**
+- `cross_engine_daily_check.py --self-test`（不需要 node）：注入四种偏差——
+  日期差一天、来源文案不一致、网页给了 CLI 没给、CLI 给了网页没给——
+  **每一条都必须被判成不一致**；外加校验从 HTML 里抠出来的 JS 真的含有
+  `findDeadline` 与全部同步常量（否则"看不到"和"一致"会被混为一谈，
+  历史上漏抽过 const 包装常量）。
+
 ## [0.8.24] - 2026-10-26
 
 ### 体检：把「README 承诺的能力」和「实际能跑的命令」逐条对一遍

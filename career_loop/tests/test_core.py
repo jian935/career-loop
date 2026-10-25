@@ -811,23 +811,97 @@ class TestCrossEngineConsistency(unittest.TestCase):
     项目是致命的。所以用真实中文 JD 逐条比对（scripts/cross_engine_check.py）。
     """
 
-    def test_cross_engine_check_passes(self):
-        import subprocess
-        import sys
+    def _require_node(self):
+        """跨引擎比对要靠 node 跑网页 JS；没装就跳过（本机有，CI 也有）。"""
         from pathlib import Path
 
-        root = Path(__file__).parent.parent
-        script = root / "scripts" / "cross_engine_check.py"
-        if not script.exists():
-            self.skipTest("cross_engine_check.py 不存在")
         node = r"C:\Users\llj12\.workbuddy\binaries\node\versions\22.22.2-6\node.exe"
-        if not Path(node).exists():
-            self.skipTest("本机没有 node，跳过跨引擎比对")
-        res = subprocess.run(
-            [sys.executable, str(script), "--limit", "12"],
+        if Path(node).exists():
+            return node
+        import shutil
+
+        found = shutil.which("node")
+        if found:
+            return found
+        self.skipTest("没有 node，跳过跨引擎比对")
+
+    @staticmethod
+    def _run_script(name, root, *args):
+        import subprocess
+        import sys
+
+        script = root / "scripts" / name
+        # 这里如果写成 parent.parent（少一层）就会静默 skipTest —— 一条假装通过
+        # 的一致性锁比没有锁更糟，所以脚本不存在时必须是**失败**而不是跳过。
+        if not script.exists():
+            raise AssertionError(f"脚本不存在（ROOT 算错了？）：{script}")
+        return subprocess.run(
+            [sys.executable, str(script), *args],
             capture_output=True, text=True, encoding="utf-8", cwd=str(root),
         )
+
+    def test_cross_engine_check_passes(self):
+        # 仓库根是 tests 的**上三级**：career_loop/tests → career_loop → repo root
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent.parent
+        self._require_node()
+        res = self._run_script("cross_engine_check.py", root, "--limit", "12")
         self.assertEqual(res.returncode, 0, res.stdout[-1500:] + res.stderr[-800:])
+
+    def test_daily_cross_engine_check_passes(self):
+        """网页的「今日清单」与 CLI 必须抽到同一个截止日。
+
+        网页版 daily 是新写的一层。两边只要差一天，用户就不知道该信哪个——
+        所以按 `career-loop daily` 的全部边界写法逐条对拍。
+        """
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent.parent
+        self._require_node()
+        res = self._run_script("cross_engine_daily_check.py", root)
+        self.assertEqual(res.returncode, 0, res.stdout[-2000:] + res.stderr[-800:])
+
+    def test_daily_cross_engine_check_has_teeth(self):
+        """这个 `--self-test` 不需要 node，所以不能跳过。
+
+        它证明比对逻辑不是"永远点头"：四种注入的偏差（日期差一天、来源文案
+        不一致、一侧给了一侧没给）必须都被判成不一致。
+        """
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent.parent
+        res = self._run_script("cross_engine_daily_check.py", root, "--self-test")
+        self.assertEqual(res.returncode, 0, res.stdout[-2000:] + res.stderr[-800:])
+
+    def test_web_smoke_passes(self):
+        """整段网页 JS 在 Node 里跑一遍：每个入口都得能点。
+
+        纯函数级的跨引擎比对是不够的 —— 它不会发现 `OCC_SUMMARY` 少导出一个
+        字段（页面当时直接印 undefined），也不会发现「先点今日清单、再点导出
+        报告」会抛 TypeError。所以这里把整段 `<script>` 加载起来挨个点。
+        """
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent.parent
+        self._require_node()
+        res = self._run_script("smoke_web.py", root)
+        self.assertEqual(res.returncode, 0, res.stdout[-2000:] + res.stderr[-800:])
+
+    def test_web_smoke_has_teeth(self):
+        """冒烟脚本必须能抓住真实坏法，否则它只是一盏更好看的绿灯。"""
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent.parent
+        before = (root / "docs" / "index.html").read_text(encoding="utf-8")
+        self._require_node()
+        try:
+            res = self._run_script("smoke_web.py", root, "--self-test")
+            self.assertEqual(res.returncode, 0, res.stdout[-2000:] + res.stderr[-800:])
+        finally:
+            after = (root / "docs" / "index.html").read_text(encoding="utf-8")
+        # 自测靠临时改写 index.html 注入坏法，跑完必须还原，不能污染工作区
+        self.assertEqual(after, before, "smoke_web.py --self-test 没还原 index.html")
 
     def test_inline_split_exists_in_webpage_js(self):
         """网页 JS 必须有中文内联切分，否则中文 JD 只能抽出 1 项。"""

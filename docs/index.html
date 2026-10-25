@@ -414,6 +414,29 @@
   .ind-bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#7BF1C4,#22D3EE)}
   .ind-miss{font-size:11px;color:var(--muted);font-family:var(--mono)}
   .hint{font-size:11.5px;color:var(--muted);margin:8px 0 0;font-family:var(--mono);line-height:1.5}
+  /* 今日清单：截止日与到期紧急度 */
+  .btn-sep{width:1px;height:20px;background:var(--line2);margin:0 4px}
+  .sm-select{background:var(--panel);border:1px solid var(--line2);color:var(--sub);
+    border-radius:8px;font:11px var(--mono);padding:5px 7px}
+  .job-due{font:11px var(--mono);margin:6px 0 0;display:flex;gap:6px;align-items:baseline}
+  .job-due .d{color:var(--amber)} .job-due .soon{color:var(--rose);font-weight:700}
+  .job-due .src{color:var(--muted)}
+  .job-why{font-size:11px;color:var(--emerald);margin:4px 0 0;font-family:var(--mono)}
+  /* 职业分类对账表 */
+  .occ-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  @media(max-width:720px){.occ-metrics{grid-template-columns:1fr}}
+  .occ-metric{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:12px 14px}
+  .occ-metric .k{font:800 20px var(--mono);color:var(--cyan)}
+  .occ-metric .k.warn{color:var(--amber)}
+  .occ-metric .l{font-size:11.5px;color:var(--sub);margin-top:2px}
+  .occ-metric .n{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin-top:4px}
+  .occ-table{width:100%;border-collapse:collapse;font-size:11.5px}
+  .occ-table th{text-align:left;color:var(--muted);font-weight:600;font-family:var(--mono);
+    border-bottom:1px solid var(--line2);padding:7px 9px;white-space:nowrap}
+  .occ-table td{border-bottom:1px solid var(--line);padding:8px 9px;color:var(--sub);vertical-align:top}
+  .occ-table td.c{font-family:var(--mono);color:var(--ink);white-space:nowrap}
+  .occ-table td.m{font-family:var(--mono);color:var(--emerald);white-space:nowrap}
+  .occ-table td.p{font-family:var(--mono);color:var(--muted);font-size:10.5px}
 
   /* ---- 闭环校准看板 ---- */
   .calib{background:rgba(124,92,255,.05);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:22px}
@@ -461,7 +484,7 @@
       <circle cx="23.5" cy="16" r="2.1" fill="#22D3EE"/>
     </svg>
     <span>career-loop</span>
-    <span class="ver">v0.8.24</span>
+    <span class="ver">v0.8.25</span>
   </a>
   <div class="nav-links">
     <a href="#app">Demo</a>
@@ -546,12 +569,30 @@
       <button id="scanBtn" class="btn-ghost sm">② 看全行业适配</button>
       <button id="exportBtn" class="btn-export">导出 Markdown 报告</button>
       <button id="batchSample" class="btn-ghost sm">载入示例</button>
+      <span class="btn-sep"></span>
+      <button id="dailyBtn" class="btn-ghost sm">③ 按今日清单排序（先到期先投）</button>
+      <select id="dailyFmt" class="sm-select" title="导出格式">
+        <option value="md">Markdown 勾选清单</option>
+        <option value="csv">CSV（表格 / Notion）</option>
+        <option value="ics">ICS（日历 / 待办 App）</option>
+      </select>
+      <button id="exportDailyBtn" class="btn-export">导出今日清单</button>
     </div>
-    <p class="hint" id="batchHint">排序用「匹配分」给岗位打分并附最划算补强；全行业适配用你经历里的关键词覆盖 66 个岗位族的能力项。</p>
-    <h3 style="font-size:13px;color:var(--sub);margin:18px 0 10px">该投哪些（按匹配分排序）</h3>
+    <p class="hint" id="batchHint">排序用「匹配分」给岗位打分并附最划算补强；全行业适配用你经历里的关键词覆盖 66 个岗位族的能力项。<br>
+      <b>今日清单</b>会再抽出<b>截止日</b>，改成「先到期先投」的顺序，每条写清日期来源（JD 原文 / JD 没给）——<b>猜出来的日期绝不伪装成确定的</b>，所以没抓到就明说没抓到。</p>
+    <h3 style="font-size:13px;color:var(--sub);margin:18px 0 10px"><span id="rankHead">该投哪些（按匹配分排序）</span></h3>
     <div class="rank-list" id="rankList"></div>
     <h3 style="font-size:13px;color:var(--sub);margin:20px 0 10px">你的经历适配哪些行业</h3>
     <div class="ind-list" id="industryList"></div>
+  </section>
+
+  <section class="occ" id="occupations">
+    <div class="sec-head"><h2>职业分类 · 覆盖面对账</h2><span>哪些架子上有词表、哪些是空白——由 <code>career-loop occupations</code> 现场算出</span></div>
+    <div class="occ-metrics" id="occMetrics"></div>
+    <table class="occ-table"><thead><tr>
+      <th>大类</th><th>名称</th><th>小类（已建立词表/收录）</th><th>已建立词表的岗位族</th>
+    </tr></thead><tbody id="occBody"></tbody></table>
+    <p class="hint" id="occHint"></p>
   </section>
 
   <section class="evidence" id="evidence">
@@ -1218,6 +1259,24 @@ const BOILERPLATE_PATTERNS = [/(?:该|此)?职位来源于[：:]?[^\s。，,；;
 function stripBoilerplate(t){ if(!t) return t; for(const re of BOILERPLATE_PATTERNS){ t = t.replace(re, ""); } return t; }
 const FAMILY_PROMPT = "你是岗位族分类器。给你一份招聘 JD 的正文，判断它属于哪个或哪些岗位族。\n\n规则：\n1. 只能从下面列表里选，族 key 原样输出，不要自造族名；\n2. 可以多选，按相关程度从高到低排列；\n3. 只依据 JD 正文判断，不要臆测正文没写的技能；\n4. 严格输出 JSON：{\"families\": [\"族key\"], \"confidence\": 0.0到1.0}，不要输出任何其他文字。\n\n岗位族列表：\n- product：产品（PRD/需求文档、产品规划）\n- marketing：市场（内容/文案、投放/广告、品牌/公关、私域/社群）\n- sales：销售（客户开发/BD、商务谈判、CRM/客户管理）\n- finance：财务（会计核算、财务报表、税务、审计/内控、证书(CPA/ACCA)、财务软件(用友/金蝶/SAP)）\n- design：设计（视觉设计、交互/UX、设计工具、动效/三维）\n- operations：运营（活动运营、用户运营、内容运营、SEO/网站运营）\n- hr：人力（招聘、绩效/薪酬、培训/组织、劳动法/社保用工）\n- education：教育（教学/授课、课程/教研、学员/班级管理、考试/测评）\n- healthcare：医疗（临床/护理、药学/医学、医疗器械/注册、公共卫生/院感）\n- legal：法务（合同/法务、诉讼/争议解决、公司法/投融资、知识产权）\n- supply：供应链（供应链/库存、采购/供应商、计划/排产）\n- manufacturing：制造（工艺/生产、制程质量、设备/维保、冶炼/轧制、纺织/印染）\n- ai_nlp：NLP（NLP/文本处理）\n- ai_cv：CV（计算机视觉）\n- ai_recsys：推荐/搜索（推荐/搜索）\n- ai_mlops：MLOps（MLOps/模型部署）\n- ai_solution：AI方案/售前（AI 解决方案/售前）\n- ai_ops：AI运营/标注（AI 运营/数据标注）\n- ai_compliance：AI合规（AI 合规/伦理）\n- admin：行政（行政后勤、档案/证照）\n- ecommerce：电商（电商运营、直播/达人、选品/上架）\n- tourism：旅游/酒店（酒店/住宿、旅游/计调）\n- it_systems：信息管理（信息系统实施、系统运维/工单）\n- project_mgmt：项目管理（项目管理、敏捷/迭代管理）\n- trade：外贸（国际贸易、单证/结算）\n- asset_valuation：资产评估（资产评估、资产处置/不良资产）\n- ai_speech：语音（语音(ASR/TTS)）\n- ai_multimodal：多模态（多模态）\n- ai_robotics：具身/机器人（具身智能/机器人）\n- ai_data：数据工程（数据工程）\n- data_analysis：数据分析（业务数据分析）\n- ai_testing：AI测试（AI 测试/质量）\n- property：物业/房地产（物业/房地产、设施/工程维保）\n- construction：工程管理（工程管理、造价/预算、设计/深化）\n- backend：后端（服务端语言、架构/分布式、数据库/存储）\n- frontend：前端（前端框架、移动端/小程序、构建/性能）\n- qa：测试（功能测试、自动化测试、性能/压力测试）\n- devops：运维（Linux/服务器运维、容器/编排、监控/告警、CI/CD 流水线）\n- security：信息安全（渗透/漏洞、等保/安全合规、安全运营）\n- embedded：嵌入式（单片机/固件、电路/PCB、总线/通信协议）\n- electrical：电气（PLC/电气控制、供配电设计、工业自动化）\n- mechanical：机械设计（结构设计、仿真/有限元、出图/工艺文件）\n- quality：质量（质量体系、检验/统计、持续改进）\n- banking：银行（信贷/授信、零售/网点、信用风险、投行/股权投资）\n- insurance：保险（核保/承保、理赔/查勘、保险产品/精算）\n- securities：证券（行业研究、估值建模、投资/交易）\n- consulting：咨询（商业分析/研究、咨询交付、战略/组织）\n- media：传媒（公关/媒体关系、编辑/校对）\n- film：影视（拍摄/编导、剪辑/后期、直播/演艺）\n- game：游戏（游戏策划、游戏运营）\n- translation：翻译（笔译/本地化、口译、CAT 工具）\n- service：客服（客服/工单、投诉/异常处理、服务质检）\n- retail：零售（门店/连锁、进销存、加盟/选址）\n- catering：餐饮（餐饮运营、食品安全）\n- tourism_cn：导游/讲解（导游/讲解）\n- energy：能源化工（电力/电网、化工/工艺安全、新能源/储能）\n- automotive：汽车（整车/零部件、三电/新能源车、台架/路试）\n- agriculture：农林牧渔（种植/农艺、养殖/防疫、智慧农业、林业/草原、渔业/水产、农产品/食品）\n- domestic：居民服务（家政/保洁、美容/美发、维修服务）\n- transport_ops：运输操作（驾驶/车辆调度、叉车/起重）\n- research：科研（论文/文献、课题/实验、研究方法/统计）\n- public_admin：公务/公共事务（公文/政策、窗口/基层服务）\n- social：社工（个案/社区工作、公益项目）\n- psychology：心理（心理咨询、测评/干预）\n- sports：体育（教练/训练、健身/私教）\n- logistics：物流（仓储/分拣、运输/配送、关务/报关）\n- ai：AI/算法（父族：任一 AI 子族命中即包含）";
 const FAMILY_KEYS = ["product","marketing","sales","finance","design","operations","hr","education","healthcare","legal","supply","manufacturing","ai_nlp","ai_cv","ai_recsys","ai_mlops","ai_solution","ai_ops","ai_compliance","admin","ecommerce","tourism","it_systems","project_mgmt","trade","asset_valuation","ai_speech","ai_multimodal","ai_robotics","ai_data","data_analysis","ai_testing","property","construction","backend","frontend","qa","devops","security","embedded","electrical","mechanical","quality","banking","insurance","securities","consulting","media","film","game","translation","service","retail","catering","tourism_cn","energy","automotive","agriculture","domestic","transport_ops","research","public_admin","social","psychology","sports","logistics","ai"];
+const DAILY_CUES = ["截止时间","截止日期","截止","截至","deadline","报名截止","投递截止","有效至","有效期至"];
+const DAILY_OPEN_ENDED = ["招满为止","长期有效","长期招聘","额满为止"];
+const RE_DATE_FULL = "(\\d{4})\\s*[年\\-/.]\\s*(\\d{1,2})\\s*[月\\-/.]\\s*(\\d{1,2})";
+const RE_DATE_SHORT = "(?:^|[^0-9])(\\d{1,2})\\s*[月/.-]\\s*(\\d{1,2})\\s*日?(?!\\d)";
+const OCC_COVERAGE = [
+  {code:"1",label:"党的机关、国家机关、群众团体和社会组织、企事业单位负责人",mapped:3,total:3,packs:["project_mgmt","consulting","public_admin","education","social"]},
+  {code:"2",label:"专业技术人员",mapped:10,total:10,packs:["mechanical","electrical","construction","agriculture","research","healthcare","finance","banking","insurance","securities","asset_valuation","legal","psychology","social","education","film","translation","sports","media","backend","frontend","qa","devops","security","embedded","it_systems","ai_nlp","ai_cv","ai_recsys","ai_mlops","ai_solution","ai_ops","ai_compliance","ai_speech","ai_multimodal","ai_robotics","ai_data","ai_testing"]},
+  {code:"3",label:"办事人员和有关人员",mapped:4,total:4,packs:["admin","service","public_admin","property"]},
+  {code:"4",label:"社会生产服务和生活服务人员",mapped:9,total:9,packs:["sales","retail","logistics","supply","tourism","catering","property","domestic","energy","transport_ops","tourism_cn","sports","hr","social","healthcare"]},
+  {code:"5",label:"农、林、牧、渔业生产及辅助人员",mapped:4,total:4,packs:["agriculture"]},
+  {code:"6",label:"生产制造及有关人员",mapped:9,total:9,packs:["mechanical","manufacturing","embedded","automotive","energy","catering","quality","supply"]},
+  {code:"7",label:"军人",mapped:0,total:0,packs:[]},
+  {code:"8",label:"不便分类的其他从业人员",mapped:0,total:0,packs:[]},
+];
+const OCC_SUMMARY = {
+  listed_total:39, listed_mapped:39, dictionary_total:79, big_classes:8, completeness:1.0, breadth:0.4937
+};
+const OCC_DICTIONARY_VINTAGE = "79";
 /* VOCAB:END */
 const ALL_DIMS = Object.assign({}, TAXONOMY, GENERAL_DIMS);
 for(const pk in DOMAIN_PACKS){
@@ -1687,8 +1746,15 @@ function splitJDs(text){
 }
 function titleOf(jdText){
   const lines=jdText.split(/\n+/).map(s=>s.trim()).filter(Boolean);
-  for(const l of lines){ if(looksLikeTitle(l)) return l.slice(0,42); }
-  return (lines[0]||"未命名岗位").slice(0,42);
+  for(const l of lines){ if(looksLikeTitle(l)) return cleanTitle(l); }
+  return cleanTitle(lines[0]||"未命名岗位");
+}
+/** 与 Python `matching.extract_title` 对齐：JD 文件常写成 Markdown 标题
+    （"# Agent 应用开发工程师"）。不剥掉这些字符，网页会显示成
+    "# Agent 应用开发工程师（实习 / 校招）"，而 CLI 那侧是干净的岗位名
+    ——同一个产品两种叫法，最伤信任。有跨引擎对比盯着这条。*/
+function cleanTitle(s){
+  return String(s||"").replace(/^[#*\s]+/,"").replace(/[#*\s]+$/,"").slice(0,42);
 }
 function rankJobs(jdText, profileText){
   const jds=splitJDs(jdText);
@@ -1696,13 +1762,18 @@ function rankJobs(jdText, profileText){
     const r=compute(block, profileText);
     const g=r.ups[0];
     return {title:titleOf(block), score:r.base, domains:(r.domains||[]).slice(0,2),
+      raw:block,                       // 今日清单要在原文里找截止日，留着不删
       gap:g?("补 "+g.req.label+" +"+g.delta.toFixed(1)):"无缺口可补",
       ups:r.ups.slice(0,3).map(u=>u.req.label+" +"+u.delta.toFixed(1))};
   }).sort((a,b)=>b.score-a.score);
 }
+let lastRanked=[];   // 最近一次 rankJobs 的结果（今日清单复用，避免重复算分）
+let lastDaily=[];    // 最近一次生成的今日清单（导出用）
 function renderRanking(jdText, profileText){
   const box=el("rankList"); box.innerHTML="";
   const jobs=rankJobs(jdText, profileText);
+  lastRanked=jobs; lastDaily=[];          // 重新排序就把旧的今日清单作废
+  el("rankHead").textContent="该投哪些（按匹配分排序）";
   if(!jobs.length){ box.innerHTML='<div class="empty" style="grid-column:1/-1">没解析到岗位。请确认每个 JD 之间用单独一行的 --- 分隔。</div>'; return; }
   jobs.forEach((j,i)=>{
     const d=document.createElement("div"); d.className="job-card";
@@ -1752,24 +1823,34 @@ function renderScan(profileText){
 
 /* ===== 导出报告 ===== */
 let lastSingle=null;
+/** 从卡片里取文字；没有这个节点就返回空串，而不是炸掉。
+
+    为什么要这么防守：`exportReport()` 是**读 DOM** 来回填报告的，
+    而 rankList 里现在有两种卡片（按匹配分排序 / 今日清单），字段并不一样
+    ——今日清单的卡片没有 `.job-gap`。以前直接 `.textContent`，
+    于是「先点③再点导出报告」当场抛 TypeError、什么都不下载。
+    （这个 bug 是 scripts/smoke_web.py 整页跑一遍才抓到的，纯函数级比对看不到。）
+*/
+function _txt(node, sel){
+  const n = node && node.querySelector && node.querySelector(sel);
+  return n ? (n.textContent || "").trim() : "";
+}
 function exportReport(){
   let md="# career-loop 匹配报告\n\n";
   if(el("rankList").children.length){
-    md+="## 该投哪些（按匹配分排序）\n\n";
+    const isDaily = (el("rankHead").textContent||"").indexOf("今日清单") === 0;
+    md+="## "+(isDaily ? "今日投递清单（先到期先投）" : "该投哪些（按匹配分排序）")+"\n\n";
     [...el("rankList").children].forEach((c,i)=>{
-      const t=c.querySelector(".job-title").textContent;
-      const s=c.querySelector(".job-score").textContent;
-      const g=c.querySelector(".job-gap").textContent;
-      md+=(i+1)+". **"+t+"** — "+s+"　"+g+"\n";
+      const due=_txt(c,".job-due");
+      md+=(i+1)+". **"+_txt(c,".job-title")+"** — "+_txt(c,".job-score")+
+          (due?"　"+due:"")+(_txt(c,".job-gap")?"　"+_txt(c,".job-gap"):"")+"\n";
     });
     md+="\n";
   }
   if(el("industryList").children.length){
     md+="## 你的经历适配哪些行业（覆盖度 Top）\n\n";
     [...el("industryList").children].slice(0,10).forEach(c=>{
-      const n=c.querySelector(".ind-name").textContent;
-      const v=c.querySelector(".ind-cov").textContent;
-      md+="- "+n+"："+v+"\n";
+      md+="- "+_txt(c,".ind-name")+"："+_txt(c,".ind-cov")+"\n";
     });
     md+="\n";
   }
@@ -1791,6 +1872,191 @@ function exportReport(){
   a.href=URL.createObjectURL(blob); a.download="career-loop-report.md";
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ============================================================
+   今日投递清单：截止日抽取 + 排序 + 导出
+   Python 版本在 career_loop/daily.py（CLI: career-loop daily）
+
+   跨引擎纪律：这里用到的线索词（DAILY_CUES / DAILY_OPEN_ENDED）和
+   两条日期正则（RE_DATE_FULL / RE_DATE_SHORT）**全部由 sync_web_vocab.py
+   从 Python 导出**，不在这边手写。手写的那部分是纯粹的移植逻辑，跑
+   scripts/cross_engine_daily_check.py 会拿真实 JD 逐条对两边的结果。
+   ============================================================ */
+const RE_FULL = new RegExp(RE_DATE_FULL);
+const RE_SHORT = new RegExp(RE_DATE_SHORT);
+
+function pad2(n){ return n<10 ? "0"+n : ""+n; }
+function isoOf(y,m,d){
+  if(m<1||m>12||d<1||d>31) return null;
+  const dt=new Date(Date.UTC(y,m-1,d));
+  if(dt.getUTCFullYear()!==y||dt.getUTCMonth()!==m-1||dt.getUTCDate()!==d) return null; // 2026-02-30 之类
+  return y+"-"+pad2(m)+"-"+pad2(d);
+}
+function isoToDate(s){ const p=s.split("-").map(Number); return new Date(Date.UTC(p[0],p[1]-1,p[2])); }
+
+function firstDate(window, today){
+  const m = RE_FULL.exec(window);
+  if(m){ const got=isoOf(+m[1],+m[2],+m[3]); if(got) return got; }
+  const s = RE_SHORT.exec(window);
+  if(s){
+    const mo=+s[1], dy=+s[2];
+    if(mo>=1&&mo<=12&&dy>=1&&dy<=31){
+      for(const yr of [today.getUTCFullYear(), today.getUTCFullYear()+1]){
+        const got=isoOf(yr,mo,dy);
+        if(got && isoToDate(got)>=today) return got;
+      }
+      return isoOf(today.getUTCFullYear(),mo,dy);
+    }
+  }
+  return null;
+}
+
+/** 抽截止日 → {due, source}。启发式：只在线索词附近 60 字窗口里找。 */
+function findDeadline(text, today){
+  today = today || new Date();
+  const low = text.toLowerCase();
+  for(const cue of DAILY_CUES){
+    let start = 0, idx;
+    while((idx = low.indexOf(cue.toLowerCase(), start)) >= 0){
+      start = idx + 1;
+      const window = text.slice(idx, idx+60);
+      const got = firstDate(window, today);
+      if(got) return {due:got, source:"JD 原文"};
+      // 线索词旁边写的是「招满为止」——确实是没给日期，但必须先看完整句：
+      // 真实 JD 常写「截止日期：2027-02-28（招满为止不做另行通知）」，
+      // 先判"招满为止"会把真实日期吃掉（Python 侧同一个坑已经修过）。
+      for(const ph of DAILY_OPEN_ENDED){
+        if(window.indexOf(ph) >= 0) return {due:null, source:"JD 写的是『"+ph+"』，没有具体日期"};
+      }
+    }
+  }
+  for(const ph of DAILY_OPEN_ENDED){
+    if(text.indexOf(ph) >= 0) return {due:null, source:"JD 写的是『"+ph+"』，没有具体日期"};
+  }
+  return {due:null, source:""};
+}
+
+/** 今日清单：给每个岗位补上截止日，改成「先到期先投」的顺序。 */
+function planToday(jobs){
+  const today = new Date();
+  const items = jobs.map(j=>{
+    const got = findDeadline(j.raw||"", today);
+    return Object.assign({}, j, {due:got.due, dueSource:got.source});
+  });
+  items.sort((a,b)=>{
+    const ha = a.due?0:1, hb = b.due?0:1;
+    if(ha!==hb) return ha-hb;
+    const da = a.due||"9999-12-31", db = b.due||"9999-12-31";
+    if(da!==db) return da<db?-1:1;
+    return b.score-a.score;
+  });
+  items.forEach(it=>{
+    if(it.due){
+      const days = Math.round((isoToDate(it.due)-today)/86400000);
+      it.why = days<0 ? "已过期 "+(-days)+" 天（JD 可能没更新）"
+             : days===0 ? "**今天截止**" : "距截止 "+days+" 天";
+    }else{
+      it.why = it.dueSource ? "JD 没给日期，需要自己确认" : "JD 未给出截止日";
+    }
+  });
+  return items;
+}
+
+function renderDaily(){
+  const jobs = lastRanked.length ? lastRanked : rankJobs(el("batchJDs").value, el("batchProfile").value);
+  lastRanked = jobs;
+  if(!jobs.length){ alert("先在上面排一次序（①），或确认 JD 之间用单独一行的 --- 分隔。"); return; }
+  const items = planToday(jobs);
+  lastDaily = items;
+  el("rankHead").textContent = "今日清单（先到期先投 · " + items.filter(i=>i.due).length + "/" + items.length + " 条有截止日）";
+  const box = el("rankList"); box.innerHTML = "";
+  const today = new Date();
+  items.forEach((j,i)=>{
+    const d=document.createElement("div"); d.className="job-card";
+    const sc=j.score>=70?"ok":j.score>=50?"warn":"bad";
+    const soon = j.due && Math.round((isoToDate(j.due)-today)/86400000) <= 3;
+    d.innerHTML=
+      '<div class="job-head"><span class="job-rank">'+(i+1)+'</span>'+
+      '<span class="job-title">'+j.title+'</span>'+
+      '<span class="job-score '+sc+'">'+j.score.toFixed(1)+'%</span></div>'+
+      '<div class="job-due"><span class="d'+(soon?' soon':'')+'">'+(j.due||"无截止信息")+'</span>'+
+      (j.due?'<span class="src">'+j.dueSource+'</span>':'<span class="src">'+j.dueSource+'</span>')+'</div>'+
+      '<div class="job-why">'+j.why+'　·　'+(j.gap||"")+'</div>'+
+      (j.ups.length?'<div class="job-ups">'+j.ups.map(u=>'<span class="u">'+u+'</span>').join('')+'</div>':'');
+    box.appendChild(d);
+  });
+}
+
+function exportDaily(){
+  if(!lastDaily || !lastDaily.length){ alert("先点「③ 按今日清单排序」。"); return; }
+  const fmt = el("dailyFmt").value;
+  const todayStr = new Date().toISOString().slice(0,10);
+  let body="", ext="md", mime="text/markdown;charset=utf-8";
+  if(fmt==="md"){
+    body = "# 今日投递清单 · "+todayStr+"\n\n> 排序：有截止日的先按截止日升序（先到期先投）；\n> 没有截止日的排后面、内部按匹配分降序。\n\n";
+    lastDaily.forEach((it,i)=>{
+      body += "- [ ] "+it.title+"　"+it.score.toFixed(1)+"%　截止："+(it.due||"无截止信息")+"\n";
+      body += "      - 最划算补强："+(it.gap||"—")+"\n";
+      body += "      - 为什么排在今天："+it.why+"\n";
+    });
+    body += "\n---\n由 career-loop 网页版生成 · 本地计算 · 数据不上传\n";
+  }else if(fmt==="csv"){
+    ext="csv"; mime="text/csv;charset=utf-8";
+    const esc = s => '"'+String(s==null?"":s).replace(/"/g,'""')+'"';
+    body = ["岗位","匹配分","截止日","截止日来源","最划算补强","为什么排在今天"]
+             .map(esc).join(",")+"\n";
+    lastDaily.forEach(it=>{
+      body += [it.title, it.score.toFixed(1)+"%", it.due||"", it.dueSource||"",
+               it.gap||"", it.why].map(esc).join(",")+"\n";
+    });
+  }else{
+    ext="ics"; mime="text/calendar;charset=utf-8";
+    const stamp = new Date().toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
+    const esc = s => String(s==null?"":s).replace(/([,;\\])/g,"\\$1").replace(/\n/g,"\\n");
+    body = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//career-loop//daily//ZH","CALSCALE:GREGORIAN"];
+    lastDaily.forEach((it,i)=>{
+      body.push("BEGIN:VTODO","UID:daily-"+(i+1)+"-"+todayStr.replace(/-/g,""),"DTSTAMP:"+stamp,
+                "SUMMARY:"+esc("投递 "+it.title+"（"+it.score.toFixed(1)+"%）"));
+      if(it.due) body.push("DUE;VALUE=DATE:"+it.due.replace(/-/g,""));
+      body.push("DESCRIPTION:"+esc("最划算补强："+(it.gap||"—")+"\\n"+(it.why||"")),
+                "STATUS:NEEDS-ACTION","END:VTODO");
+    });
+    body.push("END:VCALENDAR");
+    body = body.join("\r\n");
+  }
+  const blob=new Blob([body],{type:mime});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="today."+ext;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ===== 职业分类对账（数据由 sync_web_vocab.py 从 Python 算好导出） ===== */
+function renderOccupations(){
+  const box=el("occBody"); if(!box||typeof OCC_COVERAGE==="undefined") return;
+  box.innerHTML="";
+  OCC_COVERAGE.forEach(r=>{
+    const packs=r.packs.map(p=>DOMAIN_CN[p]||p).join("、")||"—";
+    const tr=document.createElement("tr");
+    tr.innerHTML='<td class="c">'+r.code+'</td><td>'+r.label+'</td>'+
+      '<td class="m">'+r.mapped+'/'+r.total+'</td><td class="p">'+packs+'</td>';
+    box.appendChild(tr);
+  });
+  const s=OCC_SUMMARY;
+  el("occMetrics").innerHTML=
+    '<div class="occ-metric"><div class="k">'+(s.completeness*100).toFixed(0)+'%</div>'+
+      '<div class="l">映射完整度</div><div class="n">'+s.listed_mapped+'/'+s.listed_total+
+      '　分母＝本仓库收录的小类</div></div>'+
+    '<div class="occ-metric"><div class="k warn">'+(s.breadth*100).toFixed(0)+'%</div>'+
+      '<div class="l">覆盖广度</div><div class="n">'+s.listed_total+'/'+s.dictionary_total+
+      '　分母＝大典全部中类</div></div>'+
+    '<div class="occ-metric"><div class="k">'+s.big_classes+'</div>'+
+      '<div class="l">职业大类</div><div class="n">已建 '+Object.keys(DOMAIN_PACKS).length+' 个岗位族词表</div></div>';
+  el("occHint").innerHTML=
+    '两个数字<b>含义不同，别只引用一个</b>：完整度说的是"收录进来的都建了词表"，'+
+    '广度才是"覆盖了多少职业版图"（还有 '+(s.dictionary_total-s.listed_total)+' 个中类完全没有词表）。'+
+    '映射是<b>启发式</b>的，非官方逐条数据。重跑：<code>career-loop occupations</code>。';
 }
 
 function loadBatchSample(){
@@ -2089,6 +2355,9 @@ el("sample").addEventListener("click",()=>{ sampleIdx=(sampleIdx+1)%SAMPLES.leng
 el("jd").addEventListener("input",debounceRun);
 el("profile").addEventListener("input",debounceRun);
 el("rankBtn").addEventListener("click",()=>renderRanking(el("batchJDs").value, el("batchProfile").value));
+el("dailyBtn").addEventListener("click",renderDaily);
+el("exportDailyBtn").addEventListener("click",exportDaily);
+renderOccupations();
 el("scanBtn").addEventListener("click",()=>renderScan(el("batchProfile").value));
 el("exportBtn").addEventListener("click",exportReport);
 el("batchSample").addEventListener("click",loadBatchSample);
