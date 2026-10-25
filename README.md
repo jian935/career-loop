@@ -329,6 +329,35 @@ career-loop log --app-id 1 --status interview # 回流真实结果
 career-loop calibrate                         # 用真实数据重新校准
 ```
 
+**已经有成批的投递记录？一条命令跑完整闭环：**
+
+```bash
+career-loop reflow \
+  --records examples/reflow_demo_records.csv \
+  --profile examples/profile_me.md \
+  --mode terminal \
+  --out reflow_report.md
+```
+
+`reflow` 读一份投递记录表（CSV / JSONL / JSON，列名自动嗅探），一次跑完：
+**读记录 → 算预测分 → 校准 r → 漏斗归因 → 方向对比 → 出 markdown 报告**，
+还能 `--db-write` 写进本地库让 `status` / `calibrate` 接着用。
+
+两种口径**必须分开**，混在一起会得出错误结论：
+
+| `--mode` | 正反馈算作 | 回答的问题 |
+|---|---|---|
+| `terminal`（默认） | **只有拿到 offer** | 匹配分能不能预测录取 |
+| `early` | HR 沟通 / 感兴趣 / 初筛通过 / 面试邀约 | 匹配分能不能预测"HR 理不理我" |
+
+报告里会额外做一件事：**r 低的时候先看正负两组的分数分布**。
+正负两组分布重叠 → 说明「结果本来就与岗位契合度无关」；
+分布分得开但 r 不显著 → 才是「样本量不够，再攒」。
+
+示例数据（`examples/reflow_demo_records.csv`）是**编造的**，只用来演示命令怎么跑——
+详见 [`examples/reflow_demo_README.md`](examples/reflow_demo_README.md)，那里也说明了
+为什么示例数据跑出的 r 好看但没有意义。
+
 ### 5) 人→JD：我该优先投什么、补什么（双向匹配）
 
 ```bash

@@ -4,6 +4,40 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.11] - 2026-10-25
+
+### 一条命令跑完整回流闭环（新增 `career-loop reflow`）
+- 新增 `career_loop/reflow.py`：把「读记录 → 算预测分 → 校准 r → 漏斗归因 → 方向对比 → 出报告」
+  抽成公共库，CLI、三个脚本共用同一套实现。
+- 新增 CLI 命令 `career-loop reflow --records <投递记录> --profile <经历> --mode {early,terminal}`：
+  CSV / JSONL / JSON 自动识别、列名自动嗅探、`--db-write` 可顺带写进 SQLite。
+- **两种口径显式分开**：`terminal`（只有 offer 算正反馈，回答"能否预测录取"）与
+  `early`（HR 有动作即算正反馈，回答"能否预测 HR 理不理我"）。混在一起会得出无法解释的中间值。
+- **r 低时先看分布再下结论**：比较正/负反馈组的预测分中位数。分布重叠 → 结果本来就与岗位契合度无关；
+  分布分得开但 r 不显著 → 样本量不够。作者 50 条真实中文 JD 上正是前者（14 vs 25 分，r = 0.003）。
+- **没有 JD 原文的记录只进漏斗、不进相关系数**——不会拿编出来的分数充数。
+
+### 修方向分类器：通用词抢位（真实数据暴露）
+- 原分类器"先到先得"，导致「安全攻防研究员」含"研究"被归到金融/研究、
+  「安全运营分析师」含"运营"被归到运营/增长；「电池研发测试」等硬件测试岗被笼统归到测试/质量。
+- 改为**加权计分 + 命中位置**判定：专有词（攻防/投行/嵌入式…）3 分，通用词（研究/运营/分析…）1 分，
+  同分时取岗位名里更靠前的词。18 条用例全过，分类更贴合岗位实质。
+
+### 消除口径重复
+- `scripts/calibrate_admission.py` / `analyze_funnel_attribution.py` / `run_calibration.py`
+  改为调用统一库，删除各自复制的状态映射、归因关键词表与方向分类。
+- 重构后逐条比对基线输出：**r、分桶、漏斗、归因计数全部零漂移**（方向分布因分类器修复而变化，属真实修正）。
+
+### 新增示例与测试
+- `examples/reflow_demo_records.csv` + `examples/reflow_demo_README.md`：
+  示例数据**明确标注为编造**，并写明"示例 r 好看是因为编数据时按分数高低编的结果"，
+  真实数据可能是 0 甚至负数。
+- 新增 12 条单测锁住口径：状态映射、两种口径的正反馈集合差异、CSV/JSONL 嗅探、
+  无 JD 记录不入相关系数、分布重叠诊断、报告必须写明口径与边界。
+
+校验：91 单测全过、评测集 60 条一致率 1.0、audit 32/32、
+英文族识别 93.6% / 中文族识别 77.8%、跨引擎 51/51 一致、词表同步。
+
 ## [0.8.10] - 2026-10-25
 
 ### 网页「中文抽取实验室」（新增，可交互）

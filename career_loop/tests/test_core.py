@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from career_loop import calibrate, collect, explore, internship, matching, recommend, store
+from career_loop import calibrate, collect, explore, internship, matching, recommend, reflow, store
 from career_loop.eval import load_dataset, run_eval
 
 
@@ -774,6 +774,161 @@ class TestChineseVocabularyCoverage(unittest.TestCase):
         owners = [k for k, spec in ALL_DIMS.items()
                   if any("机器学习" in kw for kw in spec["kw"])]
         self.assertEqual(owners, ["llm_basics"], owners)
+
+
+class TestReflowCalibration(unittest.TestCase):
+    """投递回流分析的口径锁定。
+
+    这些测试的作用是**防止口径漂移**：状态映射、归因、方向分类一旦被改动，
+    历史报告里的 r 就对不上了，而且没人会发现。
+    """
+
+    def test_early_status_only_counts_real_recruiter_action(self):
+        # 平台状态词不算招聘方动作 → 不算正反馈
+        for text in ("待联系", "待笔试通知", "待HR跟进", "HR未查看", "简历已读，暂未回复"):
+            self.assertEqual(
+                reflow.normalize_early_status(text), reflow.STATUS_APPLIED, text
+            )
+        # 招聘方真的动了 → 正反馈
+        for text in ("HR发起沟通", "HR感兴趣", "简历被标记有意向", "简历初筛通过",
+                     "发起面试邀约"):
+            self.assertIn(
+                reflow.normalize_early_status(text), reflow.EARLY_POSITIVE, text
+            )
+
+    def test_terminal_only_offer_is_positive(self):
+        # 终局口径：进面试但淘汰不是正反馈
+        self.assertEqual(
+            reflow.normalize_terminal_outcome("面试环节淘汰"),
+            reflow.STATUS_INTERVIEW_ELIMINATED,
+        )
+        self.assertNotIn(
+            reflow.STATUS_INTERVIEW_ELIMINATED, reflow.TERMINAL_POSITIVE
+        )
+        self.assertIn(reflow.STATUS_OFFER, reflow.TERMINAL_POSITIVE)
+        self.assertEqual(
+            reflow.normalize_terminal_outcome("发放offer"), reflow.STATUS_OFFER
+        )
+        self.assertEqual(
+            reflow.normalize_terminal_outcome("简历筛选拒绝"), reflow.STATUS_REJECTED
+        )
+        self.assertEqual(
+            reflow.normalize_terminal_outcome("无反馈沉默"), reflow.STATUS_SILENT
+        )
+
+    def test_modes_give_different_positive_sets(self):
+        # 两种口径的正反馈集合必须不同，否则就白分了
+        self.assertNotEqual(reflow.EARLY_POSITIVE, reflow.TERMINAL_POSITIVE)
+        self.assertLess(
+            len(reflow.TERMINAL_POSITIVE), len(reflow.EARLY_POSITIVE)
+        )
+
+    def test_rejection_attribution_splits_external_vs_controllable(self):
+        self.assertEqual(
+            reflow.attribute_rejection("岗位HC冻结，暂缓招聘"),
+            reflow.ATTR_EXTERNAL,
+        )
+        self.assertEqual(
+            reflow.attribute_rejection("缺少云原生相关项目经验"),
+            reflow.ATTR_CONTROLLABLE,
+        )
+
+    def test_direction_classification_is_stable(self):
+        self.assertEqual(reflow.classify_direction("推荐算法实习生"), "算法/AI")
+        self.assertEqual(reflow.classify_direction("用户增长运营"), "运营/增长")
+        self.assertEqual(reflow.classify_direction("安全攻防研究员"), "安全")
+        self.assertEqual(reflow.classify_direction("某个不存在的岗位"), "其他")
+
+    def test_load_records_sniffs_csv_columns(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "r.csv"
+            p.write_text(
+                "投递ID,公司名称,岗位名称,JD原文,终局结果,回流备注\n"
+                "D1,某公司,后端开发,熟悉 Go 与 Redis,发放offer,薪资不错\n"
+                "D2,某公司2,前端开发,精通 Vue,简历筛选拒绝,HC 冻结\n",
+                encoding="utf-8-sig",
+            )
+            recs = reflow.load_records(p)
+            self.assertEqual(len(recs), 2)
+            self.assertEqual(recs[0]["id"], "D1")
+            self.assertEqual(recs[0]["company"], "某公司")
+            self.assertEqual(recs[0]["role"], "后端开发")
+            self.assertIn("Redis", recs[0]["jd_text"])
+            self.assertEqual(recs[0]["outcome_text"], "发放offer")
+            self.assertEqual(recs[1]["outcome_text"], "简历筛选拒绝")
+
+    def test_load_records_sniffs_jsonl(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "r.jsonl"
+            p.write_text(
+                '{"id":"A1","role":"算法","jd_text":"熟悉机器学习","outcome":"发放offer"}\n'
+                '{"id":"A2","role":"运营","jd_text":"内容策划","outcome":"简历筛选拒绝"}\n',
+                encoding="utf-8",
+            )
+            recs = reflow.load_records(p)
+            self.assertEqual(len(recs), 2)
+            self.assertEqual(recs[0]["id"], "A1")
+            self.assertEqual(recs[1]["role"], "运营")
+
+    def test_record_without_jd_is_excluded_from_correlation(self):
+        """没有 JD 原文的记录只能进漏斗，不能进相关系数。"""
+        recs = [
+            {"id": "1", "role": "后端开发", "jd_text": "熟悉 Go 与 Redis、MySQL 存储",
+             "outcome_text": "发放offer", "note": ""},
+            {"id": "2", "role": "前端开发", "jd_text": "", "outcome_text": "简历筛选拒绝",
+             "note": "HC 冻结"},
+        ]
+        res = reflow.analyze_reflow(recs, "熟悉 Go 与 Redis，做过后端开发。", "terminal")
+        self.assertEqual(res.total, 2)
+        self.assertEqual(len(res.scored_usable), 1)
+        # 漏斗统计仍然包含两条
+        self.assertEqual(res.status_counts["offer"], 1)
+        self.assertEqual(res.status_counts["rejected"], 1)
+
+    def test_score_spread_diagnosis_detects_overlap(self):
+        """正负两组分数重叠时，诊断应说"更像数据本身无关"。"""
+        recs = []
+        for i in range(6):
+            recs.append({"id": f"p{i}", "role": "算法工程师",
+                         "jd_text": "熟悉 Python 与机器学习",
+                         "outcome_text": "发放offer", "note": ""})
+        for i in range(6):
+            recs.append({"id": f"n{i}", "role": "算法工程师",
+                         "jd_text": "熟悉 Python 与机器学习",
+                         "outcome_text": "简历筛选拒绝", "note": "缺少项目经验"})
+        res = reflow.analyze_reflow(recs, "熟悉 Python，做过机器学习项目。", "terminal")
+        self.assertIsNotNone(res.spread)
+        self.assertIn("重叠", res.spread.diagnose())
+
+    def test_report_states_mode_and_boundary(self):
+        recs = [
+            {"id": f"{i}", "role": "后端开发", "jd_text": "熟悉 Go 与 Redis",
+             "outcome_text": "发放offer" if i < 3 else "简历筛选拒绝", "note": ""}
+            for i in range(8)
+        ]
+        res = reflow.analyze_reflow(recs, "熟悉 Go，做过后端开发。", "terminal")
+        md = reflow.render_report(res, title="T")
+        self.assertIn("终局录取", md)
+        self.assertIn("匹配分不是录取概率", md)
+        self.assertIn("Pearson r", md)
+
+    def test_early_report_warns_terminal_is_different(self):
+        recs = [
+            {"id": f"{i}", "role": "运营", "jd_text": "内容策划与活动运营",
+             "outcome_text": "HR发起沟通" if i < 3 else "已读不回", "note": ""}
+            for i in range(8)
+        ]
+        res = reflow.analyze_reflow(recs, "做过内容运营。", "early")
+        md = reflow.render_report(res)
+        self.assertIn("早期信号 ≠ 终局结果", md)
+
+    def test_unknown_mode_raises(self):
+        with self.assertRaises(ValueError):
+            reflow.analyze_reflow([], "x", "bogus")
 
 
 if __name__ == "__main__":

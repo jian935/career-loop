@@ -126,6 +126,23 @@ lift 分析显示这些族的 JD **普遍很短**（客服岗、助理岗、项�
 - 样本到量后跑 `calibrate`，r 高就继续信这个分，r 低就**反过来用真实数据修权重**。
 - 全过程在本地 SQLite，`data/calibration/` 已 gitignore——**你的求职数据永远不会上传**。
 - **v0.8.7 把这条闭环搬进了浏览器**：网页底部「用你自己的结果校准」区块直接记匹配分与真实结果，实时算出 r 与分桶正反馈率，数据只存 localStorage、不联网。数学口径与 `career_loop/calibrate.py` 完全一致（同一份数据交叉验证：r = −0.06453413… 两边同值）。**评委打开网页就能自己跑一遍闭环**，不用装环境、不用配 API Key。
+- **v0.8.11 把整条闭环收成一条命令**：`career-loop reflow --records <你的投递记录> --profile <你的经历>` 一次跑完「读记录 → 算分 → 校准 r → 漏斗归因 → 方向对比 → 出报告」。记录表用 CSV / JSONL / JSON 都行，列名自动嗅探；没有 JD 原文的记录只进漏斗、不进相关系数（不会拿编出来的分数充数）。
+
+**两种口径必须分开**——这是 `reflow` 显式区分的：
+
+| 口径 | 正反馈算作 | 回答的问题 |
+|---|---|---|
+| `--mode terminal` | **只有拿到 offer** | 匹配分能不能预测录取 |
+| `--mode early` | HR 沟通 / 感兴趣 / 初筛通过 / 面试邀约 | 匹配分能不能预测「HR 理不理我」 |
+
+「HR 理我了」和「我拿到 offer」是两个不同的事件、噪声源也不同。
+把面试邀约当录取会让 r 虚高；把两种混在一张表里会得到一个谁也解释不了的中间值。
+
+**r 低的时候，工具会先看分布再下结论**：比较「正反馈组」与「非正反馈组」的预测分中位数。
+两组分布几乎重叠 → 说明**结果本来就与岗位契合度无关**（换更强的打分器也一样）；
+分布分得开但 r 不显著 → 才是「样本量不够，再攒」。
+作者在 50 条真实中文 JD 上跑出的正是前者（正反馈组中位 14 分 vs 非正反馈组 25 分，r = 0.003）——
+**这不是引擎的锅，是那批数据里"拿到 offer"和"岗位契合"本来就不相关。**
 
 这就是 career-loop 和「一次性黑盒打分工具」的本质区别：它不只告诉你「你多匹配」，还允许你**用事实推翻它**。
 
@@ -222,11 +239,18 @@ python scripts/real_eval_scatter.py --n 2000 --seed 7
 python scripts/fetch_cn_eval_data.py     # 9.3MB，需要 pip install pyarrow
 python scripts/cn_eval_family.py --extract-stats
 
-# 5) 网页 JS 引擎 ↔ Python 引擎一致性（真实中文 JD 逐条比对）→ 51/51 一致
+# 6) 网页 JS 引擎 ↔ Python 引擎一致性（真实中文 JD 逐条比对）→ 51/51 一致
 python scripts/cross_engine_check.py
 
-# 6) 网页与引擎词表一致性检查
+# 7) 网页与引擎词表一致性检查
 python scripts/sync_web_vocab.py --check
+
+# 8) 用你自己的投递记录跑完整闭环（一条命令）
+#    → 漏斗 + 校准 r + 归因 + 方向对比 + markdown 报告
+python -m career_loop reflow \
+  --records examples/reflow_demo_records.csv \
+  --profile examples/profile_me.md \
+  --mode terminal --out reflow_report.md
 ```
 
 所有数字均来自确定性抽样（`seed=7`），第三方跑出来的应当一致；若不一致，欢迎开 issue 对账。

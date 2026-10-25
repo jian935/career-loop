@@ -229,6 +229,53 @@ def cmd_calibrate(args) -> int:
     return 0
 
 
+def cmd_reflow(args) -> int:
+    """一条命令跑完整回流闭环：读记录 → 算分 → 校准 → 归因 → 出报告。"""
+    from . import reflow as rf
+
+    src = Path(args.records)
+    if not src.exists():
+        print(f"记录文件不存在：{src}"); return 1
+    profile = _read(args.profile)
+    if not profile.strip():
+        print("经历文件为空，无法打分", file=sys.stderr); return 1
+
+    records = rf.load_records(src)
+    if not records:
+        print(f"没读到任何记录：{src}"); return 1
+
+    # 校准必须可复现：默认走规则模式（离线、确定性）。
+    # 需要 LLM 抽取时显式加 --use-llm。
+    llm = matching.LLM() if getattr(args, "use_llm", False) else None
+    if getattr(args, "use_llm", False) and not llm.available:
+        print("⚠️ 已指定 --use-llm 但没有可用的模型配置，已回退到规则模式。")
+    res = rf.analyze_reflow(records, profile, args.mode, llm)
+
+    # 写 SQLite：让 status / calibrate 命令也能用上这批记录
+    if args.db_write:
+        store.init(args.db)
+        pid = store.add_profile(args.profile_name, profile, args.db)
+        for s in res.scored:
+            if s.score is None:
+                continue
+            jid = store.add_jd(s.role or "(未命名岗位)", s.record.get("jd_text", ""), [], args.db)
+            aid = store.record_application(jid, pid, s.score, args.db)
+            store.set_status(aid, s.status, s.note, args.db)
+        print(f"[db] {len(res.scored_usable)} 条已写入 {args.db or '默认库'}"
+              f"（可用 `career-loop status` 查看）\n")
+
+    print(rf.render_console_summary(res))
+    if args.out:
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(
+            rf.render_report(res, title=args.title, data_note=args.data_note),
+            encoding="utf-8",
+        )
+        print(f"\n报告已写入 {out}")
+    return 0
+
+
 def cmd_eval(args) -> int:
     ds = load_dataset(args.data)
     def matcher(jd, profile):
@@ -480,6 +527,23 @@ def build_parser() -> argparse.ArgumentParser:
     cb.add_argument("--data", default=None, help="或用 jsonl 演示（字段 fit_score, positive）")
     cb.add_argument("--json", default=None)
 
+    rf = sub.add_parser(
+        "reflow",
+        help="回流闭环：一条命令跑完 读记录→算分→校准 r→漏斗归因→出报告",
+    )
+    rf.add_argument("--records", required=True, help="投递记录 CSV / JSONL / JSON（自动识别列名）")
+    rf.add_argument("--profile", required=True, help="你的经历文件（md / txt）")
+    rf.add_argument("--mode", choices=["early", "terminal"], default="terminal",
+                    help="口径：terminal=终局录取（只有 offer 算正反馈）；early=早期互动信号")
+    rf.add_argument("--out", default=None, help="把 markdown 报告写到这个文件")
+    rf.add_argument("--title", default="投递回流校准报告", help="报告标题")
+    rf.add_argument("--data-note", default="", help="报告里标注的数据来源说明")
+    rf.add_argument("--db-write", action="store_true",
+                    help="同时把记录写进 SQLite，让 status / calibrate 也能用")
+    rf.add_argument("--profile-name", default="候选人", help="写入 SQLite 时用的名字")
+    rf.add_argument("--use-llm", action="store_true",
+                    help="用模型抽取能力项（默认规则模式，保证离线可复现）")
+
     ev = sub.add_parser("eval", help="跑标注评测集，给匹配引擎打分")
     ev.add_argument("--data", default="data/eval_sample.jsonl")
     ev.add_argument("--badcases", default="badcases.jsonl")
@@ -541,6 +605,7 @@ def main(argv: list[str] | None = None) -> int:
         "add-profile": cmd_add_profile, "add-jd": cmd_add_jd,
         "match": cmd_match, "apply": cmd_apply, "status": cmd_status,
         "log": cmd_log, "calibrate": cmd_calibrate, "eval": cmd_eval,
+        "reflow": cmd_reflow,
         "dashboard": cmd_dashboard, "recommend": cmd_recommend,
         "collect": cmd_collect, "demand": cmd_demand, "whatif": cmd_whatif,
         "intern": cmd_intern, "scan": cmd_scan,
