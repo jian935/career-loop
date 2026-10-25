@@ -339,6 +339,124 @@ class TestInternship(unittest.TestCase):
         self.assertGreaterEqual(len(internship.load_presets()), 8)
 
 
+class TestFamilyLLMBackend(unittest.TestCase):
+    """v0.8.17：岗位族识别的可选 LLM 后端（默认行为必须与规则逐字节一致）。"""
+
+    class _FakeLLM:
+        available = True
+
+        def __init__(self, reply=None, exc=None):
+            self._reply = reply
+            self._exc = exc
+            self.calls = 0
+
+        def json(self, system, user):
+            self.calls += 1
+            if self._exc:
+                raise self._exc
+            return self._reply
+
+    def test_valid_json_families(self):
+        fake = self._FakeLLM({"families": ["service", "retail"], "confidence": 0.9})
+        fams = matching.detect_family_llm("接听客户来电，处理投诉。门店陈列补货。", fake)
+        self.assertEqual(fams, ["service", "retail"])
+
+    def test_unknown_family_filtered_chinese_name_mapped(self):
+        fake = self._FakeLLM({"families": ["客服", "product_manager", "retail"]})
+        fams = matching.detect_family_llm("接听客户来电。", fake)
+        self.assertEqual(fams, ["service", "retail"])  # 中文名映射 + 未知族丢弃
+
+    def test_ai_parent_derived_from_subfamily(self):
+        fake = self._FakeLLM({"families": ["ai_nlp"]})
+        fams = matching.detect_family_llm("做文本分类与微调。", fake)
+        self.assertEqual(fams, ["ai_nlp", "ai"])  # 镜像规则的父族推导
+
+    def test_malformed_reply_raises(self):
+        fake = self._FakeLLM({"nothing": 1})
+        with self.assertRaises(matching.LLMError):
+            matching.detect_family_llm("任何文本", fake)
+
+    def test_llm_failure_falls_back_to_rules_with_note(self):
+        jd = "负责客服接线与投诉处理。"
+        fake = self._FakeLLM(exc=matching.LLMError("HTTP 401"))
+        v = matching.detect_families(jd, fake, mode="llm")
+        self.assertEqual(v.used, "rules")
+        self.assertIn("service", v.families)
+        self.assertIn("回退", v.note)
+
+    def test_no_llm_falls_back_to_rules(self):
+        jd = "负责客服接线与投诉处理。"
+        for mode in ("llm", "auto"):
+            v = matching.detect_families(jd, None, mode=mode)
+            self.assertEqual(v.used, "rules")
+            self.assertIn("未配置", v.note)
+
+    def test_auto_skips_llm_when_rules_hit(self):
+        class ExplodingLLM(self._FakeLLM):
+            def json(self, system, user):
+                raise AssertionError("auto 模式不该在规则命中时调用 LLM")
+
+        jd = "负责客服接线与投诉处理。"
+        v = matching.detect_families(jd, ExplodingLLM(), mode="auto")
+        self.assertEqual(v.used, "rules")
+        self.assertEqual(v.families, matching.detect_domains(jd))
+
+    def test_auto_asks_llm_only_when_rules_empty(self):
+        jd = "吃苦耐劳，服从公司各项安排。"
+        self.assertEqual(matching.detect_domains(jd), [])  # 前提：规则确实空判
+        fake = self._FakeLLM({"families": ["service"]})
+        v = matching.detect_families(jd, fake, mode="auto")
+        self.assertEqual(v.used, "rules+llm")
+        self.assertEqual(v.families, ["service"])
+        self.assertEqual(fake.calls, 1)
+
+    def test_rules_mode_never_touches_llm(self):
+        fake = self._FakeLLM({"families": ["retail"]})
+        v = matching.detect_families("负责客服接线与投诉处理。", fake, mode="rules")
+        self.assertEqual(v.used, "rules")
+        self.assertEqual(fake.calls, 0)
+
+    def test_blend_orders_llm_first_then_rules_extras(self):
+        jd = "负责客服接线与投诉处理，维护客户关系。"
+        rules = matching.detect_domains(jd)
+        self.assertIn("service", rules)
+        fake = self._FakeLLM({"families": ["retail", "service"]})
+        v = matching.detect_families(jd, fake, mode="blend")
+        self.assertEqual(v.used, "llm+rules")
+        self.assertEqual(v.families[0], "retail")      # LLM 首选排最前（top-1 准）
+        self.assertEqual(v.families[1], "service")     # 规则命中补后（召回全）
+        self.assertEqual(set(v.families), set(["retail"]) | set(rules))
+
+    def test_blend_without_llm_falls_back_to_rules(self):
+        jd = "负责客服接线与投诉处理。"
+        v = matching.detect_families(jd, None, mode="blend")
+        self.assertEqual(v.used, "rules")
+        self.assertIn("未配置", v.note)
+        self.assertEqual(v.families, matching.detect_domains(jd))
+
+    def test_blend_llm_failure_falls_back_to_rules(self):
+        jd = "负责客服接线与投诉处理。"
+        fake = self._FakeLLM(exc=matching.LLMError("网络错误"))
+        v = matching.detect_families(jd, fake, mode="blend")
+        self.assertEqual(v.used, "rules")
+        self.assertIn("回退", v.note)
+
+    def test_prompt_covers_every_family(self):
+        from career_loop.matching.schema import DOMAIN_PACKS, FAMILY_CN
+        prompt = matching.family_llm.family_system_prompt()
+        for key in list(DOMAIN_PACKS) + ["ai"]:
+            self.assertIn(f"- {key}：", prompt)
+        # FAMILY_CN 必须恰好覆盖词表族 + ai 父族，防止新增族静默漏名
+        self.assertEqual(set(FAMILY_CN), set(DOMAIN_PACKS) | {"ai"})
+
+    def test_cli_domains_command(self):
+        from career_loop import cli
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "jd.md"
+            p.write_text("岗位职责：接听客户来电，处理投诉与退换货。\n", encoding="utf-8")
+            self.assertEqual(cli.main(["domains", "--file", str(p), "--backend", "rules"]), 0)
+
+
 class TestLLMWiring(unittest.TestCase):
     def test_llm_mode_is_used_when_available(self):
         class FakeLLM:

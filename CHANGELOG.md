@@ -4,6 +4,43 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.17] - 2026-10-25
+
+### W10：LLM 族识别后端——1,838 条真实调用，五种模式同台实测
+
+1.5 节结论指向语义模型，本轮就是这条路的落地与实测。核心数字
+（同一数据集 / 同一标签 / 同一输入字段，岗位名不喂模型）：
+
+| 模式 | 做法 | any-in | top-1 | 平均族数 |
+|---|---|---|---|---|
+| rules | 纯词表（原基线） | 86.0% | 56.6% | 4.88 |
+| llm | 纯模型 | 86.5% | 73.5% | 2.20 |
+| auto | 规则先判，空结果才问模型 | 87.0% | 57.6% | 4.90 |
+| **blend** | **LLM 首选优先 + 规则补充** | **93.4%** | **73.5%** | 5.49 |
+
+- **W9 补不动的两族补动了**：service 52.2%→78.3%、project_mgmt 69.8%→82.5%；
+  两个引擎盲区几乎不重叠（规则漏短 JD / 同义表达，LLM 漏咨询 / 实施 / 售前）。
+- **LLM 单独用不是规则替代品**：consulting 77.5%→28.1%、it_systems 84.5%→32.1%、
+  ai_solution 82.2%→21.9%——「实施顾问」类 JD 被模型判成 sales/service，
+  与 W9 的标题-正文矛盾同源。
+- **新命令** `career-loop domains --file jd.md --backend blend|llm|auto|rules`；
+  未配 Key 或调用失败一律回退规则并标注原因（`used` / `note`），
+  主链路（match / whatif / reflow / calibrate）**不接** LLM——校准 r 必须离线可复现。
+- **复现**：`scripts/llm_family_eval.py`（1,838 条真实调用，deepseek-flash，
+  1 次 HTTP 失败 0.05%，墙钟 517s ≈ ¥9；原始预测落盘 `data/llm_eval/`，gitignore）。
+- **诚实边界**：LLM 数字跨运行 ±0.1pt（temperature 0.2 + 数据集 383 条重复正文
+  在并发下同文不同答）；缓存保证同一次运行可精确复现。详见 evidence.md 1.6 节。
+
+### 工程
+
+- `career_loop/matching/family_llm.py`：族提示词封闭集（66 族 key + 中文名 + 代表维度，
+  单测锁「FAMILY_CN 必须恰好覆盖词表族 + ai 父族」）；镜像规则的 ai_* → ai 父族推导。
+- `FAMILY_CN` 从 `cli.DOMAIN_CN` 下沉到 `schema.py`（单一来源，`sync_web_vocab` 经别名不受影响）。
+- `LLM` 客户端新增 `stats`（http_calls / cache_hits / failures，锁保护）——
+  评测脚本据此如实报告「实调 vs 缓存」，原来把缓存命中也报成「实调」。
+- 单测 124 → **138**；全量回归零回退（audit 32/32、对照集 100%、英文 93.6%、
+  中文 86.0%、抽取 45/45 + 留出 100%、跨引擎 51/51、脱敏审计干净）。
+
 ## [0.8.16] - 2026-10-25
 
 ### W9：专攻 service / project_mgmt——四条路试完，确认补不动（证据链上墙）

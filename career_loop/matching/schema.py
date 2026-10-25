@@ -565,6 +565,36 @@ AI_CORE_KW = [
 ]
 
 
+# 岗位族中文名（v0.8.17 从 cli.DOMAIN_CN 下沉，供 LLM 提示词/CLI/网页共用）。
+# 单测锁住「FAMILY_CN 的键必须恰好覆盖 DOMAIN_PACKS + ai 父族」——
+# 新增族忘起名字时，测试会红，不会静默漏进提示词。
+FAMILY_CN: dict[str, str] = {
+    "product": "产品", "marketing": "市场", "sales": "销售", "finance": "财务",
+    "design": "设计", "operations": "运营", "hr": "人力", "education": "教育",
+    "healthcare": "医疗", "legal": "法务", "supply": "供应链", "manufacturing": "制造",
+    "ai": "AI/算法",
+    "ai_nlp": "NLP", "ai_cv": "CV", "ai_recsys": "推荐/搜索", "ai_mlops": "MLOps",
+    "ai_solution": "AI方案/售前", "ai_ops": "AI运营/标注", "ai_compliance": "AI合规",
+    "ai_speech": "语音", "ai_multimodal": "多模态", "ai_robotics": "具身/机器人",
+    "ai_data": "数据工程", "ai_testing": "AI测试", "data_analysis": "数据分析",
+    "admin": "行政", "ecommerce": "电商", "tourism": "旅游/酒店",
+    "it_systems": "信息管理", "project_mgmt": "项目管理", "trade": "外贸",
+    "asset_valuation": "资产评估",
+    "property": "物业/房地产", "construction": "工程管理",
+    "backend": "后端", "frontend": "前端", "qa": "测试", "devops": "运维",
+    "security": "信息安全", "embedded": "嵌入式", "electrical": "电气",
+    "mechanical": "机械设计", "quality": "质量",
+    "banking": "银行", "insurance": "保险", "securities": "证券",
+    "consulting": "咨询", "media": "传媒", "film": "影视", "game": "游戏",
+    "translation": "翻译", "service": "客服", "retail": "零售",
+    "catering": "餐饮", "tourism_cn": "导游/讲解", "domestic": "居民服务",
+    "transport_ops": "运输操作",
+    "energy": "能源化工", "automotive": "汽车", "agriculture": "农林牧渔",
+    "research": "科研", "public_admin": "公务/公共事务", "social": "社工",
+    "psychology": "心理", "sports": "体育", "logistics": "物流",
+}
+
+
 def detect_domains(text: str) -> list[str]:
     """粗判岗位族，返回命中关键词最多的前几个（用于展示/裁剪词表）。
 

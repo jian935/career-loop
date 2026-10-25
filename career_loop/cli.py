@@ -16,6 +16,7 @@ from . import matching
 from . import recommend as rec_mod
 from . import store
 from .eval import load_dataset, run_eval
+from .matching.schema import FAMILY_CN as DOMAIN_CN  # noqa: F401（sync_web_vocab 依赖此名）
 
 
 def _read(path: str) -> str:
@@ -65,34 +66,6 @@ def _ensure_stdout_utf8() -> None:
             pass
 
 
-DOMAIN_CN = {
-    "ai": "AI/技术", "product": "产品", "marketing": "市场", "sales": "销售",
-    "finance": "财务", "design": "设计", "operations": "运营", "hr": "人力",
-    "education": "教育", "healthcare": "医疗", "legal": "法务",
-    "supply": "供应链", "manufacturing": "制造",
-    "ai_nlp": "NLP", "ai_cv": "CV", "ai_recsys": "推荐/搜索", "ai_mlops": "MLOps",
-    "ai_solution": "AI方案", "ai_ops": "AI运营", "ai_compliance": "AI合规",
-    "admin": "行政", "ecommerce": "电商", "tourism": "旅游/酒店",
-    "it_systems": "信息管理", "project_mgmt": "项目管理", "trade": "外贸",
-    "asset_valuation": "资产评估",
-    "ai_speech": "语音", "ai_multimodal": "多模态", "ai_robotics": "具身/机器人",
-    "ai_data": "数据工程", "ai_testing": "AI测试", "data_analysis": "数据分析",
-    "property": "物业/房地产", "construction": "工程管理",
-    # 0.8.0 新增岗位族
-    "backend": "后端", "frontend": "前端", "qa": "测试", "devops": "运维",
-    "security": "信息安全", "embedded": "嵌入式", "electrical": "电气",
-    "mechanical": "机械设计", "quality": "质量",
-    "banking": "银行", "insurance": "保险", "securities": "证券",
-    "consulting": "咨询", "media": "传媒", "film": "影视", "game": "游戏",
-    "translation": "翻译", "service": "客服", "retail": "零售",
-    "catering": "餐饮", "tourism_cn": "导游/讲解", "domestic": "居民服务",
-    "transport_ops": "运输操作",
-    "energy": "能源化工", "automotive": "汽车", "agriculture": "农林牧渔",
-    "research": "科研", "public_admin": "公务/公共事务", "social": "社工",
-    "psychology": "心理", "sports": "体育", "logistics": "物流",
-}
-
-
 def _domain_text(text: str) -> str:
     doms = matching.detect_domains(text)
     return " / ".join(DOMAIN_CN.get(d, d) for d in doms[:3]) or "通用"
@@ -104,6 +77,21 @@ def _make_llm(args=None):
         return None
     llm = matching.LLM()
     return llm if llm.available else None
+
+
+def cmd_domains(args) -> int:
+    """判岗位族。--backend 默认 blend：LLM 首选优先 + 规则补充（实测 any-in 93.4% / top-1 73.5%）。"""
+    text = _read(args.file)
+    llm = _make_llm(args) if args.backend != "rules" else None
+    verdict = matching.detect_families(text, llm, mode=args.backend)
+    names = " / ".join(DOMAIN_CN.get(d, d) for d in verdict.families) or "（未判出）"
+    print(f"岗位族：{names}")
+    print(f"keys   {verdict.families}")
+    line = f"模式   {verdict.used}"
+    if verdict.note:
+        line += f"（{verdict.note}）"
+    print(line)
+    return 0
 
 
 def cmd_doctor(args) -> int:
@@ -499,6 +487,13 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("init", help="初始化本地数据库")
     sub.add_parser("doctor", help="自检：Python / LLM / 缓存 / 评测集")
 
+    dd = sub.add_parser("domains", help="判岗位族；--backend 可选 LLM 后端（默认 blend）")
+    dd.add_argument("--file", required=True, help="JD 文本文件（md / txt）")
+    dd.add_argument("--backend", choices=["rules", "llm", "auto", "blend"], default="blend",
+                    help="rules=纯词表；llm=纯模型（失败回退规则）；"
+                         "auto=规则先判、规则空结果时才问模型（省调用）；"
+                         "blend=LLM 首选优先+规则补充（实测最优）")
+
     ap = sub.add_parser("add-profile", help="保存候选人经历")
     ap.add_argument("--file", required=True)
     ap.add_argument("--name", required=True)
@@ -608,7 +603,7 @@ def main(argv: list[str] | None = None) -> int:
         "reflow": cmd_reflow,
         "dashboard": cmd_dashboard, "recommend": cmd_recommend,
         "collect": cmd_collect, "demand": cmd_demand, "whatif": cmd_whatif,
-        "intern": cmd_intern, "scan": cmd_scan,
+        "intern": cmd_intern, "scan": cmd_scan, "domains": cmd_domains,
     }
     return handlers[args.command](args)
 

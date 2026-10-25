@@ -345,6 +345,12 @@
   .esys-tried h4{margin:0 0 8px;font-size:12.5px;color:var(--amber)}
   .esys-tried h4 span{color:var(--muted);font-weight:400;font-family:var(--mono);font-size:11px;margin-left:6px}
   .esys-tried ol{margin:0;padding-left:20px;font-size:11.5px;color:var(--sub);line-height:1.75}
+  .esys-llm{border:1px solid rgba(52,211,153,.35);border-radius:10px;padding:12px 14px;margin:14px 0;background:rgba(52,211,153,.04)}
+  .esys-llm h4{margin:0 0 8px;font-size:12.5px;color:var(--emerald)}
+  .esys-llm h4 span{color:var(--muted);font-weight:400;font-family:var(--mono);font-size:11px;margin-left:6px}
+  .esys-llm p{margin:0 0 8px;font-size:11.5px;color:var(--sub);line-height:1.7}
+  .esys-llm p.note{margin:8px 0 0;font-size:11px;color:var(--muted);line-height:1.7}
+  .esys-llm .esys-tr .b{color:var(--emerald)}
   .esys-tried ol b{color:var(--ink)}
   .esys-tried-note{margin:9px 0 0;font-size:11px;color:var(--muted);line-height:1.7;border-top:1px dashed var(--line);padding-top:9px}
   .esys-tried-note b{color:var(--amber)}
@@ -705,11 +711,12 @@
 
       <div class="esys-table">
         <div class="esys-tr"><span class="a">回归检验项</span><span class="b" style="color:var(--muted)">当前状态</span><span class="c">复现命令</span></div>
-        <div class="esys-tr"><span class="a">单元测试</span><span class="b">124 / 124</span><span class="c">python -m unittest career_loop.tests.test_core</span></div>
+        <div class="esys-tr"><span class="a">单元测试</span><span class="b">138 / 138</span><span class="c">python -m unittest career_loop.tests.test_core</span></div>
         <div class="esys-tr"><span class="a">对照集匹配判定（60 条）</span><span class="b">1.0</span><span class="c">python scripts/coverage.py</span></div>
         <div class="esys-tr"><span class="a">对照集族识别（66 个已建词表岗位）</span><span class="b">100%</span><span class="c">python scripts/coverage.py</span></div>
         <div class="esys-tr"><span class="a">英文集族识别（不回退闸门）</span><span class="b">93.6%</span><span class="c">python scripts/real_eval_family.py</span></div>
         <div class="esys-tr"><span class="a">中文集族识别</span><span class="b">86.0%</span><span class="c">python scripts/cn_eval_family.py</span></div>
+        <div class="esys-tr"><span class="a">中文集 + LLM 第二意见</span><span class="b">93.4%</span><span class="c">python scripts/llm_family_eval.py（需 Key，结果有缓存）</span></div>
         <div class="esys-tr"><span class="a">中文能力抽取（标注 45 + 留出 10,613）</span><span class="b">100% / 86.2%</span><span class="c">python scripts/eval_real_jd.py</span></div>
         <div class="esys-tr"><span class="a">网页 ↔ CLI 跨引擎一致性（5 项）</span><span class="b">51 / 51</span><span class="c">python scripts/cross_engine_check.py</span></div>
         <div class="esys-tr"><span class="a">网页词表同步（无漂移）</span><span class="b">✓ 一致</span><span class="c">python scripts/sync_web_vocab.py --check</span></div>
@@ -735,6 +742,22 @@
           <p>人工标注集判错了，<b>改标注，不改引擎去迁就</b>（P39 漏 <code>pub_document</code> 就是这么修的）。
              被证伪的想法也写在 evidence.md 里（词长加权、咨询/顾问入族），别重走。</p>
         </div>
+      </div>
+
+      <div class="esys-llm">
+        <h4>第二意见机制：LLM 族识别后端实测<span>v0.8.17 · 1,838 条真实调用 · 同数据集同标签</span></h4>
+        <p>1.5 节确认词表补不动最弱两族，转而把语义模型作为<b>第二意见</b>——不换数据集、不换标签、不换输入字段，<b>岗位名绝不喂给模型</b>（标签来自岗位名，喂了就是泄露）：</p>
+        <div class="esys-table">
+          <div class="esys-tr"><span class="a">模式</span><span class="b" style="color:var(--muted)">any-in / top-1</span><span class="c">做法</span></div>
+          <div class="esys-tr"><span class="a">规则基线</span><span class="b">86.0% / 56.6%</span><span class="c">纯词表（平均输出 4.88 个族）</span></div>
+          <div class="esys-tr"><span class="a">LLM 单独</span><span class="b">86.5% / 73.5%</span><span class="c">不是替代品：漏「咨询/实施/售前」（consulting 28%）</span></div>
+          <div class="esys-tr"><span class="a">规则空判才问</span><span class="b">87.0% / 57.6%</span><span class="c">省调用，增益有限</span></div>
+          <div class="esys-tr"><span class="a">blend（默认）</span><span class="b">93.4% / 73.5%</span><span class="c">LLM 首选优先 + 规则补充：service 52%→78%</span></div>
+        </div>
+        <p class="note">
+          两个引擎的盲区几乎不重叠（规则漏短 JD / 同义表达，LLM 漏咨询实施售前），所以并集有效。<b>主链路不接 LLM</b>——校准 r 必须离线可复现；未配 Key 或调用失败自动回退规则并标注。
+          LLM 数字跨运行 ±0.1pt（temperature 0.2），缓存保证单次运行可复现。完整证据链：<code>docs/evidence.md</code> 1.6 节。
+        </p>
       </div>
 
       <div class="esys-tried">
@@ -1143,7 +1166,7 @@ const ALL_DIMS = Object.assign({}, TAXONOMY, GENERAL_DIMS);
 for(const pk in DOMAIN_PACKS){
   for(const k in DOMAIN_PACKS[pk]){ if(!ALL_DIMS[k]) ALL_DIMS[k]=DOMAIN_PACKS[pk][k]; }
 }
-const DOMAIN_CN={ai:"AI/技术",product:"产品",marketing:"市场",sales:"销售",finance:"财务",design:"设计",operations:"运营",hr:"人力",education:"教育",healthcare:"医疗",legal:"法务",supply:"供应链",manufacturing:"制造",ai_nlp:"NLP",ai_cv:"CV",ai_recsys:"推荐/搜索",ai_mlops:"MLOps",ai_solution:"AI方案",ai_ops:"AI运营",ai_compliance:"AI合规",admin:"行政",ecommerce:"电商",tourism:"旅游/酒店",it_systems:"信息管理",project_mgmt:"项目管理",trade:"外贸",asset_valuation:"资产评估",ai_speech:"语音",ai_multimodal:"多模态",ai_robotics:"具身/机器人",ai_data:"数据工程",ai_testing:"AI测试",data_analysis:"数据分析",property:"物业/房地产",construction:"工程管理",backend:"后端",frontend:"前端",qa:"测试",devops:"运维",security:"信息安全",embedded:"嵌入式",electrical:"电气",mechanical:"机械设计",quality:"质量",banking:"银行",insurance:"保险",securities:"证券",consulting:"咨询",media:"传媒",film:"影视",game:"游戏",translation:"翻译",service:"客服",retail:"零售",catering:"餐饮",tourism_cn:"导游/讲解",domestic:"居民服务",transport_ops:"运输操作",energy:"能源化工",automotive:"汽车",agriculture:"农林牧渔",research:"科研",public_admin:"公务/公共事务",social:"社工",psychology:"心理",sports:"体育",logistics:"物流"};
+const DOMAIN_CN={product:"产品",marketing:"市场",sales:"销售",finance:"财务",design:"设计",operations:"运营",hr:"人力",education:"教育",healthcare:"医疗",legal:"法务",supply:"供应链",manufacturing:"制造",ai:"AI/算法",ai_nlp:"NLP",ai_cv:"CV",ai_recsys:"推荐/搜索",ai_mlops:"MLOps",ai_solution:"AI方案/售前",ai_ops:"AI运营/标注",ai_compliance:"AI合规",ai_speech:"语音",ai_multimodal:"多模态",ai_robotics:"具身/机器人",ai_data:"数据工程",ai_testing:"AI测试",data_analysis:"数据分析",admin:"行政",ecommerce:"电商",tourism:"旅游/酒店",it_systems:"信息管理",project_mgmt:"项目管理",trade:"外贸",asset_valuation:"资产评估",property:"物业/房地产",construction:"工程管理",backend:"后端",frontend:"前端",qa:"测试",devops:"运维",security:"信息安全",embedded:"嵌入式",electrical:"电气",mechanical:"机械设计",quality:"质量",banking:"银行",insurance:"保险",securities:"证券",consulting:"咨询",media:"传媒",film:"影视",game:"游戏",translation:"翻译",service:"客服",retail:"零售",catering:"餐饮",tourism_cn:"导游/讲解",domestic:"居民服务",transport_ops:"运输操作",energy:"能源化工",automotive:"汽车",agriculture:"农林牧渔",research:"科研",public_admin:"公务/公共事务",social:"社工",psychology:"心理",sports:"体育",logistics:"物流"};
 const CUSTOM_STOP=new Set(["负责","经验","相关","工作","能力","要求","熟悉","了解","具备","完成","以及","进行","能够","优先","以上","学历","本科","专业","岗位","职责","任职","参与","独立","熟练","掌握","良好","一定","具有","使用"]);
 const REQ_SIGNALS=["熟悉","掌握","具备","能够","会","负责","了解","精通","熟练","经验","优先","要求","独立","完成","参与","维护","开发","设计","管理","推进","分析","制定","执行","对接","沟通","处理","操作","使用"];
 const NOISE_MARKERS=["薪资","福利","五险","双休","地点","地址","公司简介","融资","规模","简历投递","邮箱","微信","电话","官网","包吃","补贴","年终奖","团建","上班时间"];

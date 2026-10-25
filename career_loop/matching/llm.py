@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import threading
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -61,6 +62,9 @@ class LLM:
         self.model = model or os.getenv("JD_FIT_MODEL") or os.getenv("OPENAI_MODEL") or DEFAULT_MODEL
         self.timeout = timeout
         self.cache = (os.getenv("CAREER_LOOP_NO_CACHE") != "1") if cache is None else cache
+        # 调用统计：并发下用锁保证计数不丢（评测脚本要如实报「实调 vs 缓存」）
+        self._stat_lock = threading.Lock()
+        self.stats = {"http_calls": 0, "cache_hits": 0, "failures": 0}
 
     @property
     def available(self) -> bool:
@@ -71,6 +75,8 @@ class LLM:
             raise LLMError("未配置 API Key")
         path = _cache_path(self.model, system, user) if self.cache else None
         if path is not None and path.exists():
+            with self._stat_lock:
+                self.stats["cache_hits"] += 1
             return path.read_text(encoding="utf-8")
         payload = {
             "model": self.model,
@@ -93,10 +99,16 @@ class LLM:
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
+            with self._stat_lock:
+                self.stats["failures"] += 1
             body = exc.read().decode("utf-8", "ignore")[:300]
             raise LLMError(f"HTTP {exc.code}: {body}") from exc
         except urllib.error.URLError as exc:
+            with self._stat_lock:
+                self.stats["failures"] += 1
             raise LLMError(f"网络错误: {exc.reason}") from exc
+        with self._stat_lock:
+            self.stats["http_calls"] += 1
         content = data["choices"][0]["message"]["content"]
         if path is not None:
             try:
