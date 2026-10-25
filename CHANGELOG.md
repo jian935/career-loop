@@ -4,6 +4,54 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.20] - 2026-10-25
+
+### W13：英文 README + 仓库页打磨（星标与投稿的地基）
+
+**新增 `README.en.md`（639 行）**
+
+不是机翻——把「匹配分是可被证伪的」这个核心概念用英文重新讲了一遍，结构对齐中文版：
+首屏差异点 / 做什么不做什么 / 与同类项目对照表 / 六步闭环 / 功能清单 / 安装 /
+可选 LLM / 快速开始（四段可复制命令 + 真实输出）/ 任意岗位族覆盖 / 三支柱评测体系 /
+仓库结构 / 质量自检 / 设计取舍 / 已知局限 / Contributing / License / 相关项目对照。
+英文 README 顶部有 4 枚徽章（含新增的 `tests 138 passing`），中英两版互链。
+
+**`docs/repo-page.md`（仓库页配置清单）**
+
+仓库的 description / Topics / 社交预览图 / Features 开关 / 分支保护属于**账号侧一次性
+配置**，写不进代码，所以做成一页可直接照抄的清单：
+- Description 两条候选文案（含关键词覆盖说明）
+- 13 个 Topics（含为什么要加 `llm`、为什么不堆 `ai`、为什么加 `falsifiability`）
+- 社交预览用 `docs/og-cover.png`，附检查点
+- Features 开关逐项建议（Issues/Discussions 开，Wiki 关——避免第二份不同步的真相）
+- `main` 分支保护规则（PR + 必过 CI）
+- 发布后 48 小时内的三件事 + 第一个 star 的三个转化来源
+
+**顺带修正的不精确表述**
+
+- 演示视频实际 **135.0 秒 = 2 分 15 秒**，两版 README 与投稿包此前都写"3 分钟"
+  （链接文字与 W8 条目）。标题改为真实时长，锚点同步更新。
+- 补齐 5 处中英不对称：留出集 86.2% → 100.0%、中文集全量 8,674 条，
+  以及**作者私有失效区间 r = -0.059 / 终局 r = 0.03**（此前只在 evidence.md，
+  现在进了两版 README 的显眼位置——这是项目最独特的招牌）。
+
+**把一致性做成回归锁（新增 6 个单测，`TestDocsConsistency`）**
+
+这个项目的纪律是「数字必须和引擎真实值一致」，而两份 README 极易各改一边、悄悄漂移：
+
+- `test_key_numbers_appear_in_both_readmes` — 33 组关键数字必须同时出现在两版
+- `test_internal_anchors_resolve` — 目录锚点必须真的指向某个标题
+- `test_referenced_files_exist` — 引用的本地文件必须存在（防 404 链接）
+- `test_readmes_cross_link_each_other` — 两版必须互链
+- `test_video_duration_claim_is_consistent` — 不允许再写"3 分钟"
+- `test_english_readme_exists` — 英文 README 不许被删
+
+**测试自身已做 A/B 自测**（沿用 `audit_anonymization.py` 的规矩）：
+把英文版 93.4% 改成 94.0% → 报 `数字不对称：['93.4%']`；
+把中文版 10,613 改成 10613 → 报 `数字不对称：['10,613']`；还原后全绿。
+
+**回归**：单测 138 → **144**，audit 32/32、词表同步无漂移、跨引擎一致。
+
 ## [0.8.19] - 2026-10-25
 
 ### W12：上架前终检 + 一键发布脚本

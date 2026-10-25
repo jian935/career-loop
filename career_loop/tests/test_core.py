@@ -1335,5 +1335,88 @@ class TestBoilerplateAndFamilyRecall(unittest.TestCase):
         self.assertNotIn("adm_archive", keys)
 
 
+class TestDocsConsistency(unittest.TestCase):
+    """中英文 README 的数字对称性 / 链接有效性。
+
+    这个项目的纪律是「数字必须和引擎真实值一致」。英文 README 是新增的，
+    两份文档很容易各改一边、悄悄漂移——所以把一致性做成回归锁。
+    """
+
+    ROOT = Path(__file__).resolve().parent.parent.parent
+
+    # 关键数字 → 必须同时出现在中英文两版里
+    KEY_NUMBERS = (
+        "66", "171", "60", "93.6%", "86.0%", "93.4%", "0.193", "56.6%", "73.5%",
+        "52%", "78%", "70%", "83%", "45", "10,613", "13.8", "86.2%", "100.0%",
+        "1,167", "1,838", "138", "32", "75", "3%", "16", "50", "29", "0.694",
+        "-0.059", "0.03", "9,544", "122,560", "8,674", "35+",
+    )
+
+    @classmethod
+    def _read(cls, name: str) -> str:
+        path = cls.ROOT / name
+        if not path.exists():
+            raise unittest.SkipTest(f"{name} 不存在")
+        return path.read_text(encoding="utf-8")
+
+    @staticmethod
+    def _anchors(text: str) -> set[str]:
+        import re
+        out = set()
+        for line in text.splitlines():
+            m = re.match(r"^#{1,6}\s+(.*)$", line)
+            if not m:
+                continue
+            t = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", m.group(1).strip())
+            t = re.sub(r"[*`~]", "", t).strip().lower()
+            t = re.sub(r"[^\w\s-]", "", t)
+            out.add(re.sub(r"\s+", "-", t))
+        return out
+
+    def test_english_readme_exists(self):
+        self.assertTrue((self.ROOT / "README.en.md").exists(),
+                        "英文 README 是拿星标的地基，不能被删掉")
+
+    def test_key_numbers_appear_in_both_readmes(self):
+        """同一组关键数字必须同时出现在中英文两版里——只改一边就会在这里炸。"""
+        zh = self._read("README.md")
+        en = self._read("README.en.md")
+        missing = [n for n in self.KEY_NUMBERS
+                   if not (n in zh and n in en)]
+        self.assertEqual(missing, [], f"中英文 README 数字不对称：{missing}")
+
+    def test_internal_anchors_resolve(self):
+        """README 内部的目录锚点必须真的指向某个标题（改了标题忘了改链接会在这里炸）。"""
+        import re
+        for name in ("README.md", "README.en.md"):
+            text = self._read(name)
+            have = self._anchors(text)
+            for link in set(re.findall(r"\]\(#([^)]+)\)", text)):
+                self.assertIn(link, have, f"{name} 的锚点 #{link} 没有对应标题")
+
+    def test_referenced_files_exist(self):
+        """README 里引用的本地文件必须真实存在（避免 404 链接）。"""
+        import re
+        pat = re.compile(r"\]\((docs/[^)#]+|examples/[^)#]+|scripts/[^)#]+|"
+                         r"data/[^)#]+|LICENSE|README\.md|README\.en\.md)\)")
+        for name in ("README.md", "README.en.md"):
+            text = self._read(name)
+            for path in set(pat.findall(text)):
+                self.assertTrue((self.ROOT / path).exists(),
+                                f"{name} 引用了不存在的文件：{path}")
+
+    def test_readmes_cross_link_each_other(self):
+        """两版必须互链，否则英文读者找不到中文版、反之亦然。"""
+        self.assertIn("README.en.md", self._read("README.md"))
+        self.assertIn("README.md", self._read("README.en.md"))
+
+    def test_video_duration_claim_is_consistent(self):
+        """视频实际 135 秒 = 2 分 15 秒；两版 README 都不能再写"3 分钟"。"""
+        for name in ("README.md", "README.en.md"):
+            text = self._read(name)
+            self.assertNotIn("3 分钟演示视频", text, f"{name} 仍把视频写成 3 分钟")
+            self.assertNotIn("3-minute demo video", text, f"{name} 仍把视频写成 3 分钟")
+
+
 if __name__ == "__main__":
     unittest.main()
