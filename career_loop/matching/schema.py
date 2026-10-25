@@ -46,7 +46,8 @@ TAXONOMY: dict[str, dict] = {
     },
     "llm_basics": {
         "label": "大模型原理与边界",
-        "kw": ["大模型", "llm", "gpt", "transformer", "微调", "token", "上下文窗口"],
+        "kw": ["大模型", "llm", "gpt", "transformer", "微调", "token", "上下文窗口",
+               "机器学习基础", "机器学习", "深度学习", "神经网络", "模型评估指标", "算法基础"],
         "fix": "写一份你自己的『模型能力边界实测』：同一个任务在 3 个模型上的失败模式差异。",
     },
     "prompt_eng": {

@@ -4,6 +4,33 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.10] - 2026-10-25
+
+### 网页「中文抽取实验室」（新增，可交互）
+- 证据墙新增「中文抽取实验室」：粘贴一段中文 JD → 实时显示逐项抽取结果，
+  **左边黄色块是引擎没认出来的要求（custom 项）**，右边是词表已覆盖的能力项，
+  底部给出未覆盖率与说明。附两条真实样本一键载入。
+- 用的就是网页自己的 `parseJD`，所以显示的与「单 JD 匹配」区完全一致，不是另一套演示逻辑。
+
+### 对齐网页 JS 与 Python 引擎（重要）
+- 发现网页 JS 引擎缺 **中文内联切分** 与 **英文降噪**，与 Python 后端行为不一致
+  （同一批中文 JD，网页抽出的能力项数明显偏少）。
+- 补齐：`_split_inline_segments` 对应的 `splitInlineSegments`、英文分节标记、
+  全大写标题 / URL / 招呼语 / 薪资行过滤（`isNoiseLine`）。
+- 新增 `scripts/cross_engine_check.py`：把同一批真实中文 JD + 英文 JD 跑两边，
+  逐条比对能力项集合 / 数量 / custom 数 / 每项权重。
+  **当前结果：51/51 全部一致 ✓**（custom key 因两边哈希算法不同，按 quote 归一化后比对——
+  它只是内部标识符，不影响任何用户可见结果）。
+
+### 补词表漏掉的基础能力
+- 「机器学习基础 / 机器学习 / 深度学习 / 神经网络」此前**完全不在词表**，
+  而这是中文 AI 岗最普遍的门槛要求（实验室里被实测暴露出来）→ 补进 `llm_basics`。
+- 配反向测试：「机器学习」只能属于 `llm_basics`，不许进别的族。
+
+### 校验
+79 个单测全过（新增跨引擎一致性与中文覆盖回归）、评测集 60 条一致率 1.0、
+`audit.py` 32/32、英文族识别 93.6%、中文族识别 77.8%、跨引擎 51/51 一致、网页词表同步、JS 语法通过。
+
 ## [0.8.9] - 2026-10-25
 
 ### 网页「中文 vs 英文」对比模块

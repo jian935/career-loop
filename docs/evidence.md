@@ -161,7 +161,9 @@ lift 分析显示这些族的 JD **普遍很短**（客服岗、助理岗、项�
 
 ## 4. 跨引擎一致性（Python ↔ 浏览器）
 
-网页 Demo 用原生 JS 重写了同一套规则。两者必须同分，否则「可证伪」就是空话：
+网页 Demo 用原生 JS 重写了同一套规则。两者必须同分，否则「可证伪」就是空话。
+
+**v0.8.10 之前的做法**（只测 3 个手写样例，太弱）：
 
 | 样例 | Python | 浏览器 |
 |---|---:|---:|
@@ -169,7 +171,26 @@ lift 分析显示这些族的 JD **普遍很短**（客服岗、助理岗、项�
 | Agent dev | 53.6% | 53.6% |
 | Finance（会计岗） | 81.8% | 81.8% |
 
-改规则必须两边一起改、并更新这张表（`scripts/sync_web_vocab.py --check` 在 CI 里卡漂移）。
+**v0.8.10 起改用真实数据逐条比对**：`scripts/cross_engine_check.py` 把同一批
+**真实中文 JD（50 条）+ 英文 JD** 分别喂给 Python 引擎和网页 JS 引擎，
+比对能力项集合 / 数量 / custom 数 / 每项权重：
+
+| 比对项 | 结果 |
+|---|---:|
+| 能力项集合一致 | **51/51** |
+| 能力项数量一致 | **51/51** |
+| custom 数量一致 | **51/51** |
+| 每项权重完全一致 | **51/51** |
+
+这个检验**真的抓到过 bug**：网页 JS 原本缺中文内联切分和英文降噪，
+同一批中文 JD 在网页上抽出的能力项数明显偏少——已修（`splitInlineSegments` / `isNoiseLine`）。
+只测手写样例是发现不了这种问题的。
+
+> 说明：custom 项的 key 是内容哈希（Python 用 MD5、网页用 djb2），只是内部标识符、
+> 不影响任何用户可见结果，所以比对时按 quote 归一化。
+
+改规则必须两边一起改、并更新这张表（`scripts/sync_web_vocab.py --check` 在 CI 里卡漂移，
+`cross_engine_check.py` 已接进单测）。
 
 ---
 
@@ -201,7 +222,10 @@ python scripts/real_eval_scatter.py --n 2000 --seed 7
 python scripts/fetch_cn_eval_data.py     # 9.3MB，需要 pip install pyarrow
 python scripts/cn_eval_family.py --extract-stats
 
-# 5) 网页与引擎词表一致性检查
+# 5) 网页 JS 引擎 ↔ Python 引擎一致性（真实中文 JD 逐条比对）→ 51/51 一致
+python scripts/cross_engine_check.py
+
+# 6) 网页与引擎词表一致性检查
 python scripts/sync_web_vocab.py --check
 ```
 

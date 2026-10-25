@@ -247,6 +247,40 @@
   .cn-en-repro{grid-column:1/-1;border:1px dashed var(--line);border-radius:10px;padding:11px 14px;
     font:11px/1.7 var(--mono);color:var(--muted)}
   .cn-en-repro b{color:var(--cyan);font-weight:600}
+
+  /* ---- 中文抽取实验室 ---- */
+  .lab{background:rgba(34,211,238,.04);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:22px}
+  .lab-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+  @media(max-width:820px){.lab-grid{grid-template-columns:1fr}}
+  .lab-col h3{font-size:13px;color:var(--sub);margin:0 0 8px;font-weight:600}
+  .lab textarea{min-height:230px;font-size:12.5px;font-family:var(--mono)}
+  .lab-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+  @media(max-width:820px){.lab-sum{grid-template-columns:repeat(2,1fr)}}
+  .lab-stat{border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:rgba(255,255,255,.02)}
+  .lab-stat .k{font:800 19px var(--mono);color:var(--cyan)}
+  .lab-stat.warn .k{color:var(--amber)}
+  .lab-stat .l{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+  .lab-out{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.lab-out{grid-template-columns:1fr}}
+  .lab-pane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.02)}
+  .lab-pane>h4{margin:0;padding:10px 14px;font-size:12px;color:var(--ink);
+    border-bottom:1px solid var(--line);background:rgba(255,255,255,.03);display:flex;
+    align-items:center;gap:8px}
+  .lab-pane>h4 .cnt{font:700 11px var(--mono);color:var(--muted);margin-left:auto}
+  .lab-list{max-height:340px;overflow:auto;padding:10px 12px}
+  .lab-item{border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:7px;
+    background:rgba(255,255,255,.02);font-size:12px}
+  .lab-item.custom{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.05)}
+  .lab-item .t{display:flex;align-items:baseline;gap:8px;margin-bottom:5px}
+  .lab-item .t b{color:var(--ink);font-weight:600}
+  .lab-item .t .w{font:700 10px var(--mono);color:var(--cyan)}
+  .lab-item.custom .t b{color:var(--amber)}
+  .lab-item .q{font-size:11px;color:var(--muted);line-height:1.5;border-left:2px solid var(--line);
+    padding-left:8px}
+  .lab-item .kw{display:inline-block;font:10.5px var(--mono);color:var(--sub);
+    background:rgba(255,255,255,.05);padding:1px 6px;border-radius:5px;margin:2px 4px 0 0}
+  .lab-note{font-size:11.5px;color:var(--muted);line-height:1.65;margin-top:12px;
+    border-left:2px solid var(--cyan);padding-left:11px}
   @media(max-width:720px){.nav-links{display:none}.hero{padding-top:52px}.stats{gap:26px}}
 
   /* 批量岗位 · 全行业适配 */
@@ -477,6 +511,46 @@
         </div>
       </div>
     </div>
+
+    <div class="lab">
+      <div class="sec-head"><h2>中文抽取实验室</h2><span>亲手喂一段中文 JD，看引擎到底认出了什么、漏了什么</span></div>
+      <p class="hint" style="margin-top:0;margin-bottom:14px">
+        上面 77.8% 是个汇总数字。这里把它拆开：<b>左边的黄色块是引擎没认出来的要求</b>——
+        它们要么该补进词表，要么本来就该靠语义模型理解。<b>敢把漏的摆出来，才算真的在检验自己。</b>
+      </p>
+      <div class="lab-grid">
+        <div class="lab-col">
+          <h3>粘贴一段中文 JD</h3>
+          <textarea id="labJD" spellcheck="false" placeholder="岗位职责：1、负责智能家电MCU固件开发；2、调试外设驱动、蓝牙通信；3、版本自测、bug闭环。任职要求：1、自动化/电子；2、熟悉C语言；3、了解蓝牙协议；4、会使用示波器、调试工具优先。"></textarea>
+        </div>
+        <div class="lab-col">
+          <h3>或者直接看真实样本</h3>
+          <textarea id="labJD2" spellcheck="false" placeholder="点下面的按钮载入一条真实中文 JD…"></textarea>
+          <div class="batch-actions" style="margin-top:9px">
+            <button id="labSampleA" class="btn-ghost sm">载入真实样本 ①</button>
+            <button id="labSampleB" class="btn-ghost sm">载入真实样本 ②</button>
+            <button id="labClear" class="btn-ghost sm">清空</button>
+          </div>
+        </div>
+      </div>
+      <div class="lab-sum">
+        <div class="lab-stat"><div class="k" id="labTotal">0</div><div class="l">抽出能力项</div></div>
+        <div class="lab-stat"><div class="k" id="labKnown">0</div><div class="l">词表已覆盖</div></div>
+        <div class="lab-stat warn"><div class="k" id="labCustom">0</div><div class="l">词表未覆盖</div></div>
+        <div class="lab-stat"><div class="k" id="labFam">—</div><div class="l">识别到的岗位族</div></div>
+      </div>
+      <div class="lab-out">
+        <div class="lab-pane">
+          <h4>✓ 词表已覆盖的能力项 <span class="cnt" id="labKnownCnt"></span></h4>
+          <div class="lab-list" id="labKnownList"></div>
+        </div>
+        <div class="lab-pane">
+          <h4>⚠ 词表未覆盖（引擎漏掉的） <span class="cnt" id="labCustomCnt"></span></h4>
+          <div class="lab-list" id="labCustomList"></div>
+        </div>
+      </div>
+      <p class="lab-note" id="labNote"></p>
+    </div>
   </section>
 
   <section class="calib" id="calibrate">
@@ -517,7 +591,7 @@
 /* VOCAB:BEGIN 由 scripts/sync_web_vocab.py 从 career_loop/matching/schema.py 自动生成，勿手改 */
 const TAXONOMY = {
 python:{label:"Python 工程能力", kw:["python","pandas","fastapi","flask","numpy","django"]},
-llm_basics:{label:"大模型原理与边界", kw:["大模型","llm","gpt","transformer","微调","token","上下文窗口","large language model"]},
+llm_basics:{label:"大模型原理与边界", kw:["大模型","llm","gpt","transformer","微调","token","上下文窗口","机器学习基础","机器学习","深度学习","神经网络","模型评估指标","算法基础","large language model"]},
 prompt_eng:{label:"提示词工程", kw:["提示词","prompt","提示工程","系统提示","prompt engineering"]},
 rag:{label:"RAG / 检索增强", kw:["rag","检索增强","知识库","向量","embedding","召回","重排","rerank","retrieval augmented","vector database","reranking"]},
 agent:{label:"Agent / 智能体", kw:["agent","智能体","工作流","多智能体","编排","tool use","multi-agent","orchestration"]},
@@ -854,12 +928,41 @@ const NEG=["没有","未","尚未","只做过","只在自己","仅","缺少","�
 const STRONG_NEG=["没用过","没做过","从没","完全没有","毫无","从不","没碰过","没接触","不了解"];
 const STRONG=["精通","深入","独立","主导","熟练掌握","扎实","闭环","从0到1","从 0 到 1"];
 const SECTIONS=[
-  {name:"job", markers:["岗位职责","工作职责","工作内容","职位描述","你将","职责"]},
-  {name:"must", markers:["任职要求","岗位要求","任职资格","基础要求","要求"]},
-  {name:"nice", markers:["优先条件","加分项","优先","bonus"]}
+  {name:"job", markers:["岗位职责","工作职责","工作内容","职位描述","你将","职责",
+    "essential duties","essential functions","job duties","responsibilities",
+    "what you will do","the role","your impact","about the role","position summary","role overview","job description"]},
+  {name:"must", markers:["任职要求","岗位要求","任职资格","基础要求","要求",
+    "requirements","required","qualifications","minimum qualifications","must have",
+    "you have","who you are","minimum education","basic qualifications","we are looking for","you should have"]},
+  {name:"nice", markers:["优先条件","加分项","优先","bonus",
+    "nice to have","preferred","preferred qualifications","plus","good to have","desirable","extra credit"]}
 ];
 const BULLET=/^\s*(?:[-*+•]|\d+[.、)]|[（(]\d+[)）])\s*/;
 const ST_LABEL={full:"已具备", partial:"部分", missing:"缺失"};
+
+// 英文 JD 的模板噪声（与 Python matching/extract.py 保持一致）
+const EN_TEMPLATE_PHRASES=["hello folks","hope you are","we are looking for","we want you",
+  "please apply","click here","join our","about us","why you","what we offer","what we do",
+  "our team","our mission","equal opportunity","salary is","benefits include","how to apply","good luck"];
+const EN_NOISE_RES=[
+  /https?:\/\//i, /www\./i, /^\W*$/, /^(e-?mail|email)\s*[:：]?\s*\S+/i,
+  /^(phone|tel|address|location|salary|posted|date)\s*[:：]/i, /[$¥€£]\s?\d/
+];
+function isUpperHeading(line){
+  const letters=[];
+  for(const ch of line){ if(/[a-zA-Z]/.test(ch)) letters.push(ch); }
+  if(letters.length<4) return false;
+  let up=0; for(const c of letters) if(c===c.toUpperCase()&&c!==c.toLowerCase()) up++;
+  return up/letters.length>=0.9;
+}
+function isNoiseLine(line){
+  const s=line.trim();
+  if(!s) return true;
+  const low=s.toLowerCase();
+  if(EN_TEMPLATE_PHRASES.some(p=>low.includes(p))) return true;
+  if(isUpperHeading(s)) return true;
+  return EN_NOISE_RES.some(r=>r.test(s));
+}
 
 function stripLine(s){
   return s.replace(BULLET,"").replace(/\s+/g," ").trim();
@@ -889,7 +992,40 @@ function hitsOf(line){
 function looksLikeReq(line){
   if(line.length<6 || line.length>120) return false;
   if(NOISE_MARKERS.some(n=>line.includes(n))) return false;
+  if(isNoiseLine(line)) return false;
   return true;
+}
+// 中文 JD 常把整份压在一行（"岗位职责：1、…；2、…任职要求：1、…"）。
+// 不拆的话整段被当成一行，只能命中一个词 —— 与 Python 的
+// _split_inline_segments 保持一致。
+function splitInlineSegments(line){
+  const parts=[]; let buf=""; let i=0;
+  const pushHead=()=>{ const h=buf.replace(/[：:，,。；; ]+$/,""); if(h) parts.push(h); };
+  while(i<line.length){
+    let matched=false;
+    for(const sec of SECTIONS){
+      for(const m of sec.markers){
+        if(line.substr(i,m.length)!==m) continue;
+        // 标题必须出现在子句开头，否则"有K8s项目优先"里的"优先"会被误当段标题
+        if(i>0 && !"：:，,。；;、 \t".includes(line[i-1])) continue;
+        pushHead();
+        parts.push("\x00SECTION:"+sec.name);
+        buf=""; i+=m.length; matched=true; break;
+      }
+      if(matched) break;
+    }
+    if(matched) continue;
+    const ch=line[i];
+    if(ch==="；"||ch===";"||ch==="。"){
+      const seg=buf.replace(/^[：:，, ]+|[：:，, ]+$/g,"");
+      if(seg) parts.push(seg);
+      buf="";
+    }else buf+=ch;
+    i++;
+  }
+  const tail=buf.replace(/^[：:，, ]+|[：:，, ]+$/g,"");
+  if(tail) parts.push(tail);
+  return parts;
 }
 function customLabel(line){
   let s=stripLine(line).replace(/^(负责|熟悉|掌握|具备|能够|要求|参与|独立|完成|了解|精通|熟练)/,"");
@@ -920,17 +1056,24 @@ function parseJD(text){
     if(sec){ section=sec; first=false; continue; }
     if(first){ first=false; if(looksLikeTitle(raw)) continue; }
     if(raw.length<6) continue;
-    const hits=hitsOf(raw);
-    const w=weightOf(section,raw);
-    if(hits.length){
-      for(const h of hits){
-        const prev=req[h.key];
-        if(!prev || w>prev.weight) req[h.key]={key:h.key,label:ALL_DIMS[h.key].label,weight:w,quote:raw.slice(0,90)};
+    // 一行里可能压着多条要求（中文 JD 常见），拆开逐条处理
+    for(const seg of splitInlineSegments(raw)){
+      if(seg.startsWith("\x00SECTION:")){ section=seg.split(":")[1]; continue; }
+      const s=seg.trim();
+      if(s.length<4) continue;
+      // 内联段来自明确编号的列表，本身就是要求项，不该再套标题规则
+      const hits=hitsOf(s);
+      const w=weightOf(section,s);
+      if(hits.length){
+        for(const h of hits){
+          const prev=req[h.key];
+          if(!prev || w>prev.weight) req[h.key]={key:h.key,label:ALL_DIMS[h.key].label,weight:w,quote:s.slice(0,90)};
+        }
+      }else if(looksLikeReq(s)){
+        const ck=hashKey(s);
+        const prev=req[ck];
+        if(!prev || w>prev.weight) req[ck]={key:ck,label:customLabel(s),weight:w,quote:s.slice(0,90),custom:true};
       }
-    }else if(looksLikeReq(raw)){
-      const ck=hashKey(raw);
-      const prev=req[ck];
-      if(!prev || w>prev.weight) req[ck]={key:ck,label:customLabel(raw),weight:w,quote:raw.slice(0,90),custom:true};
     }
   }
   return Object.keys(req).map(k=>req[k]);
@@ -1472,6 +1615,65 @@ function renderCnEn(){
   }
 }
 
+/* ============================================================
+   中文抽取实验室：把引擎在中文 JD 上的真实表现摊开给用户看
+   用的就是网页自己的 parseJD —— 所以这里显示的就是你在上面
+   「单 JD 匹配」里会得到的同一批能力项，不是另一套演示逻辑。
+   ============================================================ */
+const LAB_SAMPLES = [
+  "岗位职责：1、负责智能家电MCU固件开发；2、调试外设驱动、蓝牙通信；3、版本自测、bug闭环。任职要求：1、自动化/电子；2、熟悉C语言；3、了解蓝牙协议；4、会使用示波器、调试工具优先。",
+  "岗位职责：1、参与短视频推荐特征工程与样本清洗；2、协助离线实验、指标统计；3、跟进模型效果观测，输出实验报告。任职要求：1、统计/数学/计算机；2、熟悉Python、Pandas；3、了解机器学习基础；4、有推荐相关竞赛加分。"
+];
+function labItem(r, isCustom){
+  const d=document.createElement("div");
+  d.className="lab-item"+(isCustom?" custom":"");
+  const t=document.createElement("div"); t.className="t";
+  const b=document.createElement("b"); b.textContent=r.label;
+  const w=document.createElement("span"); w.className="w";
+  w.textContent="权重 "+r.weight;
+  t.appendChild(b); t.appendChild(w);
+  d.appendChild(t);
+  const q=document.createElement("div"); q.className="q"; q.textContent=r.quote;
+  d.appendChild(q);
+  return d;
+}
+function renderLab(){
+  const text=el("labJD").value.trim();
+  const box=el("labKnownList"), cbox=el("labCustomList");
+  while(box.children.length) box.removeChild(box.children[0]);
+  while(cbox.children.length) cbox.removeChild(cbox.children[0]);
+  if(!text){
+    el("labTotal").textContent="0"; el("labKnown").textContent="0";
+    el("labCustom").textContent="0"; el("labFam").textContent="—";
+    el("labKnownCnt").textContent=""; el("labCustomCnt").textContent="";
+    el("labNote").textContent="粘贴一段 JD，或点上面的按钮载入真实样本。";
+    return;
+  }
+  const reqs=parseJD(text);
+  const known=reqs.filter(r=>!r.custom);
+  const custom=reqs.filter(r=>r.custom);
+  for(const r of known) box.appendChild(labItem(r,false));
+  for(const r of custom) cbox.appendChild(labItem(r,true));
+  el("labTotal").textContent=String(reqs.length);
+  el("labKnown").textContent=String(known.length);
+  el("labCustom").textContent=String(custom.length);
+  el("labKnownCnt").textContent=known.length+" 项";
+  el("labCustomCnt").textContent=custom.length+" 项";
+  const doms=detectDomains(text);
+  el("labFam").textContent=doms.length?doms.slice(0,2).map(d=>DOMAIN_CN[d]||d).join(" / "):"未识别";
+  const rate=reqs.length?Math.round(custom.length/reqs.length*100):0;
+  el("labNote").textContent="这段 JD 抽出 "+reqs.length+" 个能力项，其中 "+custom.length
+    +" 个（"+rate+"%）词表没覆盖。"
+    +(rate>=40?" 覆盖偏低——这类 JD 靠关键词匹配帮不上多少忙，需要语义模型。"
+      :rate>0?" 这些漏掉的正是词表要补的方向（见 evidence.md 的中文检验一节）。"
+      :" 全部命中词表。");
+}
+let labTimer=null;
+function debounceLab(){
+  clearTimeout(labTimer);
+  labTimer=setTimeout(renderLab,220);
+}
+
 let sampleIdx=0;
 function loadSample(i){
   el("jd").value=SAMPLES[i].jd;
@@ -1503,12 +1705,18 @@ el("calDemo").addEventListener("click",calDemo);
 el("calExport").addEventListener("click",calExport);
 el("calClear").addEventListener("click",()=>{ if(confirm("清空所有本地校准记录？")){ calSave([]); renderCalib(); } });
 el("calRole").addEventListener("keydown",e=>{ if(e.key==="Enter") calAdd(); });
+el("labJD").addEventListener("input",debounceLab);
+el("labSampleA").addEventListener("click",()=>{ el("labJD").value=LAB_SAMPLES[0]; renderLab(); });
+el("labSampleB").addEventListener("click",()=>{ el("labJD").value=LAB_SAMPLES[1]; renderLab(); });
+el("labClear").addEventListener("click",()=>{ el("labJD").value=""; renderLab(); });
 const qs=new URLSearchParams(location.search).get("s");
 sampleIdx = qs===null ? 0 : Math.max(0, Math.min(SAMPLES.length-1, parseInt(qs,10)||0));
 loadSample(sampleIdx);
 loadBatchSample();
 renderCalib();
 renderCnEn();
+el("labJD").value=LAB_SAMPLES[0];
+renderLab();
 </script>
 </body>
 </html>

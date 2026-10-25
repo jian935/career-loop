@@ -679,6 +679,44 @@ class TestChineseVocabFromRealData(unittest.TestCase):
         self.assertNotIn("fe_framework", {r.key for r in reqs})
 
 
+class TestCrossEngineConsistency(unittest.TestCase):
+    """网页 JS 引擎必须和 Python 引擎抽出一模一样的能力项。
+
+    网页 demo 是 Python 引擎的手写移植版。两边一旦有差异，
+    评委在网页上看到的匹配结果就会和 CLI 不一样——对主打「可证伪」的
+    项目是致命的。所以用真实中文 JD 逐条比对（scripts/cross_engine_check.py）。
+    """
+
+    def test_cross_engine_check_passes(self):
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        root = Path(__file__).parent.parent
+        script = root / "scripts" / "cross_engine_check.py"
+        if not script.exists():
+            self.skipTest("cross_engine_check.py 不存在")
+        node = r"C:\Users\llj12\.workbuddy\binaries\node\versions\22.22.2-6\node.exe"
+        if not Path(node).exists():
+            self.skipTest("本机没有 node，跳过跨引擎比对")
+        res = subprocess.run(
+            [sys.executable, str(script), "--limit", "12"],
+            capture_output=True, text=True, encoding="utf-8", cwd=str(root),
+        )
+        self.assertEqual(res.returncode, 0, res.stdout[-1500:] + res.stderr[-800:])
+
+    def test_inline_split_exists_in_webpage_js(self):
+        """网页 JS 必须有中文内联切分，否则中文 JD 只能抽出 1 项。"""
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent.parent
+        html = (root / "docs" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("function splitInlineSegments", html)
+        self.assertIn("function isNoiseLine", html)
+        # 分节标记里要有英文的
+        self.assertIn("essential duties", html)
+
+
 class TestChineseVocabularyCoverage(unittest.TestCase):
     """用公开中文 JD 数据集补的词，要能命中，且不误伤其他族。
 
@@ -722,6 +760,20 @@ class TestChineseVocabularyCoverage(unittest.TestCase):
         jd = "岗位职责：1、负责大模型算法研发，训练推荐模型并搭建 RAG 检索链路。"
         preds = self._detect(jd)
         self.assertIn("ai", preds, preds)
+
+    def test_machine_learning_basics_is_covered(self):
+        # 「机器学习基础」曾完全不在词表里（中文 AI 岗最普遍的门槛要求）
+        jd = "任职要求：1、统计/数学/计算机；2、熟悉Python、Pandas；3、了解机器学习基础。"
+        reqs, _ = matching.extract_requirements(jd, None)
+        self.assertIn("llm_basics", {r.key for r in reqs})
+
+    def test_machine_learning_word_is_not_overgeneric(self):
+        # 「机器学习」不能出现在与 AI 无关的族里
+        from career_loop.matching.schema import ALL_DIMS
+
+        owners = [k for k, spec in ALL_DIMS.items()
+                  if any("机器学习" in kw for kw in spec["kw"])]
+        self.assertEqual(owners, ["llm_basics"], owners)
 
 
 if __name__ == "__main__":
