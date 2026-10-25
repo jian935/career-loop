@@ -11,7 +11,7 @@
 
 <p align="center">
   
-  <a href="https://github.com/jian35/career-loop/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/jian35/career-loop?style=social"></a>
+  <a href="https://github.com/jian935/career-loop/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/jian935/career-loop?style=social"></a>
   
   <img alt="license" src="https://img.shields.io/badge/license-MIT-22c55e.svg">
   
@@ -23,7 +23,7 @@
 
 <p align="center">
   
-  <a href="https://jian35.github.io/career-loop/"><b>▶ 在线试用（免安装，浏览器里跑）</b></a>
+  <a href="https://jian935.github.io/career-loop/"><b>▶ 在线试用（免安装，浏览器里跑）</b></a>
   
   \&nbsp;·\&nbsp;
   
@@ -94,7 +94,7 @@ Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的�
 ## 在线体验（免安装）
 
 - 直接打开 [`docs/index.html`](docs/index.html)：纯前端，粘贴 JD 和经历就在浏览器里算，数据不上传。
-- 部署到 GitHub Pages：`Settings → Pages → Source: Deploy from a branch → Branch: main, Folder: /docs`，之后地址形如 `https://jian35.github.io/career-loop/`。
+- 部署到 GitHub Pages：`Settings → Pages → Source: Deploy from a branch → Branch: main, Folder: /docs`，之后地址形如 `https://jian935.github.io/career-loop/`。
 - 命令行零配置预览核心引擎：`python scripts/demo_cli.py`（免 API Key，离线跑「单 JD 匹配 → 多 JD 排序 → 补强性价比」）。
 
 ## 支持任意岗位（不只 AI）
@@ -103,7 +103,7 @@ Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的�
 
 1. **AI / 技术岗**：Python、RAG、Agent、函数调用、框架、AI 编程工具、效果评估……
 2. **通用能力**：沟通协作、执行推进、问题解决、学习自驱、文档表达、客户导向、领导力、外语、办公软件。
-3. **岗位族（65 个 / 171 个能力项）**：
+3. **岗位族（66 个 / 171 个能力项）**：
    - AI 细分（12）：NLP / CV / 推荐搜索 / MLOps / 语音 / 多模态 / 具身智能 / 数据工程 / AI 测试 / 解决方案 / AI 运营 / AI 合规
    - 工商管理大类（16）：市场营销 / 销售 / 会计 / 财务分析 / 审计 / 人力 / 行政 / 供应链 / 电商 / 旅游酒店 / 信息管理 / 项目管理 / 国际贸易 / 资产评估 / 物业房地产 / 工程管理
    - 研发工程（9）：后端 / 前端 / 测试 / 运维 / 信息安全 / 嵌入式 / 电气 / 机械设计 / 质量
@@ -189,6 +189,9 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
   ② 公开 HF 英文集 1,167 条真实 JD → 族识别 **93.6%** / r=0.193；
   ③ `data/eval_real_jd.jsonl` **45 条真实中文 JD 文本**人工标注（覆盖 20 个能力项）
      + **10,613 条留出检验** → 语境约束的真实贡献 **+13.8 个百分点**（`scripts/eval_real_jd.py`）。
+- **岗位族识别（domains）**：规则 / LLM / auto / blend 四种后端。blend（默认）= LLM 首选优先 + 规则补充，
+  1,838 条真实中文 JD 实测 **86.0% → 93.4%**（service 52%→78%）；未配 Key 自动回退规则，行为与旧版一致。
+  详见 [`docs/evidence.md`](docs/evidence.md) 1.6 节。
 - **校准（calibrate）**：Pearson 相关系数 r + 20 分桶正反馈率，判断匹配分是否真能预测结果。
 - **双向匹配（recommend）**：给定一份经历 + 一批 JD，给 JD 排序，并算出「补哪一项能力最划算（能解锁最多岗位）」——直接回答「下一步该做什么项目」。
 - **反事实解释（whatif）**：假设把某一项补到「已具备」，匹配分能从多少涨到多少——把「补哪项最划算」变成一个具体数字，而不是一句建议。
@@ -205,7 +208,7 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 需要 Python 3.10+。本仓库**零第三方依赖**即可跑核心逻辑（eval / calibrate / match / 存储）；只有看板需要 `streamlit`。
 
 ```bash
-git clone https://github.com/jian35/career-loop.git
+git clone https://github.com/jian935/career-loop.git
 cd career-loop
 pip install -e .            # 装 cli 命令：career-loop
 # 可选：看板
@@ -306,6 +309,9 @@ career-loop calibrate --data data/demo_applications.jsonl
   如实与英文数字并列，不做取舍；仍弱的族（service 52% / product 70%）与 hr 词表 5% 的
   精确率问题都写进了 `docs/evidence.md` 1.4 节，没有藏。v0.8.16
   专攻 service / project_mgmt 一轮，四条路试完确认补不动，证据链见 1.5 节。
+  v0.8.17 转向语义模型做**第二意见**：规则+LLM 混合（blend）同数据集实测 **93.4%**
+  （service 52%→78%、project_mgmt 70%→83%），LLM 单独用不是替代品（漏咨询/实施/售前类），
+  过程与边界见 1.6 节。
 - 匹配分 ↔ 真实标注 `final_score` 的 Pearson **r = 0.193**（2,000 真实配对，弱正相关）
 
 r 偏低且为正，符合预期：引擎当前是**规则关键词基线**，而 `final_score` 是**多维语义匹配**，
@@ -598,7 +604,7 @@ career-loop/
 
 ## Star history
 
-![Star History Chart](https://api.star-history.com/svg?repos=jian35/career-loop\&type=Date)
+![Star History Chart](https://api.star-history.com/svg?repos=jian935/career-loop\&type=Date)
 
 ## 许可
 

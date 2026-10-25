@@ -9,7 +9,7 @@ description = "Job-fit scoring you can falsify: JD x experience -> weighted scor
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "jian35" }]
+authors = [{ name = "jian935" }]
 keywords = [
     "job", "career", "resume", "job-matching", "eval", "calibration",
     "agent", "llm", "counterfactual", "local-first",
@@ -37,11 +37,11 @@ dev = ["pytest>=8", "build>=1.2"]
 career-loop = "career_loop.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/jian35/career-loop"
-Repository = "https://github.com/jian35/career-loop"
-Issues = "https://github.com/jian35/career-loop/issues"
-Documentation = "https://github.com/jian35/career-loop/tree/main/docs"
-Changelog = "https://github.com/jian35/career-loop/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/jian935/career-loop"
+Repository = "https://github.com/jian935/career-loop"
+Issues = "https://github.com/jian935/career-loop/issues"
+Documentation = "https://github.com/jian935/career-loop/tree/main/docs"
+Changelog = "https://github.com/jian935/career-loop/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 include = ["career_loop*"]

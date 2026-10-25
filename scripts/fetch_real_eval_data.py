@@ -42,7 +42,7 @@ FILES = {
 }
 
 HEADERS = {
-    "User-Agent": "career-loop/0.8 (+https://github.com/jian35/career-loop)",
+    "User-Agent": "career-loop/0.8 (+https://github.com/jian935/career-loop)",
     "Accept": "*/*",
 }
 

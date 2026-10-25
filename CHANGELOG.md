@@ -4,6 +4,40 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.18] - 2026-10-25
+
+### W11：投稿材料打磨（1024 造物挑战）+ GitHub ID 勘误
+
+**数字勘误（用当前引擎重算，非手改编数）**：
+
+- 作者私有 40 条投递 early 口径 r = -0.255 → **-0.059**（重跑
+  `career-loop reflow --records data/calibration/applications.json --mode early`；
+  分桶：20-40 档 30% / 40-60 档 27.3% / 60-80 档 15 条 0% / 80-100 档 50%）
+- 50 条同源样例 terminal 口径 r = 0.003 → **0.03**；
+  `docs/reflow_sample.md` 由 `scripts/make_reflow_sample.py` 重新生成
+- 波及：evidence.md（第 3 节整表 + 总览 + 收尾）、submission.md、share-kit.md、
+  retro.md、index.html（rf-stat / RF_BUCKETS / 证据墙卡 / 失效区间行）、
+  reflow_sample.md（重新生成）。CHANGELOG 历史条目保留旧值，以勘误表为准
+- retro.md 补「打脸之后」一节（W7–W10：中文 86.0% / 补不动的证据 / blend 93.4% /
+  主链路不接 LLM），删除已过时的「下一步 42→50 条」
+
+**素材重制（旧素材数字停留在 v0.4 时代）**：
+
+- `docs/demo.gif`：用当前 CLI 输出重录（80.4% / 63.6% / 43.2%）
+- `docs/demo.png` / `docs/demo-finance.png`：当前网页重截图（66 岗位族 / 60 评测集 /
+  v0.8.17；会计岗 81.8% 持久准确）；hero 统计条 65→66 族、42→60 评测集、版本号 v0.4→v0.8.17
+- `docs/og-cover.png`：同版式重绘（65→66 岗位族）
+- `docs/career-loop-demo.mp4`：按当前引擎数字重制（135s，H.264 716KB）——
+  校准段改用同源样例数据真实值 r=0.03 并**明确标注数据性质**（原视频的 r=0.694
+  是编造演示数据且画面无标注，属可证伪性风险）；证据墙新增 blend 93.4%
+
+**GitHub ID 勘误**：用户 2026-10-25 明确 ID 为 **jian935**（此前误记为 jian35），
+全仓库 26 处链接统一替换（README / pyproject.toml / docs/index.html /
+submission / share-kit / retro / fetch_real_eval_data.py / CHANGELOG 历史行）。
+对外链接：`github.com/jian935/career-loop`、`jian935.github.io/career-loop`。
+
+**校验**：138 单测全过、audit 32/32、词表同步无漂移、跨引擎 51/51。
+
 ## [0.8.17] - 2026-10-25
 
 ### W10：LLM 族识别后端——1,838 条真实调用，五种模式同台实测
@@ -40,6 +74,21 @@ versioning follows [Semantic Versioning](https://semver.org/).
   评测脚本据此如实报告「实调 vs 缓存」，原来把缓存命中也报成「实调」。
 - 单测 124 → **138**；全量回归零回退（audit 32/32、对照集 100%、英文 93.6%、
   中文 86.0%、抽取 45/45 + 留出 100%、跨引擎 51/51、脱敏审计干净）。
+
+### 数字勘误（投稿材料打磨时发现，全部用当前引擎重算替换）
+
+按「对外引用的 r 必须是当前引擎真实值」纪律，用 `data/calibration/` 私有数据
+（不入库）重跑 `career-loop reflow` 后更新：
+
+| 位置 | 旧值（引擎修复前） | 当前引擎真实值 |
+|---|---|---|
+| 作者私有 40 条投递（early 口径） | r = -0.255 | **r = -0.059**（正反馈 7/40 = 17.5% 不变；分桶：20-40 档 30%、40-60 档 27.3%、60-80 档 15 条 0%） |
+| 50 条同源样例（terminal 口径） | r = 0.003 | **r = 0.03** |
+
+波及文件：`docs/evidence.md`（第 3 节整表 + 分桶 + 总览 + 收尾）、
+`docs/submission.md`、`docs/share-kit.md`、`docs/retro.md`、`docs/index.html`
+（rf-stat / RF_BUCKETS / 失效区间行）、`docs/reflow_sample.md`（重新生成，非手改）。
+历史版本条目中的旧数字保留原样（CHANGELOG 不改写历史），以本条为准。
 
 ## [0.8.16] - 2026-10-25
 
@@ -499,7 +548,7 @@ JS 语法过、6 个 section 标签平衡、单测 97 条全过、audit 32/32、
 - 47 unit tests (was 36), 32 CLI checks, eval consistency 1.0 — all still green.
 - Shipped browser samples still score 58.3 / 53.6 / 81.8, identical in Python
   and JS.
-- Author / repository metadata now points to `github.com/jian35/career-loop`.
+- Author / repository metadata now points to `github.com/jian935/career-loop`.
 
 ## [0.7.0] - 2026-10-24
 
