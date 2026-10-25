@@ -4,6 +4,31 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.27] - 2026-10-26
+
+### 补上 CI 里缺的三道检查（体检清单 P1）
+
+体检时列的三处"承诺在、验证不在"里，最后两处在这版补掉：
+
+1. **console script 从没被按用户的方式试过**——CI 一直只跑 `python -m career_loop`，
+   等于没验过 `pyproject` 里那个入口。现在装完就敲 `career-loop --help`，
+   并且再跑一次会读数据的 `career-loop occupations`（只解析参数表不算验证）。
+2. **看板是唯一依赖可选第三方包的部分，CI 完全不回归**——新增独立 `ui` job
+   （不塞进 6 个矩阵 job，免得每个都装一遍 streamlit）：
+   `pip install -e .[ui]` + `smoke_dashboard.py --strict`（无头 AppTest，不开浏览器）
+   + `--self-test`（确认这个冒烟自己也有牙齿）。
+3. **顺手拆掉一颗我自己刚埋的雷**：docker job 里断言 `occupations | grep "49%"`，
+   v0.8.26 把口径改了之后这个数字变成 78%——**用具体数字断言，等于在验证
+   "我没改数字"而不是"命令能读到数据"**。改成断言文字标签「词表覆盖」。
+
+已知遗留：看板里 `use_container_width` 已被 streamlit 标记废弃（计划在 2025-12-31
+后移除，目前 1.66 仍可用，只是告警）。没有立刻改签名——新签名 `width=` 会打破
+`streamlit>=1.30` 的下限兼容；这条由新增的 `ui` job 看着，真移除时 CI 会先红。
+
+仓库唯一长期未解决项仍是 **P0 GitHub 推送**：本机到 github.com 不通
+（代理隧道 502，之前是 hosts 被指向 127.0.0.1），换网络后
+`bash scripts/publish_github.sh` 即可，脚本本身已自检过。
+
 ## [0.8.26] - 2026-10-26
 
 ### 把「覆盖面」的分母换成别人给的：职业分类对账重写 + 三个新行业词表

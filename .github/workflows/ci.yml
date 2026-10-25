@@ -24,6 +24,14 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Install
         run: python -m pip install -e .
+      # CI 一直只跑 `python -m career_loop`，等于从没验过 pyproject 里那个
+      # console script 真的能用（README 让用户直接输 `career-loop`）。
+      # 装完必须按用户的方式敲一遍。
+      - name: Console script works (as users invoke it)
+        run: career-loop --help
+      # 再验一个**会读文件**的子命令，确认入口不是只解析了 --help 的参数表
+      - name: Console script reads its own data
+        run: career-loop occupations | grep -q "词表覆盖"
       - name: Syntax check
         run: python -m compileall -q career_loop
       - name: Unit tests
@@ -68,7 +76,28 @@ jobs:
         run: docker build -t career-loop:ci .
       - name: Entry point works
         run: docker run --rm career-loop:ci --help
+      # 断言用**文字标签**而不是具体百分比：数字口径一改（v0.8.26 就改过一次，
+      # 49% → 78%），写死数字会让这条从"验证能读数据"变成"验证我没改数字"。
       - name: Reads its own data inside the image
-        run: docker run --rm career-loop:ci occupations | grep -q "49%"
+        run: docker run --rm career-loop:ci occupations | grep -q "词表覆盖"
       - name: Full eval runs inside the image
         run: docker run --rm career-loop:ci eval --data data/eval_sample.jsonl
+
+  # 看板是唯一依赖可选第三方包（streamlit）的部分，CI 不装它就永远不回归。
+  # 单独一个 job：不塞进上面的 6 个矩阵 job 里，免得每个都多装一遍 streamlit。
+  # smoke_dashboard.py 用 streamlit 自带的 AppTest 无头跑，不开浏览器，
+  # --strict 表示没装 streamlit 就算失败（默认跳过是给本机留的方便）。
+  ui:
+    name: dashboard smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install with UI extras
+        run: python -m pip install -e ".[ui]"
+      - name: Dashboard smoke (headless)
+        run: python scripts/smoke_dashboard.py --strict
+      - name: Dashboard smoke has teeth
+        run: python scripts/smoke_dashboard.py --self-test

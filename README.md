@@ -630,6 +630,7 @@ career-loop/
 - **41 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态、坏截止日、职业分类对账）+ `doctor` + `scan` + `daily` 三种导出都要跑得通且文件非空。
 - **网页端到端冒烟**（`python scripts/smoke_web.py`）：把 `docs/index.html` 里**整段 `<script>`** 在 Node 里跑起来挨个点每个入口（18 个：单 JD 匹配 / 批量排序 / 今日清单 / 三种导出 / 全行业适配 / 实习推荐 / 职业分类对账 / 抽取实验室 / 校准看板）。它补的是纯函数比对看不到的一类坏法——页面印 `undefined`、导出按钮抛异常；带 `--self-test`，四种注入的坏法必须全被抓出来。
 - 一条命令复现：`python -m unittest discover -s career_loop/tests`。
+- **CI 三个 job**：`test`（6 个矩阵：ubuntu/windows × py3.10/3.12/3.13，含**按用户方式敲 `career-loop` 命令**、网页词表一致性、三套跨引擎比对、整页冒烟）+ `docker`（真 build 并跑命令）+ `ui`（装 `.[ui]` 无头跑看板冒烟）。看板与 Dockerfile 以前都是"承诺在、验证不在"，现在都有自动化盯着。
 
 ---
 

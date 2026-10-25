@@ -677,6 +677,12 @@ career-loop/
   JDs, capability extraction *and* family identification, and the vocabulary is
   generated from Python by `scripts/sync_web_vocab.py` so the two cannot drift.
 - One command: `python -m unittest discover -s career_loop/tests`.
+- **CI runs three jobs** — `test` (a 6-cell matrix: ubuntu/windows × py3.10/3.12/3.13,
+  including invoking `career-loop` **the way users do**, web-vocabulary parity, three
+  cross-engine diffs, and the whole-page smoke), `docker` (real build + three commands
+  inside the image), and `ui` (`pip install -e .[ui]` + headless dashboard smoke).
+  The dashboard and the Dockerfile used to be "promised but never verified"; both are
+  now under automation.
 
 ---
 
