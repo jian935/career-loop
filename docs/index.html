@@ -313,6 +313,29 @@
     background:rgba(255,255,255,.05);padding:1px 6px;border-radius:5px;margin:2px 4px 0 0}
   .lab-note{font-size:11.5px;color:var(--muted);line-height:1.65;margin-top:12px;
     border-left:2px solid var(--cyan);padding-left:11px}
+  /* ---- LLM 族识别面板 ---- */
+  .llm-panel{border:1px solid rgba(124,92,255,.32);border-radius:13px;padding:14px 16px;
+    margin:16px 0 0;background:rgba(124,92,255,.05)}
+  .llm-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .llm-head h3{margin:0;font-size:13px;color:var(--ink);font-weight:600}
+  .llm-head .tag{font:700 10px var(--mono);color:var(--violet);border:1px solid rgba(124,92,255,.4);
+    border-radius:5px;padding:1px 6px}
+  .llm-head .acc{font:11px var(--mono);color:var(--muted)}
+  .llm-panel .hint{margin:8px 0 0}
+  .llm-row{display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap;margin-top:12px}
+  .llm-field{display:flex;flex-direction:column;gap:4px;min-width:190px;flex:1}
+  .llm-field label{font:10.5px var(--mono);color:var(--muted)}
+  .llm-field input{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:7px 10px;color:var(--ink);font:12px var(--mono);width:100%}
+  .llm-field input:focus{outline:none;border-color:var(--violet)}
+  .llm-out{margin-top:11px;font-size:11.5px;color:var(--sub);line-height:1.7;font-family:var(--mono)}
+  .llm-out .ok{color:var(--cyan)}
+  .llm-out .err{color:var(--amber)}
+  .llm-out .fams{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+  .llm-out .fams span{font:11px var(--mono);border:1px solid var(--line);border-radius:6px;
+    padding:2px 8px;color:var(--ink);background:rgba(255,255,255,.03)}
+  .llm-out .fams span.llm{border-color:rgba(124,92,255,.5);color:var(--violet)}
+  .llm-out .fams span.rule{border-color:rgba(34,211,238,.4);color:var(--cyan)}
 
   /* ---- 评测体系：这些数字是怎么被检验的 ---- */
   .esys{background:rgba(52,211,153,.04);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:22px}
@@ -438,7 +461,7 @@
       <circle cx="23.5" cy="16" r="2.1" fill="#22D3EE"/>
     </svg>
     <span>career-loop</span>
-    <span class="ver">v0.8.17</span>
+    <span class="ver">v0.8.21</span>
   </a>
   <div class="nav-links">
     <a href="#app">Demo</a>
@@ -614,6 +637,31 @@
         <div class="lab-stat warn"><div class="k" id="labCustom">0</div><div class="l">词表未覆盖</div></div>
         <div class="lab-stat"><div class="k" id="labFam">—</div><div class="l">识别到的岗位族</div></div>
       </div>
+      <div class="llm-panel">
+        <div class="llm-head">
+          <h3>接入 LLM 族识别 <span class="tag">可选</span></h3>
+          <span class="acc">规则基线 86.0% → 规则+模型混合 93.4%（同一公开中文集实测）</span>
+        </div>
+        <p class="hint">
+          规则基线在<b>一句话短 JD</b>上最容易漏（客服、项目类岗位）。模型能补上这块，
+          但浏览器直连模型服务商会被 CORS 挡住、API Key 也不该进网页——所以用
+          <b>本机代理</b>：在终端跑 <code>career-loop llm-proxy</code>，把打印出来的地址与 Token 填进来即可。
+          Key 始终留在你自己的机器上，网页只跟 127.0.0.1 说话。
+        </p>
+        <div class="llm-row">
+          <div class="llm-field">
+            <label>代理地址</label>
+            <input id="llmProxy" value="http://127.0.0.1:8787" spellcheck="false">
+          </div>
+          <div class="llm-field">
+            <label>Token（启动代理时终端里打印的那串）</label>
+            <input id="llmToken" placeholder="点「测试连接」之前先填这个" spellcheck="false">
+          </div>
+          <button id="llmTest" class="btn-ghost sm">测试连接</button>
+          <button id="llmRun" class="btn sm">用模型判族</button>
+        </div>
+        <p class="llm-out" id="llmOut">未连接。规则基线始终可用，接上模型只是多一个视角。</p>
+      </div>
       <div class="lab-out">
         <div class="lab-pane">
           <h4>✓ 词表已覆盖的能力项 <span class="cnt" id="labKnownCnt"></span></h4>
@@ -757,6 +805,13 @@
         <p class="note">
           两个引擎的盲区几乎不重叠（规则漏短 JD / 同义表达，LLM 漏咨询实施售前），所以并集有效。<b>主链路不接 LLM</b>——校准 r 必须离线可复现；未配 Key 或调用失败自动回退规则并标注。
           LLM 数字跨运行 ±0.1pt（temperature 0.2），缓存保证单次运行可复现。完整证据链：<code>docs/evidence.md</code> 1.6 节。
+        </p>
+        <p class="note" style="border-left-color:var(--violet)">
+          <b style="color:var(--violet)">v0.8.21 起，这个网页自己也能用模型判族</b>——在终端跑 <code>career-loop llm-proxy</code>，
+          把打印出来的地址与 Token 填进「中文抽取实验室」里的「接入 LLM 族识别」面板即可。
+          Key 始终留在你自己的机器上，网页只跟 <code>127.0.0.1</code> 说话（绕开 CORS，也不用把 Key 贴进网页）。
+          网页与 CLI 用的是<b>同一份封闭集提示词</b>（由 <code>sync_web_vocab.py</code> 自动生成，
+          <code>scripts/cross_engine_llm_check.py</code> 逐字校验），所以两边判的族是同一件事。
         </p>
       </div>
 
@@ -1161,6 +1216,8 @@ const CONTEXT_REQUIRED = {
 const AI_CORE_KW = ["python","pandas","numpy","fastapi","django","gpt","large language model","llm","transformer","prompt engineering","rag","retrieval augmented","vector database","reranking","agent","multi-agent","orchestration","mlops","fine-tuning","pytorch","tensorflow","langchain","langgraph","nlp","natural language processing","computer vision","object detection","recommender","model deployment","kubernetes","etl","data pipeline","embedding","大模型","微调","智能体","检索增强","提示词","函数调用","多智能体"];
 const BOILERPLATE_PATTERNS = [/(?:该|此)?职位来源于[：:]?[^\s。，,；;！!？?]{2,16}/g, /以[^。；;\n]{0,15}理由索要财物[，,]?[^。；;\n]{0,25}涉嫌违法/g];
 function stripBoilerplate(t){ if(!t) return t; for(const re of BOILERPLATE_PATTERNS){ t = t.replace(re, ""); } return t; }
+const FAMILY_PROMPT = "你是岗位族分类器。给你一份招聘 JD 的正文，判断它属于哪个或哪些岗位族。\n\n规则：\n1. 只能从下面列表里选，族 key 原样输出，不要自造族名；\n2. 可以多选，按相关程度从高到低排列；\n3. 只依据 JD 正文判断，不要臆测正文没写的技能；\n4. 严格输出 JSON：{\"families\": [\"族key\"], \"confidence\": 0.0到1.0}，不要输出任何其他文字。\n\n岗位族列表：\n- product：产品（PRD/需求文档、产品规划）\n- marketing：市场（内容/文案、投放/广告、品牌/公关、私域/社群）\n- sales：销售（客户开发/BD、商务谈判、CRM/客户管理）\n- finance：财务（会计核算、财务报表、税务、审计/内控、证书(CPA/ACCA)、财务软件(用友/金蝶/SAP)）\n- design：设计（视觉设计、交互/UX、设计工具、动效/三维）\n- operations：运营（活动运营、用户运营、内容运营、SEO/网站运营）\n- hr：人力（招聘、绩效/薪酬、培训/组织、劳动法/社保用工）\n- education：教育（教学/授课、课程/教研、学员/班级管理、考试/测评）\n- healthcare：医疗（临床/护理、药学/医学、医疗器械/注册、公共卫生/院感）\n- legal：法务（合同/法务、诉讼/争议解决、公司法/投融资、知识产权）\n- supply：供应链（供应链/库存、采购/供应商、计划/排产）\n- manufacturing：制造（工艺/生产、制程质量、设备/维保、冶炼/轧制、纺织/印染）\n- ai_nlp：NLP（NLP/文本处理）\n- ai_cv：CV（计算机视觉）\n- ai_recsys：推荐/搜索（推荐/搜索）\n- ai_mlops：MLOps（MLOps/模型部署）\n- ai_solution：AI方案/售前（AI 解决方案/售前）\n- ai_ops：AI运营/标注（AI 运营/数据标注）\n- ai_compliance：AI合规（AI 合规/伦理）\n- admin：行政（行政后勤、档案/证照）\n- ecommerce：电商（电商运营、直播/达人、选品/上架）\n- tourism：旅游/酒店（酒店/住宿、旅游/计调）\n- it_systems：信息管理（信息系统实施、系统运维/工单）\n- project_mgmt：项目管理（项目管理、敏捷/迭代管理）\n- trade：外贸（国际贸易、单证/结算）\n- asset_valuation：资产评估（资产评估、资产处置/不良资产）\n- ai_speech：语音（语音(ASR/TTS)）\n- ai_multimodal：多模态（多模态）\n- ai_robotics：具身/机器人（具身智能/机器人）\n- ai_data：数据工程（数据工程）\n- data_analysis：数据分析（业务数据分析）\n- ai_testing：AI测试（AI 测试/质量）\n- property：物业/房地产（物业/房地产、设施/工程维保）\n- construction：工程管理（工程管理、造价/预算、设计/深化）\n- backend：后端（服务端语言、架构/分布式、数据库/存储）\n- frontend：前端（前端框架、移动端/小程序、构建/性能）\n- qa：测试（功能测试、自动化测试、性能/压力测试）\n- devops：运维（Linux/服务器运维、容器/编排、监控/告警、CI/CD 流水线）\n- security：信息安全（渗透/漏洞、等保/安全合规、安全运营）\n- embedded：嵌入式（单片机/固件、电路/PCB、总线/通信协议）\n- electrical：电气（PLC/电气控制、供配电设计、工业自动化）\n- mechanical：机械设计（结构设计、仿真/有限元、出图/工艺文件）\n- quality：质量（质量体系、检验/统计、持续改进）\n- banking：银行（信贷/授信、零售/网点、信用风险、投行/股权投资）\n- insurance：保险（核保/承保、理赔/查勘、保险产品/精算）\n- securities：证券（行业研究、估值建模、投资/交易）\n- consulting：咨询（商业分析/研究、咨询交付、战略/组织）\n- media：传媒（公关/媒体关系、编辑/校对）\n- film：影视（拍摄/编导、剪辑/后期、直播/演艺）\n- game：游戏（游戏策划、游戏运营）\n- translation：翻译（笔译/本地化、口译、CAT 工具）\n- service：客服（客服/工单、投诉/异常处理、服务质检）\n- retail：零售（门店/连锁、进销存、加盟/选址）\n- catering：餐饮（餐饮运营、食品安全）\n- tourism_cn：导游/讲解（导游/讲解）\n- energy：能源化工（电力/电网、化工/工艺安全、新能源/储能）\n- automotive：汽车（整车/零部件、三电/新能源车、台架/路试）\n- agriculture：农林牧渔（种植/农艺、养殖/防疫、智慧农业、林业/草原、渔业/水产、农产品/食品）\n- domestic：居民服务（家政/保洁、美容/美发、维修服务）\n- transport_ops：运输操作（驾驶/车辆调度、叉车/起重）\n- research：科研（论文/文献、课题/实验、研究方法/统计）\n- public_admin：公务/公共事务（公文/政策、窗口/基层服务）\n- social：社工（个案/社区工作、公益项目）\n- psychology：心理（心理咨询、测评/干预）\n- sports：体育（教练/训练、健身/私教）\n- logistics：物流（仓储/分拣、运输/配送、关务/报关）\n- ai：AI/算法（父族：任一 AI 子族命中即包含）";
+const FAMILY_KEYS = ["product","marketing","sales","finance","design","operations","hr","education","healthcare","legal","supply","manufacturing","ai_nlp","ai_cv","ai_recsys","ai_mlops","ai_solution","ai_ops","ai_compliance","admin","ecommerce","tourism","it_systems","project_mgmt","trade","asset_valuation","ai_speech","ai_multimodal","ai_robotics","ai_data","data_analysis","ai_testing","property","construction","backend","frontend","qa","devops","security","embedded","electrical","mechanical","quality","banking","insurance","securities","consulting","media","film","game","translation","service","retail","catering","tourism_cn","energy","automotive","agriculture","domestic","transport_ops","research","public_admin","social","psychology","sports","logistics","ai"];
 /* VOCAB:END */
 const ALL_DIMS = Object.assign({}, TAXONOMY, GENERAL_DIMS);
 for(const pk in DOMAIN_PACKS){
@@ -1402,6 +1459,53 @@ function detectDomains(text){
   const subAi=Object.keys(scores).filter(n=>n.indexOf("ai_")===0);
   if(ai>=2 || subAi.length) scores.ai = ai>=2 ? ai : Math.max.apply(null, subAi.map(n=>scores[n]));
   return Object.keys(scores).sort((a,b)=>scores[b]-scores[a]);
+}
+// ---- LLM 族识别（可选，需本地代理：career-loop llm-proxy）----
+// 与 career_loop/matching/family_llm.py 镜像：同样的封闭集、同样��归一化、
+// 同样的 blend 规则（模型首选排前面，规则的命中补后面）。
+function normalizeFamilies(fams){
+  const cnToKey={};
+  for(const k in DOMAIN_CN){ if(cnToKey[DOMAIN_CN[k]]===undefined) cnToKey[DOMAIN_CN[k]]=k; }
+  const out=[];
+  if(!Array.isArray(fams)) return out;
+  for(let f of fams){
+    if(typeof f!=="string") continue;
+    let key=f.trim().toLowerCase();
+    if(cnToKey[key]!==undefined) key=cnToKey[key];
+    if(FAMILY_KEYS.indexOf(key)>=0 && out.indexOf(key)<0) out.push(key);
+  }
+  if(out.some(k=>k.indexOf("ai_")===0) && out.indexOf("ai")<0) out.push("ai");
+  return out;
+}
+function parseLooseJson(txt){
+  let t=String(txt||"").trim();
+  t=t.replace(/^```[a-zA-Z0-9_-]*\s*/,"").replace(/\s*```$/,"");
+  try{ return JSON.parse(t); }catch(e){}
+  const m=t.match(/\{[\s\S]*\}/);
+  if(!m) throw new Error("模型没有返回 JSON");
+  return JSON.parse(m[0]);
+}
+async function detectFamiliesLLM(text, proxyUrl, token){
+  const body=stripBoilerplate(text).slice(0,12000);
+  const base=proxyUrl.replace(/\/+$/,"");
+  const resp=await fetch(base+"/llm",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","X-CL-Token":token},
+    body:JSON.stringify({system:FAMILY_PROMPT, user:"JD 正文：\n"+body})
+  });
+  if(!resp.ok){
+    let msg=""; try{ msg=(await resp.json()).error||""; }catch(e){}
+    throw new Error("本地代理返回 "+resp.status+(msg?"："+msg:""));
+  }
+  const data=await resp.json();
+  const parsed=parseLooseJson(data.text);
+  if(!Array.isArray(parsed.families)) throw new Error("模型未返回 families 列表");
+  return normalizeFamilies(parsed.families);
+}
+function blendFamilies(llmFams, ruleFams){
+  const out=llmFams.slice();
+  for(const f of ruleFams){ if(out.indexOf(f)<0) out.push(f); }
+  return out;
 }
 function compute(jdText, profileText){
   const reqs=parseJD(jdText), pp=parseProfile(profileText);
@@ -1997,6 +2101,55 @@ el("labJD").addEventListener("input",debounceLab);
 el("labSampleA").addEventListener("click",()=>{ el("labJD").value=LAB_SAMPLES[0]; renderLab(); });
 el("labSampleB").addEventListener("click",()=>{ el("labJD").value=LAB_SAMPLES[1]; renderLab(); });
 el("labClear").addEventListener("click",()=>{ el("labJD").value=""; renderLab(); });
+// ---- LLM 族识别面板 ----
+el("llmTest").addEventListener("click",async()=>{
+  const out=el("llmOut");
+  out.textContent="正在连接本机代理…";
+  try{
+    const base=el("llmProxy").value.trim().replace(/\/+$/,"");
+    const r=await fetch(base+"/health");
+    if(!r.ok) throw new Error("代理返回 HTTP "+r.status);
+    const h=await r.json();
+    out.textContent="✓ 已连接本机代理：模型 "+h.model+"（上游 "+h.base_url+"）"
+      +(h.has_key?"":"　⚠ 代理没检测到 API Key，调用会失败");
+  }catch(e){
+    out.textContent="✗ 连不上本机代理（"+e.message+"）——先在终端跑：career-loop llm-proxy";
+  }
+});
+el("llmRun").addEventListener("click",async()=>{
+  const out=el("llmOut");
+  const text=el("labJD").value.trim();
+  if(!text){ out.textContent="先在上面粘一段中文 JD 再点。"; return; }
+  out.textContent="模型判族中…（约 1–3 秒）";
+  try{
+    const fams=await detectFamiliesLLM(text, el("llmProxy").value.trim(), el("llmToken").value.trim());
+    const rules=detectDomains(text);
+    const blended=blendFamilies(fams, rules);
+    out.textContent="";
+    const line=document.createElement("div");
+    line.className="ok";
+    line.textContent="✓ 模型判出 "+fams.length+" 个族 · 规则判出 "+rules.length+" 个 · 混合后 "+blended.length+" 个";
+    out.appendChild(line);
+    const box=document.createElement("div");
+    box.className="fams";
+    for(const f of fams){
+      const s=document.createElement("span"); s.className="llm";
+      s.textContent=DOMAIN_CN[f]||f; box.appendChild(s);
+    }
+    for(const f of rules){
+      if(fams.indexOf(f)>=0) continue;
+      const s=document.createElement("span"); s.className="rule";
+      s.textContent=DOMAIN_CN[f]||f; box.appendChild(s);
+    }
+    out.appendChild(box);
+    const note=document.createElement("div");
+    note.textContent="紫色=模型判出，青色=规则补充。混合排序按「模型首选优先」——top-1 更准，规则补在后面保召回。";
+    out.appendChild(note);
+    el("labFam").textContent=blended.length?blended.slice(0,2).map(d=>DOMAIN_CN[d]||d).join(" / "):"未识别";
+  }catch(e){
+    out.textContent="✗ "+e.message+"　——规则基线不受影响，上面的结果依然有效。";
+  }
+});
 const qs=new URLSearchParams(location.search).get("s");
 sampleIdx = qs===null ? 0 : Math.max(0, Math.min(SAMPLES.length-1, parseInt(qs,10)||0));
 loadSample(sampleIdx);

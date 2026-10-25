@@ -1335,6 +1335,142 @@ class TestBoilerplateAndFamilyRecall(unittest.TestCase):
         self.assertNotIn("adm_archive", keys)
 
 
+class TestLLMProxy(unittest.TestCase):
+    """本地 LLM 代理（网页 demo 用它绕开 CORS，并把 Key 留在本机）。"""
+
+    class _FakeLLM:
+        model = "fake-model"
+        base_url = "http://fake"
+        available = True
+        stats = {"http_calls": 0, "cache_hits": 0, "failures": 0}
+
+        def __init__(self, reply='{"families":["service"],"confidence":0.9}', fail=None):
+            self.reply = reply
+            self.fail = fail
+            self.calls = []
+
+        def chat(self, system, user, temperature=0.2):
+            self.calls.append((system, user))
+            if self.fail:
+                from career_loop.matching.llm import LLMError
+                raise LLMError(self.fail)
+            return self.reply
+
+    def _start(self, fake=None, port=0, allow_any_origin=False):
+        import threading
+        import urllib.error
+        import urllib.request
+        from career_loop import llm_proxy
+
+        fake = fake or self._FakeLLM()
+        handler = type("H", (llm_proxy._Handler,), {
+            "llm": fake, "token": "tok-123", "allow_any_origin": allow_any_origin,
+        })
+        httpd = llm_proxy.ThreadingHTTPServer(("127.0.0.1", port), handler)
+        threading.Thread(target=llm_proxy._serve_quietly, args=(httpd,), daemon=True).start()
+        self.addCleanup(httpd.shutdown)
+        self.addCleanup(httpd.server_close)
+        base = f"http://127.0.0.1:{httpd.server_address[1]}"
+        self.base = base
+        self.fake = fake
+
+        def call(path, payload=None, token="tok-123", origin=None, method=None):
+            import urllib.error
+            import urllib.request
+            data = json.dumps(payload).encode() if payload is not None else None
+            headers = {"Content-Type": "application/json"}
+            if token is not None:
+                headers["X-CL-Token"] = token
+            if origin:
+                headers["Origin"] = origin
+            req = urllib.request.Request(base + path, data=data, headers=headers,
+                                         method=method or ("POST" if data else "GET"))
+            try:
+                with urllib.request.urlopen(req, timeout=20) as resp:
+                    return resp.status, json.loads(resp.read().decode())
+            except urllib.error.HTTPError as exc:
+                raw = exc.read().decode()
+                try:
+                    return exc.code, json.loads(raw)
+                except json.JSONDecodeError:
+                    return exc.code, {"error": raw[:120]}
+
+        return call
+
+    def test_health_reports_model_and_key(self):
+        call = self._start()
+        code, body = call("/health")
+        self.assertEqual(code, 200)
+        self.assertTrue(body["ok"])
+        self.assertEqual(body["model"], "fake-model")
+        self.assertTrue(body["has_key"])
+
+    def test_health_reports_missing_key(self):
+        fake = self._FakeLLM()
+        fake.available = False
+        call = self._start(fake)
+        code, body = call("/health")
+        self.assertEqual(code, 200)
+        self.assertFalse(body["has_key"])
+
+    def test_wrong_token_is_rejected(self):
+        call = self._start()
+        code, body = call("/llm", {"user": "hi"}, token="wrong")
+        self.assertEqual(code, 401)
+
+    def test_missing_user_is_rejected(self):
+        call = self._start()
+        code, body = call("/llm", {})
+        self.assertEqual(code, 400)
+
+    def test_oversized_body_is_rejected_without_connection_reset(self):
+        """超限时必须先把请求体读掉，否则客户端收到的是 connection reset 而不是 413。"""
+        call = self._start()
+        code, body = call("/llm", {"user": "x" * 300_000})
+        self.assertEqual(code, 413)
+        self.assertIn("error", body)
+
+    def test_foreign_origin_is_rejected(self):
+        call = self._start()
+        code, body = call("/llm", {"user": "hi"}, origin="https://evil.example")
+        self.assertEqual(code, 403)
+
+    def test_local_origin_is_allowed(self):
+        call = self._start()
+        code, body = call("/llm", {"user": "hi"}, origin="http://localhost:3000")
+        self.assertEqual(code, 200)
+
+    def test_successful_call_returns_text(self):
+        call = self._start()
+        code, body = call("/llm", {"system": "S", "user": "U"})
+        self.assertEqual(code, 200)
+        self.assertIn("service", body["text"])
+        self.assertEqual(self.fake.calls[0], ("S", "U"))
+
+    def test_upstream_error_is_reported_as_502(self):
+        call = self._start(self._FakeLLM(fail="HTTP 401: bad key"))
+        code, body = call("/llm", {"user": "hi"})
+        self.assertEqual(code, 502)
+        self.assertIn("401", body["error"])
+
+    def test_model_cannot_be_overridden_by_the_caller(self):
+        """网页不能指定模型——否则别人能用你的 Key 去刷更贵的模型。"""
+        call = self._start()
+        code, body = call("/llm", {"user": "hi", "model": "gpt-4o"})
+        self.assertEqual(code, 200)
+        self.assertEqual(body["model"], "fake-model")
+
+    def test_binds_loopback_only(self):
+        """代理只能绑 127.0.0.1，不能对外暴露。"""
+        from career_loop import llm_proxy
+        httpd = llm_proxy.ThreadingHTTPServer(("127.0.0.1", 0),
+                                              llm_proxy._Handler)
+        try:
+            self.assertEqual(httpd.server_address[0], "127.0.0.1")
+        finally:
+            httpd.server_close()
+
+
 class TestDocsConsistency(unittest.TestCase):
     """中英文 README 的数字对称性 / 链接有效性。
 

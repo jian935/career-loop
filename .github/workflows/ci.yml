@@ -32,3 +32,9 @@ jobs:
         run: python -m career_loop eval --data data/eval_sample.jsonl --badcases badcases.jsonl
       - name: CLI audit
         run: python scripts/audit.py
+      - name: Web vocabulary parity
+        run: python scripts/sync_web_vocab.py --check
+      # 这两项不需要任何私有数据（不像 cross_engine_check 依赖 gitignore 的校准 CSV），
+      # 所以能进 CI：网页与 CLI 判的族必须是同一件事。
+      - name: Cross-engine check (LLM family)
+        run: python scripts/cross_engine_llm_check.py

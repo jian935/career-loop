@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from career_loop.cli import DOMAIN_CN                      # noqa: E402
 from career_loop.matching.boilerplate import BOILERPLATE_PATTERNS  # noqa: E402
+from career_loop.matching.family_llm import family_system_prompt     # noqa: E402
 from career_loop.matching.schema import (                  # noqa: E402
     AI_CORE_KW, CONTEXT_REQUIRED, DOMAIN_PACKS, GENERAL_DIMS, TAXONOMY,
 )
@@ -78,6 +79,21 @@ def render_boilerplate() -> str:
     )
 
 
+def render_family_prompt() -> str:
+    """渲染 LLM 族识别的封闭集提示词（v0.8.20 起网页端也能用模型判族）。
+
+    提示词必须与 Python 侧**逐字一致**——否则网页判的族和 CLI 判的族不是同一件事，
+    两端口径漂移会让「93.4%」这个数字失去意义。
+    """
+    return f"const FAMILY_PROMPT = {js_str(family_system_prompt())};"
+
+
+def render_family_keys() -> str:
+    """合法族 key 集合（= DOMAIN_PACKS 的键 + ai 父族），与 Python 的 _normalize 同源。"""
+    keys = list(DOMAIN_PACKS) + ["ai"]
+    return f"const FAMILY_KEYS = [{','.join(js_str(k) for k in keys)}];"
+
+
 def build_block() -> str:
     return (
         "/* VOCAB:BEGIN 由 scripts/sync_web_vocab.py 从 career_loop/matching/schema.py 自动生成，勿手改 */\n"
@@ -87,6 +103,8 @@ def build_block() -> str:
         f"const CONTEXT_REQUIRED = {{\n{render_context()}\n}};\n"
         f"{render_ai_core()}\n"
         f"{render_boilerplate()}\n"
+        f"{render_family_prompt()}\n"
+        f"{render_family_keys()}\n"
         "/* VOCAB:END */\n"
     )
 

@@ -4,6 +4,57 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.21] - 2026-10-25
+
+### W14：网页版接入 LLM 族识别（本机代理）
+
+让**评委打开网页就能看到项目最强的能力**（规则 86.0% → 规则+模型 93.4%），
+而不是只能在 CLI 里看到。
+
+**新增 `career-loop llm-proxy`（`career_loop/llm_proxy.py`，零第三方依赖）**
+
+浏览器直连模型服务商有两个绕不开的硬障碍：多数 OpenAI 兼容服务不给
+`Access-Control-Allow-Origin`（CORS，浏览器直接 fetch 被拦），以及 API Key
+不该进网页表单。这个代理跑在**本机 127.0.0.1**，Key 留在本地环境变量 / `.env`，
+网页只跟本机说话——两个障碍一起解决。
+
+安全设计（11 条单测逐条锁住）：只绑回环地址 / 启动生成一次性 Token（防本机
+其它网页盗用 Key 去计费）/ 请求体上限 200KB / **不接受网页指定模型**（防被指向
+更贵的模型）/ Origin 默认只放行 `file://` 与 `localhost`。
+
+**修掉一个真 bug**：请求体超限时服务器在客户端还没发完就回应并断开，
+客户端拿到的是 `connection reset` 而不是 `413`。修法是先读掉请求体再回应，
+并由 `test_oversized_body_is_rejected_without_connection_reset` 锁住。
+
+**网页端**
+
+- 「中文抽取实验室」新增「接入 LLM 族识别」面板：填代理地址与 Token →
+  「测试连接」看模型/上游/有没有 Key → 「用模型判族」得到模型族 + 规则族 +
+  混合结果（紫色=模型判出，青色=规则补充）。
+- 网页的 `normalizeFamilies` / `blendFamilies` 镜像 Python 的 `_normalize` 与
+  blend 规则（模型首选优先、规则补后面保召回）。
+- 失败可见：代理没起 / Token 错 / 模型返回非法 JSON 都有明确提示，
+  且**规则基线的结果始终有效**。
+
+**两端一致性（新增 `scripts/cross_engine_llm_check.py`）**
+
+`sync_web_vocab.py` 现在额外同步 `FAMILY_PROMPT`（2429 字符，与 Python
+`family_system_prompt()` 逐字一致）与 `FAMILY_KEYS`（67 个）。
+新脚本再逐项校验：提示词逐字一致 ✓ / 归一化 16/16（含中文名回映射、大小写、
+重复、非法 key、非字符串、ai_* 父族推导、空输入、非列表等边界）/ blend 6/6 /
+合法族 key 集合 ✓。
+
+**真实端到端实测（非模拟）**：浏览器 → 本机代理 → deepseek-flash → 回传 →
+归一化 → 混合 → 渲染，客服 JD 得到「模型判出 1 个族（客服）· 规则判出 2 个 ·
+混合后 2 个」——模型判出的正是 W9 证明词表补不动的 service 族。
+
+**文档**：README（中英）新增 llm-proxy 用法与网页面板说明；evidence.md 新增
+1.7 节记录设计、踩到的 bug、一致性数字与四条诚实边界；
+网页证据墙的 LLM 区块补一段说明。
+
+**回归**：单测 144 → **155**（+11 代理测试），audit 32/32、词表同步无漂移、
+跨引擎 51/51、LLM 族识别跨引擎四项全绿。
+
 ## [0.8.20] - 2026-10-25
 
 ### W13：英文 README + 仓库页打磨（星标与投稿的地基）

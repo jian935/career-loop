@@ -94,6 +94,20 @@ def cmd_domains(args) -> int:
     return 0
 
 
+def cmd_llm_proxy(args) -> int:
+    """启动本地 LLM 代理，让浏览器里的网页 demo 能用上你自己配置的模型。
+
+    浏览器直连 OpenAI 兼容接口有两个硬障碍：多数服务商不给 CORS 头（浏览器
+    直接 fetch 会被拦），以及 API Key 不该粘进网页。这个代理跑在 127.0.0.1，
+    Key 留在本地，网页只跟本机说话。
+    """
+    from . import llm_proxy
+    llm_proxy.serve(port=args.port, token=args.token,
+                    allow_any_origin=args.allow_any_origin,
+                    open_browser=not args.no_open)
+    return 0
+
+
 def cmd_doctor(args) -> int:
     import platform
     from .matching.llm import CACHE_DIR
@@ -486,6 +500,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("init", help="初始化本地数据库")
     sub.add_parser("doctor", help="自检：Python / LLM / 缓存 / 评测集")
+    lp = sub.add_parser("llm-proxy", help="启动本地 LLM 代理（供网页 demo 调用）")
+    lp.add_argument("--port", type=int, default=8787, help="监听端口（默认 8787）")
+    lp.add_argument("--token", default="", help="调用令牌（默认启动时随机生成）")
+    lp.add_argument("--allow-any-origin", action="store_true",
+                    help="允许任意 Origin 访问（默认只放行 file:// 与 localhost）")
+    lp.add_argument("--no-open", action="store_true", help="不自动打开浏览器")
 
     dd = sub.add_parser("domains", help="判岗位族；--backend 可选 LLM 后端（默认 blend）")
     dd.add_argument("--file", required=True, help="JD 文本文件（md / txt）")
@@ -604,6 +624,7 @@ def main(argv: list[str] | None = None) -> int:
         "dashboard": cmd_dashboard, "recommend": cmd_recommend,
         "collect": cmd_collect, "demand": cmd_demand, "whatif": cmd_whatif,
         "intern": cmd_intern, "scan": cmd_scan, "domains": cmd_domains,
+        "llm-proxy": cmd_llm_proxy,
     }
     return handlers[args.command](args)
 
