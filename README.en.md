@@ -535,6 +535,8 @@ Each line also says *why it made today's list* (days left, what the top fix buys
 > (from the JD / `--due` fallback / not given). **Check the original posting before
 > relying on it.** A JD that says "until the role is filled" is reported as *no date*
 > rather than a guess.
+>
+> A real sample run (demo JDs + the sample profile): [`docs/daily_sample.md`](docs/daily_sample.md).
 
 ---
 

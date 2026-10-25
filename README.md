@@ -545,6 +545,8 @@ career-loop daily 同上 --out today.ics --format ics    # 进日历与待办 Ap
 > JD 里的发布日期、公司成立年份不会被误当成截止日；
 > 写「招满为止」的会明确标注「JD 没给日期」而不是猜一个。
 
+一份真实跑出来的样例（演示 JD + 示例经历）：[`docs/daily_sample.md`](docs/daily_sample.md)。
+
 ---
 
 ## 能力词表（分层）
