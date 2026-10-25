@@ -58,8 +58,19 @@ career-loop 面向所有岗位求职者（尤其应届生），解决一个真�
 > 根因是关键词覆盖率在该候选人身上饱和）。评委/面试官可一键
 > `python scripts/real_eval_family.py` / `real_eval_calibrate.py` 复现。网页底部也内嵌了这个「验证闭环 · 证据墙」区块。
 
-## 7. GitHub Pages 部署（你部署后把链接填进第 3 节）
+## 7. GitHub Pages 部署
 仓库根 `.gitignore` 已排除个人数据；`docs/` 即站点根：
+
+**方式 A（推荐，一条命令）**——在能访问 github.com 的网络下：
+```bash
+bash scripts/publish_github.sh
+```
+脚本会依次做：网络体检（github.com 可达性 + DNS 污染诊断）→ 本地体检（工作区干净 /
+密钥扫描 / 站点根就绪）→ 认证检查（gh CLI 或 `GH_TOKEN`）→ 创建 public 仓库 →
+推送 `main` → 开启 Pages（来源 `main` / `/docs`）→ 访问自检。
+凭证只从 `gh auth login` 或环境变量读取，**不写入任何文件、不打印**。
+
+**方式 B（手动）**
 1. GitHub 仓库 → Settings → Pages → Source: Deploy from a branch → Branch: `main`, Folder: `/docs`。
 2. 约 1 分钟后访问 `https://jian935.github.io/career-loop/`。
 3. 校验：链接能打开、og-cover.png 正常加载、分享到社交平台能出富预览卡片。

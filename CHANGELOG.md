@@ -4,6 +4,38 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.19] - 2026-10-25
+
+### W12：上架前终检 + 一键发布脚本
+
+**终检发现并修掉的问题**
+
+- **分支 `master` → `main`**：CI 的 `triggers` 只监听 `main`、pyproject 的文档链接指向
+  `/tree/main/`、Pages 配置源是 `main` —— 原先本地是 `master`，**CI 永远不会触发**。
+- **评测集生成脚本与数据集脱节（真 bug）**：`scripts/gen_eval.py` 只能造 42 条，而
+  `data/eval_sample.jsonl` 已有 60 条（后 18 条是 W6 手工补的通用能力 / 边界样本）。
+  任何人跑一次生成脚本都会把评测集砍掉 18 条、悄悄改动基线。已把 18 条补回脚本，
+  现在生成结果与仓库文件内容一致；脚本同时从根目录移到 `scripts/`（修好相对路径）。
+- **过时数字勘误**（用当前引擎重算，非手改）：README 三处「50 条评测集」→ 60 条；
+  `docs/benchmark.md`「评测集 50 条」→ 60 条、SALES 69.8% → **78.4%**
+  （v0.8.7 补判别词后的真实值，由 `scripts/real_eval_family.py` 实跑确认）；
+  路线图标题「W4–W8 进行中」→「W1–W11 已完成」，补 W9 / W10 / W11 三条。
+- `pyproject.toml` 版本 0.8.13 → 0.8.18；新增 `docs/.nojekyll`（Pages 部署保险）。
+
+**新增**
+
+- `docs/benchmark.md` §2.4：把 W10 的 LLM 族识别对照（rules 86.0 / llm 86.5 /
+  auto 87.0 / **blend 93.4**，含 top-1 与平均族数）写进「可复现数字」文档，
+  注明 ±0.1pt 波动来源、¥9 成本、以及主链路不接 LLM 的产品决策。
+- `scripts/publish_github.sh`：一键发布脚本——网络体检（github.com 可达性 +
+  DNS 污染诊断）→ 本地体检（工作区干净 / 密钥扫描 / 站点根就绪）→ 认证检查
+  （gh CLI 或 `GH_TOKEN`）→ 创建 public 仓库 → 推送 `main` → 开 Pages
+  （`main` / `/docs`）→ 访问自检。凭证只从 `gh auth login` 或环境变量读取，
+  **不写入任何文件、不打印**。
+
+**回归**：138 单测、audit 32/32、对照集一致率 1.0、英文族识别 93.6%、
+中文族识别 86.0%、抽取 45/45 + 留出 100.0%、跨引擎一致、脱敏审计干净。
+
 ## [0.8.18] - 2026-10-25
 
 ### W11：投稿材料打磨（1024 造物挑战）+ GitHub ID 勘误
