@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.4] - 2026-10-25
+
+### 网页 demo 升级为「工具」（投稿功能扩展）
+- 新增「批量岗位排序」：粘贴多个 JD（用单独一行的 `---` 分隔），按匹配分排序并附最划算补强 —— 把 CLI 的 `recommend` 搬上网页。
+- 新增「全行业适配」：用简历关键词覆盖 65 个岗位族的能力项，给出行业覆盖度 Top16 + 主要缺口 —— 把 `scan` 思路搬上网页。
+- 新增「导出 Markdown 报告」：一键下载当前排序/适配/单岗位结果。
+- 纯前端实现，复用 `compute()` / `DOMAIN_PACKS` / `ALL_DIMS`，零后端、零新依赖。
+- 更新 README 路线图（W4/W5/W7 进度）、版本对齐 0.8.4。
+
 ## [0.8.3] - 2026-10-25
 
 ### Added (证据墙：把「可证伪」变成看得见的证据)

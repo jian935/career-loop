@@ -212,6 +212,40 @@
     background:rgba(34,211,238,.08);padding:1px 5px;border-radius:5px}
   @media(max-width:720px){.nav-links{display:none}.hero{padding-top:52px}.stats{gap:26px}}
 
+  /* 批量岗位 · 全行业适配 */
+  .batch{padding:6px 0 4px}
+  .batch-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+  @media(max-width:720px){.batch-grid{grid-template-columns:1fr}}
+  .batch-col h3{font-size:13px;color:var(--sub);margin:0 0 8px;font-weight:600}
+  .batch textarea{min-height:150px;font-size:12.5px}
+  .batch-actions{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 4px;align-items:center}
+  .btn-ghost.sm{font-size:12.5px;padding:8px 14px}
+  .btn-export{font-size:12.5px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;
+    background:rgba(255,255,255,.03);color:var(--sub);cursor:pointer;font-weight:600}
+  .btn-export:hover{color:var(--ink);border-color:var(--violet)}
+  .rank-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:720px){.rank-list{grid-template-columns:1fr}}
+  .job-card{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);padding:13px 15px}
+  .job-head{display:flex;align-items:baseline;gap:10px}
+  .job-rank{font:800 12px var(--mono);color:var(--muted);width:18px;flex:none}
+  .job-title{font-weight:700;font-size:13.5px;color:var(--ink);flex:1}
+  .job-score{font:800 15px var(--mono);flex:none}
+  .job-score.ok{color:var(--emerald)} .job-score.warn{color:var(--amber)} .job-score.bad{color:var(--rose)}
+  .job-dom{font-size:11px;color:var(--muted);font-family:var(--mono);margin:5px 0 0}
+  .job-gap{font-size:11.5px;color:var(--cyan);margin:6px 0 0}
+  .job-ups{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .job-ups .u{font-size:10.5px;color:var(--sub);border:1px solid var(--line);border-radius:99px;padding:2px 8px}
+  .ind-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:720px){.ind-list{grid-template-columns:1fr}}
+  .ind-row{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);padding:13px 15px}
+  .ind-head{display:flex;align-items:baseline;gap:10px}
+  .ind-name{font-weight:700;font-size:13.5px;color:var(--ink);flex:1}
+  .ind-cov{font:800 15px var(--mono);color:var(--emerald)}
+  .ind-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.06);margin:8px 0 6px;overflow:hidden}
+  .ind-bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#7BF1C4,#22D3EE)}
+  .ind-miss{font-size:11px;color:var(--muted);font-family:var(--mono)}
+  .hint{font-size:11.5px;color:var(--muted);margin:8px 0 0;font-family:var(--mono);line-height:1.5}
+
 </style>
 </head>
 <body>
@@ -293,6 +327,31 @@
   <section class="interns">
     <div class="sec-head"><h2>实习方向推荐</h2><span>目标：AI 产品 · 先看目标契合，再看匹配分</span></div>
     <div class="intern-list" id="interns"></div>
+  </section>
+
+  <section class="batch">
+    <div class="sec-head"><h2>批量岗位 · 全行业适配</h2><span>粘贴一批 JD，立刻知道该投哪些；或看你的经历适配哪些行业</span></div>
+    <div class="batch-grid">
+      <div class="batch-col">
+        <h3>你的经历（简历）</h3>
+        <textarea id="batchProfile" spellcheck="false" placeholder="粘贴你的简历 / 经历..."></textarea>
+      </div>
+      <div class="batch-col">
+        <h3>多个岗位 JD（每个之间用单独一行的 --- 分隔）</h3>
+        <textarea id="batchJDs" spellcheck="false" placeholder="岗位1 标题 + 描述&#10;---&#10;岗位2 标题 + 描述&#10;---&#10;..."></textarea>
+      </div>
+    </div>
+    <div class="batch-actions">
+      <button id="rankBtn" class="btn-primary">① 排序：该投哪些</button>
+      <button id="scanBtn" class="btn-ghost sm">② 看全行业适配</button>
+      <button id="exportBtn" class="btn-export">导出 Markdown 报告</button>
+      <button id="batchSample" class="btn-ghost sm">载入示例</button>
+    </div>
+    <p class="hint" id="batchHint">排序用「匹配分」给岗位打分并附最划算补强；全行业适配用你经历里的关键词覆盖 65 个岗位族的能力项。</p>
+    <h3 style="font-size:13px;color:var(--sub);margin:18px 0 10px">该投哪些（按匹配分排序）</h3>
+    <div class="rank-list" id="rankList"></div>
+    <h3 style="font-size:13px;color:var(--sub);margin:20px 0 10px">你的经历适配哪些行业</h3>
+    <div class="ind-list" id="industryList"></div>
   </section>
 
   <section class="evidence" id="evidence">
@@ -824,6 +883,7 @@ function compute(jdText, profileText){
 }
 function el(id){return document.getElementById(id);}
 function render(res){
+  lastSingle=res;
   const s=el("score");
   s.textContent=res.base.toFixed(1)+"%";
   s.className="score "+(res.base>=70?"ok":res.base>=50?"warn":"bad");
@@ -980,6 +1040,135 @@ function renderInternships(text){
   });
 }
 
+/* ===== 批量岗位排序 ===== */
+function splitJDs(text){
+  return text.split(/^\s*---+\s*$/m).map(s=>s.trim()).filter(s=>s.length>10);
+}
+function titleOf(jdText){
+  const lines=jdText.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  for(const l of lines){ if(looksLikeTitle(l)) return l.slice(0,42); }
+  return (lines[0]||"未命名岗位").slice(0,42);
+}
+function rankJobs(jdText, profileText){
+  const jds=splitJDs(jdText);
+  return jds.map(block=>{
+    const r=compute(block, profileText);
+    const g=r.ups[0];
+    return {title:titleOf(block), score:r.base, domains:(r.domains||[]).slice(0,2),
+      gap:g?("补 "+g.req.label+" +"+g.delta.toFixed(1)):"无缺口可补",
+      ups:r.ups.slice(0,3).map(u=>u.req.label+" +"+u.delta.toFixed(1))};
+  }).sort((a,b)=>b.score-a.score);
+}
+function renderRanking(jdText, profileText){
+  const box=el("rankList"); box.innerHTML="";
+  const jobs=rankJobs(jdText, profileText);
+  if(!jobs.length){ box.innerHTML='<div class="empty" style="grid-column:1/-1">没解析到岗位。请确认每个 JD 之间用单独一行的 --- 分隔。</div>'; return; }
+  jobs.forEach((j,i)=>{
+    const d=document.createElement("div"); d.className="job-card";
+    const sc=j.score>=70?"ok":j.score>=50?"warn":"bad";
+    const dom=(j.domains||[]).map(d2=>DOMAIN_CN[d2]||d2).join(" / ");
+    d.innerHTML=
+      '<div class="job-head"><span class="job-rank">'+(i+1)+'</span>'+
+      '<span class="job-title">'+j.title+'</span>'+
+      '<span class="job-score '+sc+'">'+j.score.toFixed(1)+'%</span></div>'+
+      (dom?'<div class="job-dom">岗位族：'+dom+'</div>':'')+
+      '<div class="job-gap">'+j.gap+'</div>'+
+      (j.ups.length?'<div class="job-ups">'+j.ups.map(u=>'<span class="u">'+u+'</span>').join('')+'</div>':'');
+    box.appendChild(d);
+  });
+}
+
+/* ===== 全行业适配 ===== */
+function scanIndustries(profileText){
+  const pp=parseProfile(profileText);
+  const owned=new Set(Object.keys(pp.owned));
+  const rows=[];
+  for(const name in DOMAIN_PACKS){
+    let total=0,hit=0; const missing=[];
+    for(const k in DOMAIN_PACKS[name]){
+      total++;
+      if(owned.has(k)) hit++;
+      else if(ALL_DIMS[k]) missing.push(ALL_DIMS[k].label);
+    }
+    if(total>=3) rows.push({name, cn:DOMAIN_CN[name]||name, cov:hit/total, hit, total, missing:missing.slice(0,4)});
+  }
+  rows.sort((a,b)=>b.cov-a.cov);
+  return rows;
+}
+function renderScan(profileText){
+  const box=el("industryList"); box.innerHTML="";
+  const rows=scanIndustries(profileText);
+  rows.slice(0,16).forEach(r=>{
+    const d=document.createElement("div"); d.className="ind-row";
+    d.innerHTML=
+      '<div class="ind-head"><span class="ind-name">'+r.cn+'</span>'+
+      '<span class="ind-cov">'+Math.round(r.cov*100)+'%</span></div>'+
+      '<div class="ind-bar"><i style="width:'+Math.max(4,Math.round(r.cov*100))+'%"></i></div>'+
+      '<div class="ind-miss">覆盖 '+r.hit+'/'+r.total+(r.missing.length?' · 主要缺：'+r.missing.join('、'):'')+'</div>';
+    box.appendChild(d);
+  });
+}
+
+/* ===== 导出报告 ===== */
+let lastSingle=null;
+function exportReport(){
+  let md="# career-loop 匹配报告\n\n";
+  if(el("rankList").children.length){
+    md+="## 该投哪些（按匹配分排序）\n\n";
+    [...el("rankList").children].forEach((c,i)=>{
+      const t=c.querySelector(".job-title").textContent;
+      const s=c.querySelector(".job-score").textContent;
+      const g=c.querySelector(".job-gap").textContent;
+      md+=(i+1)+". **"+t+"** — "+s+"　"+g+"\n";
+    });
+    md+="\n";
+  }
+  if(el("industryList").children.length){
+    md+="## 你的经历适配哪些行业（覆盖度 Top）\n\n";
+    [...el("industryList").children].slice(0,10).forEach(c=>{
+      const n=c.querySelector(".ind-name").textContent;
+      const v=c.querySelector(".ind-cov").textContent;
+      md+="- "+n+"："+v+"\n";
+    });
+    md+="\n";
+  }
+  if(lastSingle && !el("rankList").children.length){
+    md+="## 单岗位匹配\n\n- 匹配分："+lastSingle.base.toFixed(1)+"%\n";
+    md+="- 能力项：\n";
+    lastSingle.reqs.slice().sort((a,b)=>b.weight-a.weight).forEach(r=>{
+      const st=lastSingle.matches[r.key].status;
+      md+="  - ["+ST_LABEL[st]+"] "+r.label+"\n";
+    });
+    md+="\n## 最划算的补强\n\n";
+    lastSingle.ups.slice(0,5).forEach(u=>{
+      md+="- "+u.req.label+"："+lastSingle.base.toFixed(1)+"% → "+u.newScore.toFixed(1)+"% (+"+u.delta.toFixed(1)+")\n";
+    });
+  }
+  md+="\n---\n由 career-loop 生成 · 本地计算 · 匹配分可证伪\n";
+  const blob=new Blob([md],{type:"text/markdown;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="career-loop-report.md";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+function loadBatchSample(){
+  el("batchProfile").value=SAMPLE_PROFILE;
+  el("batchJDs").value=[SAMPLE_A_JD, SAMPLE_B_JD,
+`数据分析师
+
+岗位职责
+- 搭建业务看板，定义转化漏斗与留存指标
+- 用 SQL 做用户分层与 A/B 实验
+
+任职要求
+1. 熟练使用 SQL 做数据查询与清洗
+2. 会用 Python 做分析与可视化
+3. 具备指标体系与归因分析能力`].join("\n---\n");
+  renderRanking(el("batchJDs").value, el("batchProfile").value);
+  renderScan(el("batchProfile").value);
+}
+
 let sampleIdx=0;
 function loadSample(i){
   el("jd").value=SAMPLES[i].jd;
@@ -1002,9 +1191,14 @@ el("run").addEventListener("click",run);
 el("sample").addEventListener("click",()=>{ sampleIdx=(sampleIdx+1)%SAMPLES.length; loadSample(sampleIdx); });
 el("jd").addEventListener("input",debounceRun);
 el("profile").addEventListener("input",debounceRun);
+el("rankBtn").addEventListener("click",()=>renderRanking(el("batchJDs").value, el("batchProfile").value));
+el("scanBtn").addEventListener("click",()=>renderScan(el("batchProfile").value));
+el("exportBtn").addEventListener("click",exportReport);
+el("batchSample").addEventListener("click",loadBatchSample);
 const qs=new URLSearchParams(location.search).get("s");
 sampleIdx = qs===null ? 0 : Math.max(0, Math.min(SAMPLES.length-1, parseInt(qs,10)||0));
 loadSample(sampleIdx);
+loadBatchSample();
 </script>
 </body>
 </html>
