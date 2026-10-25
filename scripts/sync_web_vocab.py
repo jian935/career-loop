@@ -133,14 +133,16 @@ def render_occupations() -> str:
             f'  {{code:{js_str(r["code"])},label:{js_str(r["label"])},'
             f'mapped:{r["mid_mapped"]},total:{r["mid_total"]},packs:[{packs}]}},')
     s = coverage_summary()
-    # 网页的第三个 metric 卡要渲染"职业大类"个数，所以 big_classes 必须一起导出。
-    # 曾经漏过它 —— 网页直接渲染出 "undefined"，而当时的跨引擎检查只比了
-    # 另外五个 key，所以没抓到。**凡是网页会读的 key，这里一个都不能少。**
+    # 网页一次要渲染五个数字（含"目录也没抄全"这个自曝项）
+    # 曾经漏过 big_classes —— 网页当场渲染出 "undefined"，而当时的检查只比了
+    # 另外五个 key，于是眼睁睁放过去了。**凡是网页会读的 key，这里一个都不能少。**
     summary = (
-        f'  listed_total:{s["listed_total"]}, listed_mapped:{s["listed_mapped"]},'
+        f'  enumerated:{s["enumerated"]}, supported:{s["supported"]},'
         f' dictionary_total:{s["dictionary_total"]},'
         f' big_classes:{s["big_classes"]},'
-        f' completeness:{round(s["completeness"], 4)}, breadth:{round(s["breadth"], 4)}'
+        f' completeness:{round(s["completeness"], 4)},'
+        f' coverage:{round(s["coverage"], 4)},'
+        f' enumeration_rate:{round(s["enumeration_rate"], 4)}'
     )
     return (
         "const OCC_COVERAGE = [\n" + "\n".join(rows) + "\n];\n"

@@ -301,17 +301,19 @@ step("校准看板：记 3 条 → renderCalib → 导出 CSV", () => {
   return `r=${el("calR").textContent}，导出 ${t.length} 字符`;
 });
 
-// 5) 着重检查渲染结果里有没有 undefined —— 这是"漏同步"最常见的样子：
-//    数据字典少导出一个字段，页面不报错，只是那个位置印着 undefined。
-step("整页渲染没印出 undefined", () => {
+// 5) 着重检查渲染结果里没有 undefined / NaN —— 这是"漏同步"最常见的样子：
+//    数据字典少导出一个字段，页面不报错，只是那个位置印着 undefined（或算百分比
+//    得出 NaN）。两者都要扫，因为指标卡现在是「取字段 → 乘 100 → 拼接」。
+step("整页渲染没印出 undefined / NaN", () => {
   const bad = [];
   for(const id of ["occMetrics", "occBody", "occHint", "rankHead", "labTotal",
                    "calN", "calR", "calRate", "industryList", "interns"]){
     const e = el(id);
     const txt = (e.innerHTML || "") + " " + (e.textContent || "");
-    if(txt.indexOf("undefined") >= 0) bad.push(id);
+    if(txt.indexOf("undefined") >= 0) bad.push(id + "(undefined)");
+    if(txt.indexOf("NaN") >= 0) bad.push(id + "(NaN)");
   }
-  if(bad.length) throw new Error("这些区域渲染出了 undefined：" + bad.join(", "));
+  if(bad.length) throw new Error("这些区域渲染出了坏值：" + bad.join(", "));
   return "10 个区域都干净";
 });
 
@@ -360,7 +362,8 @@ def self_test() -> int:
     bad = 0
     print("[self-test] 注入四种网页坏法，每一种都必须被抓出来：")
     cases = [
-        ("同步漏导出 big_classes", original.replace(" big_classes:8,", " ")),
+        ("同步漏导出 coverage（指标卡会算出 NaN%）",
+         original.replace(" coverage:", " ")),
         ("DOM 读取不判空（还原写死的 querySelector().textContent）",
          original.replace('return n ? (n.textContent || "").trim() : "";',
                           "return n.textContent.trim();")),

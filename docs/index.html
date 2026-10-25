@@ -484,7 +484,7 @@
       <circle cx="23.5" cy="16" r="2.1" fill="#22D3EE"/>
     </svg>
     <span>career-loop</span>
-    <span class="ver">v0.8.25</span>
+    <span class="ver">v0.8.26</span>
   </a>
   <div class="nav-links">
     <a href="#app">Demo</a>
@@ -1221,6 +1221,21 @@ const DOMAIN_PACKS = {
     top_vehicle:{label:"驾驶/车辆调度", kw:["驾驶","驾照","车辆调度","货运驾驶","班车"]},
     top_machine:{label:"叉车/起重", kw:["叉车","起重","吊装","挖掘机","特种设备作业"]},
   },
+  maritime:{
+    mar_ops:{label:"船舶/航运操作", kw:["船舶营运调度","船舶动态跟踪","船舶配载","船队调度","船员管理"]},
+    mar_eng:{label:"船舶与海洋工程", kw:["轮机工程","船舶与海洋工程","船体结构","船级社","坞修","舾装"]},
+  },
+  mining:{
+    mi_ops:{label:"采矿/井下作业", kw:["矿山开采","井下作业","采掘工作面","矿山生产管理"]},
+    mi_geo:{label:"地质勘查/选矿", kw:["矿产勘查","选矿工艺","钻探施工","储量核实"]},
+    mi_safety:{label:"矿山安全", kw:["矿山安全","尾矿库","矿井通风"]},
+  },
+  environment:{
+    env_assess:{label:"环评/环保合规", kw:["环境影响评价","环评报告","排污许可","环保验收","环境监测"]},
+    env_treat:{label:"三废治理", kw:["废水处理","污水处理","废气治理","危废处置","固废处置"]},
+    env_carbon:{label:"双碳/碳资产", kw:["碳排放核算","碳核查","碳资产管理","清洁生产审核"]},
+    env_ehs:{label:"EHS/职业健康", kw:["职业健康安全","安全生产标准化","ehs体系"]},
+  },
   research:{
     rs_paper:{label:"论文/文献", kw:["学术论文","发表论文","sci","期刊","文献检索","论文写作"]},
     rs_exp:{label:"课题/实验", kw:["课题","实验设计","实验室","科研","科研项目"]},
@@ -1257,24 +1272,24 @@ const CONTEXT_REQUIRED = {
 const AI_CORE_KW = ["python","pandas","numpy","fastapi","django","gpt","large language model","llm","transformer","prompt engineering","rag","retrieval augmented","vector database","reranking","agent","multi-agent","orchestration","mlops","fine-tuning","pytorch","tensorflow","langchain","langgraph","nlp","natural language processing","computer vision","object detection","recommender","model deployment","kubernetes","etl","data pipeline","embedding","大模型","微调","智能体","检索增强","提示词","函数调用","多智能体"];
 const BOILERPLATE_PATTERNS = [/(?:该|此)?职位来源于[：:]?[^\s。，,；;！!？?]{2,16}/g, /以[^。；;\n]{0,15}理由索要财物[，,]?[^。；;\n]{0,25}涉嫌违法/g];
 function stripBoilerplate(t){ if(!t) return t; for(const re of BOILERPLATE_PATTERNS){ t = t.replace(re, ""); } return t; }
-const FAMILY_PROMPT = "你是岗位族分类器。给你一份招聘 JD 的正文，判断它属于哪个或哪些岗位族。\n\n规则：\n1. 只能从下面列表里选，族 key 原样输出，不要自造族名；\n2. 可以多选，按相关程度从高到低排列；\n3. 只依据 JD 正文判断，不要臆测正文没写的技能；\n4. 严格输出 JSON：{\"families\": [\"族key\"], \"confidence\": 0.0到1.0}，不要输出任何其他文字。\n\n岗位族列表：\n- product：产品（PRD/需求文档、产品规划）\n- marketing：市场（内容/文案、投放/广告、品牌/公关、私域/社群）\n- sales：销售（客户开发/BD、商务谈判、CRM/客户管理）\n- finance：财务（会计核算、财务报表、税务、审计/内控、证书(CPA/ACCA)、财务软件(用友/金蝶/SAP)）\n- design：设计（视觉设计、交互/UX、设计工具、动效/三维）\n- operations：运营（活动运营、用户运营、内容运营、SEO/网站运营）\n- hr：人力（招聘、绩效/薪酬、培训/组织、劳动法/社保用工）\n- education：教育（教学/授课、课程/教研、学员/班级管理、考试/测评）\n- healthcare：医疗（临床/护理、药学/医学、医疗器械/注册、公共卫生/院感）\n- legal：法务（合同/法务、诉讼/争议解决、公司法/投融资、知识产权）\n- supply：供应链（供应链/库存、采购/供应商、计划/排产）\n- manufacturing：制造（工艺/生产、制程质量、设备/维保、冶炼/轧制、纺织/印染）\n- ai_nlp：NLP（NLP/文本处理）\n- ai_cv：CV（计算机视觉）\n- ai_recsys：推荐/搜索（推荐/搜索）\n- ai_mlops：MLOps（MLOps/模型部署）\n- ai_solution：AI方案/售前（AI 解决方案/售前）\n- ai_ops：AI运营/标注（AI 运营/数据标注）\n- ai_compliance：AI合规（AI 合规/伦理）\n- admin：行政（行政后勤、档案/证照）\n- ecommerce：电商（电商运营、直播/达人、选品/上架）\n- tourism：旅游/酒店（酒店/住宿、旅游/计调）\n- it_systems：信息管理（信息系统实施、系统运维/工单）\n- project_mgmt：项目管理（项目管理、敏捷/迭代管理）\n- trade：外贸（国际贸易、单证/结算）\n- asset_valuation：资产评估（资产评估、资产处置/不良资产）\n- ai_speech：语音（语音(ASR/TTS)）\n- ai_multimodal：多模态（多模态）\n- ai_robotics：具身/机器人（具身智能/机器人）\n- ai_data：数据工程（数据工程）\n- data_analysis：数据分析（业务数据分析）\n- ai_testing：AI测试（AI 测试/质量）\n- property：物业/房地产（物业/房地产、设施/工程维保）\n- construction：工程管理（工程管理、造价/预算、设计/深化）\n- backend：后端（服务端语言、架构/分布式、数据库/存储）\n- frontend：前端（前端框架、移动端/小程序、构建/性能）\n- qa：测试（功能测试、自动化测试、性能/压力测试）\n- devops：运维（Linux/服务器运维、容器/编排、监控/告警、CI/CD 流水线）\n- security：信息安全（渗透/漏洞、等保/安全合规、安全运营）\n- embedded：嵌入式（单片机/固件、电路/PCB、总线/通信协议）\n- electrical：电气（PLC/电气控制、供配电设计、工业自动化）\n- mechanical：机械设计（结构设计、仿真/有限元、出图/工艺文件）\n- quality：质量（质量体系、检验/统计、持续改进）\n- banking：银行（信贷/授信、零售/网点、信用风险、投行/股权投资）\n- insurance：保险（核保/承保、理赔/查勘、保险产品/精算）\n- securities：证券（行业研究、估值建模、投资/交易）\n- consulting：咨询（商业分析/研究、咨询交付、战略/组织）\n- media：传媒（公关/媒体关系、编辑/校对）\n- film：影视（拍摄/编导、剪辑/后期、直播/演艺）\n- game：游戏（游戏策划、游戏运营）\n- translation：翻译（笔译/本地化、口译、CAT 工具）\n- service：客服（客服/工单、投诉/异常处理、服务质检）\n- retail：零售（门店/连锁、进销存、加盟/选址）\n- catering：餐饮（餐饮运营、食品安全）\n- tourism_cn：导游/讲解（导游/讲解）\n- energy：能源化工（电力/电网、化工/工艺安全、新能源/储能）\n- automotive：汽车（整车/零部件、三电/新能源车、台架/路试）\n- agriculture：农林牧渔（种植/农艺、养殖/防疫、智慧农业、林业/草原、渔业/水产、农产品/食品）\n- domestic：居民服务（家政/保洁、美容/美发、维修服务）\n- transport_ops：运输操作（驾驶/车辆调度、叉车/起重）\n- research：科研（论文/文献、课题/实验、研究方法/统计）\n- public_admin：公务/公共事务（公文/政策、窗口/基层服务）\n- social：社工（个案/社区工作、公益项目）\n- psychology：心理（心理咨询、测评/干预）\n- sports：体育（教练/训练、健身/私教）\n- logistics：物流（仓储/分拣、运输/配送、关务/报关）\n- ai：AI/算法（父族：任一 AI 子族命中即包含）";
-const FAMILY_KEYS = ["product","marketing","sales","finance","design","operations","hr","education","healthcare","legal","supply","manufacturing","ai_nlp","ai_cv","ai_recsys","ai_mlops","ai_solution","ai_ops","ai_compliance","admin","ecommerce","tourism","it_systems","project_mgmt","trade","asset_valuation","ai_speech","ai_multimodal","ai_robotics","ai_data","data_analysis","ai_testing","property","construction","backend","frontend","qa","devops","security","embedded","electrical","mechanical","quality","banking","insurance","securities","consulting","media","film","game","translation","service","retail","catering","tourism_cn","energy","automotive","agriculture","domestic","transport_ops","research","public_admin","social","psychology","sports","logistics","ai"];
+const FAMILY_PROMPT = "你是岗位族分类器。给你一份招聘 JD 的正文，判断它属于哪个或哪些岗位族。\n\n规则：\n1. 只能从下面列表里选，族 key 原样输出，不要自造族名；\n2. 可以多选，按相关程度从高到低排列；\n3. 只依据 JD 正文判断，不要臆测正文没写的技能；\n4. 严格输出 JSON：{\"families\": [\"族key\"], \"confidence\": 0.0到1.0}，不要输出任何其他文字。\n\n岗位族列表：\n- product：产品（PRD/需求文档、产品规划）\n- marketing：市场（内容/文案、投放/广告、品牌/公关、私域/社群）\n- sales：销售（客户开发/BD、商务谈判、CRM/客户管理）\n- finance：财务（会计核算、财务报表、税务、审计/内控、证书(CPA/ACCA)、财务软件(用友/金蝶/SAP)）\n- design：设计（视觉设计、交互/UX、设计工具、动效/三维）\n- operations：运营（活动运营、用户运营、内容运营、SEO/网站运营）\n- hr：人力（招聘、绩效/薪酬、培训/组织、劳动法/社保用工）\n- education：教育（教学/授课、课程/教研、学员/班级管理、考试/测评）\n- healthcare：医疗（临床/护理、药学/医学、医疗器械/注册、公共卫生/院感）\n- legal：法务（合同/法务、诉讼/争议解决、公司法/投融资、知识产权）\n- supply：供应链（供应链/库存、采购/供应商、计划/排产）\n- manufacturing：制造（工艺/生产、制程质量、设备/维保、冶炼/轧制、纺织/印染）\n- ai_nlp：NLP（NLP/文本处理）\n- ai_cv：CV（计算机视觉）\n- ai_recsys：推荐/搜索（推荐/搜索）\n- ai_mlops：MLOps（MLOps/模型部署）\n- ai_solution：AI方案/售前（AI 解决方案/售前）\n- ai_ops：AI运营/标注（AI 运营/数据标注）\n- ai_compliance：AI合规（AI 合规/伦理）\n- admin：行政（行政后勤、档案/证照）\n- ecommerce：电商（电商运营、直播/达人、选品/上架）\n- tourism：旅游/酒店（酒店/住宿、旅游/计调）\n- it_systems：信息管理（信息系统实施、系统运维/工单）\n- project_mgmt：项目管理（项目管理、敏捷/迭代管理）\n- trade：外贸（国际贸易、单证/结算）\n- asset_valuation：资产评估（资产评估、资产处置/不良资产）\n- ai_speech：语音（语音(ASR/TTS)）\n- ai_multimodal：多模态（多模态）\n- ai_robotics：具身/机器人（具身智能/机器人）\n- ai_data：数据工程（数据工程）\n- data_analysis：数据分析（业务数据分析）\n- ai_testing：AI测试（AI 测试/质量）\n- property：物业/房地产（物业/房地产、设施/工程维保）\n- construction：工程管理（工程管理、造价/预算、设计/深化）\n- backend：后端（服务端语言、架构/分布式、数据库/存储）\n- frontend：前端（前端框架、移动端/小程序、构建/性能）\n- qa：测试（功能测试、自动化测试、性能/压力测试）\n- devops：运维（Linux/服务器运维、容器/编排、监控/告警、CI/CD 流水线）\n- security：信息安全（渗透/漏洞、等保/安全合规、安全运营）\n- embedded：嵌入式（单片机/固件、电路/PCB、总线/通信协议）\n- electrical：电气（PLC/电气控制、供配电设计、工业自动化）\n- mechanical：机械设计（结构设计、仿真/有限元、出图/工艺文件）\n- quality：质量（质量体系、检验/统计、持续改进）\n- banking：银行（信贷/授信、零售/网点、信用风险、投行/股权投资）\n- insurance：保险（核保/承保、理赔/查勘、保险产品/精算）\n- securities：证券（行业研究、估值建模、投资/交易）\n- consulting：咨询（商业分析/研究、咨询交付、战略/组织）\n- media：传媒（公关/媒体关系、编辑/校对）\n- film：影视（拍摄/编导、剪辑/后期、直播/演艺）\n- game：游戏（游戏策划、游戏运营）\n- translation：翻译（笔译/本地化、口译、CAT 工具）\n- service：客服（客服/工单、投诉/异常处理、服务质检）\n- retail：零售（门店/连锁、进销存、加盟/选址）\n- catering：餐饮（餐饮运营、食品安全）\n- tourism_cn：导游/讲解（导游/讲解）\n- energy：能源化工（电力/电网、化工/工艺安全、新能源/储能）\n- automotive：汽车（整车/零部件、三电/新能源车、台架/路试）\n- agriculture：农林牧渔（种植/农艺、养殖/防疫、智慧农业、林业/草原、渔业/水产、农产品/食品）\n- domestic：居民服务（家政/保洁、美容/美发、维修服务）\n- transport_ops：运输操作（驾驶/车辆调度、叉车/起重）\n- maritime：船舶/航运（船舶/航运操作、船舶与海洋工程）\n- mining：采矿/地质（采矿/井下作业、地质勘查/选矿、矿山安全）\n- environment：环保/EHS（环评/环保合规、三废治理、双碳/碳资产、EHS/职业健康）\n- research：科研（论文/文献、课题/实验、研究方法/统计）\n- public_admin：公务/公共事务（公文/政策、窗口/基层服务）\n- social：社工（个案/社区工作、公益项目）\n- psychology：心理（心理咨询、测评/干预）\n- sports：体育（教练/训练、健身/私教）\n- logistics：物流（仓储/分拣、运输/配送、关务/报关）\n- ai：AI/算法（父族：任一 AI 子族命中即包含）";
+const FAMILY_KEYS = ["product","marketing","sales","finance","design","operations","hr","education","healthcare","legal","supply","manufacturing","ai_nlp","ai_cv","ai_recsys","ai_mlops","ai_solution","ai_ops","ai_compliance","admin","ecommerce","tourism","it_systems","project_mgmt","trade","asset_valuation","ai_speech","ai_multimodal","ai_robotics","ai_data","data_analysis","ai_testing","property","construction","backend","frontend","qa","devops","security","embedded","electrical","mechanical","quality","banking","insurance","securities","consulting","media","film","game","translation","service","retail","catering","tourism_cn","energy","automotive","agriculture","domestic","transport_ops","maritime","mining","environment","research","public_admin","social","psychology","sports","logistics","ai"];
 const DAILY_CUES = ["截止时间","截止日期","截止","截至","deadline","报名截止","投递截止","有效至","有效期至"];
 const DAILY_OPEN_ENDED = ["招满为止","长期有效","长期招聘","额满为止"];
 const RE_DATE_FULL = "(\\d{4})\\s*[年\\-/.]\\s*(\\d{1,2})\\s*[月\\-/.]\\s*(\\d{1,2})";
 const RE_DATE_SHORT = "(?:^|[^0-9])(\\d{1,2})\\s*[月/.-]\\s*(\\d{1,2})\\s*日?(?!\\d)";
 const OCC_COVERAGE = [
-  {code:"1",label:"党的机关、国家机关、群众团体和社会组织、企事业单位负责人",mapped:3,total:3,packs:["project_mgmt","consulting","public_admin","education","social"]},
-  {code:"2",label:"专业技术人员",mapped:10,total:10,packs:["mechanical","electrical","construction","agriculture","research","healthcare","finance","banking","insurance","securities","asset_valuation","legal","psychology","social","education","film","translation","sports","media","backend","frontend","qa","devops","security","embedded","it_systems","ai_nlp","ai_cv","ai_recsys","ai_mlops","ai_solution","ai_ops","ai_compliance","ai_speech","ai_multimodal","ai_robotics","ai_data","ai_testing"]},
-  {code:"3",label:"办事人员和有关人员",mapped:4,total:4,packs:["admin","service","public_admin","property"]},
-  {code:"4",label:"社会生产服务和生活服务人员",mapped:9,total:9,packs:["sales","retail","logistics","supply","tourism","catering","property","domestic","energy","transport_ops","tourism_cn","sports","hr","social","healthcare"]},
-  {code:"5",label:"农、林、牧、渔业生产及辅助人员",mapped:4,total:4,packs:["agriculture"]},
-  {code:"6",label:"生产制造及有关人员",mapped:9,total:9,packs:["mechanical","manufacturing","embedded","automotive","energy","catering","quality","supply"]},
-  {code:"7",label:"军人",mapped:0,total:0,packs:[]},
-  {code:"8",label:"不便分类的其他从业人员",mapped:0,total:0,packs:[]},
+  {code:"1",label:"党的机关、国家机关、群众团体和社会组织、企事业单位负责人",mapped:3,total:6,packs:["social","public_admin","project_mgmt","consulting","education"]},
+  {code:"2",label:"专业技术人员",mapped:10,total:11,packs:["research","mechanical","electrical","construction","agriculture","maritime","healthcare","finance","banking","insurance","securities","asset_valuation","legal","psychology","social","education","film","translation","sports","media"]},
+  {code:"3",label:"办事人员和有关人员",mapped:4,total:4,packs:["admin","property","legal","service","public_admin"]},
+  {code:"4",label:"社会生产服务和生活服务人员",mapped:14,total:15,packs:["sales","retail","logistics","supply","tourism","catering","it_systems","devops","banking","insurance","securities","property","consulting","asset_valuation","quality","environment","domestic","energy","transport_ops","tourism_cn","sports","film","social","healthcare"]},
+  {code:"5",label:"农、林、牧、渔业生产及辅助人员",mapped:5,total:6,packs:["agriculture","supply"]},
+  {code:"6",label:"生产制造及有关人员",mapped:26,total:32,packs:["catering","manufacturing","energy","healthcare","mining","mechanical","automotive","maritime","electrical","embedded","quality","environment","construction","transport_ops","supply"]},
+  {code:"7",label:"军人",mapped:0,total:1,packs:[]},
+  {code:"8",label:"不便分类的其他从业人员",mapped:0,total:1,packs:[]},
 ];
 const OCC_SUMMARY = {
-  listed_total:39, listed_mapped:39, dictionary_total:79, big_classes:8, completeness:1.0, breadth:0.4937
+  enumerated:76, supported:62, dictionary_total:79, big_classes:8, completeness:0.8158, coverage:0.7848, enumeration_rate:0.962
 };
 const OCC_DICTIONARY_VINTAGE = "79";
 /* VOCAB:END */
@@ -1282,7 +1297,7 @@ const ALL_DIMS = Object.assign({}, TAXONOMY, GENERAL_DIMS);
 for(const pk in DOMAIN_PACKS){
   for(const k in DOMAIN_PACKS[pk]){ if(!ALL_DIMS[k]) ALL_DIMS[k]=DOMAIN_PACKS[pk][k]; }
 }
-const DOMAIN_CN={product:"产品",marketing:"市场",sales:"销售",finance:"财务",design:"设计",operations:"运营",hr:"人力",education:"教育",healthcare:"医疗",legal:"法务",supply:"供应链",manufacturing:"制造",ai:"AI/算法",ai_nlp:"NLP",ai_cv:"CV",ai_recsys:"推荐/搜索",ai_mlops:"MLOps",ai_solution:"AI方案/售前",ai_ops:"AI运营/标注",ai_compliance:"AI合规",ai_speech:"语音",ai_multimodal:"多模态",ai_robotics:"具身/机器人",ai_data:"数据工程",ai_testing:"AI测试",data_analysis:"数据分析",admin:"行政",ecommerce:"电商",tourism:"旅游/酒店",it_systems:"信息管理",project_mgmt:"项目管理",trade:"外贸",asset_valuation:"资产评估",property:"物业/房地产",construction:"工程管理",backend:"后端",frontend:"前端",qa:"测试",devops:"运维",security:"信息安全",embedded:"嵌入式",electrical:"电气",mechanical:"机械设计",quality:"质量",banking:"银行",insurance:"保险",securities:"证券",consulting:"咨询",media:"传媒",film:"影视",game:"游戏",translation:"翻译",service:"客服",retail:"零售",catering:"餐饮",tourism_cn:"导游/讲解",domestic:"居民服务",transport_ops:"运输操作",energy:"能源化工",automotive:"汽车",agriculture:"农林牧渔",research:"科研",public_admin:"公务/公共事务",social:"社工",psychology:"心理",sports:"体育",logistics:"物流"};
+const DOMAIN_CN={product:"产品",marketing:"市场",sales:"销售",finance:"财务",design:"设计",operations:"运营",hr:"人力",education:"教育",healthcare:"医疗",legal:"法务",supply:"供应链",manufacturing:"制造",ai:"AI/算法",ai_nlp:"NLP",ai_cv:"CV",ai_recsys:"推荐/搜索",ai_mlops:"MLOps",ai_solution:"AI方案/售前",ai_ops:"AI运营/标注",ai_compliance:"AI合规",ai_speech:"语音",ai_multimodal:"多模态",ai_robotics:"具身/机器人",ai_data:"数据工程",ai_testing:"AI测试",data_analysis:"数据分析",admin:"行政",ecommerce:"电商",tourism:"旅游/酒店",it_systems:"信息管理",project_mgmt:"项目管理",trade:"外贸",asset_valuation:"资产评估",property:"物业/房地产",construction:"工程管理",backend:"后端",frontend:"前端",qa:"测试",devops:"运维",security:"信息安全",embedded:"嵌入式",electrical:"电气",mechanical:"机械设计",quality:"质量",banking:"银行",insurance:"保险",securities:"证券",consulting:"咨询",media:"传媒",film:"影视",game:"游戏",translation:"翻译",service:"客服",retail:"零售",catering:"餐饮",tourism_cn:"导游/讲解",domestic:"居民服务",transport_ops:"运输操作",maritime:"船舶/航运",mining:"采矿/地质",environment:"环保/EHS",energy:"能源化工",automotive:"汽车",agriculture:"农林牧渔",research:"科研",public_admin:"公务/公共事务",social:"社工",psychology:"心理",sports:"体育",logistics:"物流"};
 const CUSTOM_STOP=new Set(["负责","经验","相关","工作","能力","要求","熟悉","了解","具备","完成","以及","进行","能够","优先","以上","学历","本科","专业","岗位","职责","任职","参与","独立","熟练","掌握","良好","一定","具有","使用"]);
 const REQ_SIGNALS=["熟悉","掌握","具备","能够","会","负责","了解","精通","熟练","经验","优先","要求","独立","完成","参与","维护","开发","设计","管理","推进","分析","制定","执行","对接","沟通","处理","操作","使用"];
 const NOISE_MARKERS=["薪资","福利","五险","双休","地点","地址","公司简介","融资","规模","简历投递","邮箱","微信","电话","官网","包吃","补贴","年终奖","团建","上班时间"];
@@ -2043,20 +2058,26 @@ function renderOccupations(){
       '<td class="m">'+r.mapped+'/'+r.total+'</td><td class="p">'+packs+'</td>';
     box.appendChild(tr);
   });
+  // 三个数字刻意都放到同一屏：只贴"完整度"会让人以为词表很全——
+  // 它的分母是**本仓库自己整理出来的中类**，分母是自己挑的数字不该单独拿出来说。
   const s=OCC_SUMMARY;
+  const pct = v => (v*100).toFixed(0)+"%";
   el("occMetrics").innerHTML=
-    '<div class="occ-metric"><div class="k">'+(s.completeness*100).toFixed(0)+'%</div>'+
-      '<div class="l">映射完整度</div><div class="n">'+s.listed_mapped+'/'+s.listed_total+
-      '　分母＝本仓库收录的小类</div></div>'+
-    '<div class="occ-metric"><div class="k warn">'+(s.breadth*100).toFixed(0)+'%</div>'+
-      '<div class="l">覆盖广度</div><div class="n">'+s.listed_total+'/'+s.dictionary_total+
+    '<div class="occ-metric"><div class="k">'+pct(s.coverage)+'</div>'+
+      '<div class="l">词表覆盖（头条）</div><div class="n">'+s.supported+'/'+s.dictionary_total+
       '　分母＝大典全部中类</div></div>'+
-    '<div class="occ-metric"><div class="k">'+s.big_classes+'</div>'+
-      '<div class="l">职业大类</div><div class="n">已建 '+Object.keys(DOMAIN_PACKS).length+' 个岗位族词表</div></div>';
+    '<div class="occ-metric"><div class="k warn">'+pct(s.completeness)+'</div>'+
+      '<div class="l">完整度</div><div class="n">'+s.supported+'/'+s.enumerated+
+      '　分母＝本仓库整理到的中类</div></div>'+
+    '<div class="occ-metric"><div class="k">'+pct(s.enumeration_rate)+'</div>'+
+      '<div class="l">目录整理度（自曝）</div><div class="n">'+s.enumerated+'/'+s.dictionary_total+
+      '　连中类清单都没抄全</div></div>';
   el("occHint").innerHTML=
-    '两个数字<b>含义不同，别只引用一个</b>：完整度说的是"收录进来的都建了词表"，'+
-    '广度才是"覆盖了多少职业版图"（还有 '+(s.dictionary_total-s.listed_total)+' 个中类完全没有词表）。'+
-    '映射是<b>启发式</b>的，非官方逐条数据。重跑：<code>career-loop occupations</code>。';
+    '映射是<b>启发式</b>的，非官方逐条数据；"已建词表"只表示能读出东西，不代表做透了。'+
+    '仍有 <b>'+(s.dictionary_total-s.supported)+' 个中类完全没有词表</b>（见上表最后一列）。'+
+    '早期版本只挑了自己有词表的 '+s.enumerated+' 个中类来算，于是得出 100% —— '+
+    '<b>分母自己挑出来的百分比不能算覆盖证据</b>，现在分母固定是大典的 '+s.dictionary_total+'。'+
+    '重跑：<code>career-loop occupations</code>。';
 }
 
 function loadBatchSample(){

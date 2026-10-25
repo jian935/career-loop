@@ -974,6 +974,67 @@ class TestChineseVocabularyCoverage(unittest.TestCase):
         self.assertEqual(owners, ["llm_basics"], owners)
 
 
+class TestNewIndustryPacks(unittest.TestCase):
+    """v0.8.26 新增的三个行业词表（船舶/航运、采矿/地质、环保/EHS）。
+
+    来源不是拍脑袋：候选词先在 8,674 条公开中文 JD 上逐词审过
+    （scripts/audit_new_pack_words.py），再看「含这个词的 JD 里，岗位名确实属于
+    该职业的比例」。这一轮同时记住两条教训：
+
+    1. **不能用「正文含该词」当目标集再回过头统计该词的判别力**——那样每个种子词
+       的精确率都必然是 100%，是自证。目标集必须来自岗位名（与正文无关）。
+    2. **不收裸名词**。第一版收了裸的「船舶」，结果 eval_real_jd 的负例
+       「任职要求：船舶制造类相关专业」被判成"具备船舶操作能力"——
+       匹配的是字面出现，不是能力。改成复合词（船舶营运调度 / 船级社 / 尾矿库…）
+       之后该负例回归干净（N07）。
+    """
+
+    def _detect(self, text: str) -> list[str]:
+        from career_loop.matching.schema import detect_domains
+
+        return detect_domains(text)
+
+    def test_maritime_hits_real_sentence(self):
+        # 真实 JD：青岛/上海一带的航运调度岗
+        jd = "1、跟踪和报告船舶动态；2、在主管的指导下做好船舶营运调度工作。"
+        self.assertIn("maritime", self._detect(jd))
+
+    def test_maritime_eng_hits(self):
+        jd = "任职要求：轮机工程、船舶与海洋工程等相关专业；熟悉各主流船级社规范。"
+        self.assertIn("maritime", self._detect(jd))
+
+    def test_mining_hits_real_sentence(self):
+        jd = "负责露天矿采剥计划编制与井下作业安全管理，参与选矿工艺改造。"
+        self.assertIn("mining", self._detect(jd))
+
+    def test_environment_hits_real_sentence(self):
+        jd = "负责建设项目环境影响评价与排污许可申报，组织危废处置与固废处置合规检查。"
+        self.assertIn("environment", self._detect(jd))
+
+    def test_major_requirement_line_is_not_a_skill(self):
+        """「船舶制造类相关专业」是学历要求，不是能力项 —— 裸名词的代价。"""
+        jd = "任职要求: 1、中专及以上学历 2、船舶制造类相关专业"
+        reqs, _ = matching.extract_requirements(jd, None)
+        self.assertNotIn("mar_ops", {r.key for r in reqs}, {r.key for r in reqs})
+
+    def test_no_bare_domain_noun_in_new_packs(self):
+        """新族里不许出现「船舶」「矿山」「环保」这类裸名词（见类注释第 2 条）。"""
+        from career_loop.matching.schema import DOMAIN_PACKS
+
+        bare = ("船舶", "轮机", "矿山", "采矿", "矿井", "矿石", "环保", "环评", "安全")
+        for fam in ("maritime", "mining", "environment"):
+            kws = {k for spec in DOMAIN_PACKS[fam].values() for k in spec["kw"]}
+            for w in bare:
+                self.assertNotIn(w, kws, f"{fam} 收了裸名词「{w}」")
+
+    def test_new_packs_do_not_steal_common_roles(self):
+        for fam in ("maritime", "mining", "environment"):
+            self.assertNotIn(fam, self._detect(
+                "岗位职责：1、负责招聘计划与员工关系维护，组织培训与绩效考核。"))
+            self.assertNotIn(fam, self._detect(
+                "岗位职责：1、负责大模型算法研发，训练推荐模型并搭建 RAG 检索链路。"))
+
+
 class TestReflowCalibration(unittest.TestCase):
     """投递回流分析的口径锁定。
 
@@ -1560,13 +1621,34 @@ class TestDocsConsistency(unittest.TestCase):
 
     ROOT = Path(__file__).resolve().parent.parent.parent
 
-    # 关键数字 → 必须同时出现在中英文两版里
-    KEY_NUMBERS = (
-        "66", "171", "60", "93.6%", "86.0%", "93.4%", "0.193", "56.6%", "73.5%",
-        "52%", "78%", "70%", "83%", "45", "10,613", "13.8", "86.2%", "100.0%",
+    # 历史/评测类数字：改一次记一次，写死在这里，两版都得出现
+    KEY_NUMBERS_STATIC = (
+        "60", "93.6%", "86.0%", "93.4%", "0.193", "56.6%", "73.5%",
+        "52%", "70%", "83%", "45", "10,613", "13.8", "86.2%", "100.0%",
         "1,167", "1,838", "41", "75", "3%", "16", "50", "29", "0.694",
         "-0.059", "0.03", "9,544", "122,560", "8,674", "35+",
     )
+
+    @property
+    def key_numbers(self) -> tuple[str, ...]:
+        """关键数字 → 必须同时出现在中英文两版里。
+
+        会变的数字（岗位族数、能力项数、职业分类覆盖）**从代码里现算**，不写死：
+        写死过一次，加了 3 个新族之后两边 README 都改了、这里还是旧的，
+        于是"数字不对称"的锁自己先失真了（和单测条数那条同一个教训）。
+        """
+        from career_loop.matching import taxonomy_cn
+        from career_loop.matching.schema import DOMAIN_PACKS
+
+        s = taxonomy_cn.coverage_summary()
+        computed = (
+            str(len(DOMAIN_PACKS)),                       # 岗位族数
+            str(sum(len(p) for p in DOMAIN_PACKS.values())),  # 族内能力项数
+            str(s["supported"]), str(s["enumerated"]),
+            str(s["dictionary_total"]),
+            f"{s['coverage'] * 100:.0f}%",
+        )
+        return self.KEY_NUMBERS_STATIC + computed
 
     @staticmethod
     def _count_tests() -> int:
@@ -1684,7 +1766,7 @@ class TestDocsConsistency(unittest.TestCase):
         """同一组关键数字必须同时出现在中英文两版里——只改一边就会在这里炸。"""
         zh = self._read("README.md")
         en = self._read("README.en.md")
-        missing = [n for n in self.KEY_NUMBERS
+        missing = [n for n in self.key_numbers
                    if not (n in zh and n in en)]
         self.assertEqual(missing, [], f"中英文 README 数字不对称：{missing}")
 
@@ -2009,37 +2091,67 @@ class TestDockerfileStatic(unittest.TestCase):
 class TestOccupationCoverage(unittest.TestCase):
     """README 宣称「可对齐到职业分类大典」，就必须有命令能把它跑出来。
 
-    这组测试的背景是一次体检发现：taxonomy_cn.py 全仓库零引用，是死代码，
-    而 README 两处指向它。更危险的是 coverage_matrix() 会给出 39/39 = 100%，
-    这个数字单独拿出来读，会被理解成"覆盖了大典全部中类"——实际只收录了 39 个，
-    大典有 79 个。所以这里锁的不是数字本身，而是**两个口径必须同时出现**。
+    这组测试的背景：一次体检发现 taxonomy_cn.py 全仓库零引用（死代码）。
+    v0.8.26 又重写了它的口径——旧版只整理 39 个中类且全都建了词表，于是算出
+    100%（分母是我自己挑的那 39 个）+ 49%（39/79）。两个数都对，但**都没回答
+    读者的疑问**："大典里那么多行业，你到底能对付几个"。新版把中类按编号整理
+    进来，分母固定为 79，再看有多少个真有词表支撑。
+
+    所以这里锁的不再是"收录了几个"，而是：**分母不能自己挑、两个口径必须同屏、
+    对账表里写到的每个岗位族都得真的存在。**
     """
 
-    def test_summary_reports_both_denominators(self):
+    def test_summary_reports_all_three_denominators(self):
         s = taxonomy_cn.coverage_summary()
-        self.assertEqual(s["listed_mapped"], s["listed_total"])   # 收录的都有词表
-        self.assertLess(s["breadth"], 1.0)                        # 但远没覆盖全大典
         self.assertEqual(s["dictionary_total"], taxonomy_cn.MIDS_IN_DICTIONARY_2022)
+        # coverage 的分母必须是大典全量，不能是"我挑出来的那部分"
+        self.assertEqual(s["coverage"], s["supported"] / s["dictionary_total"])
+        self.assertEqual(s["completeness"], s["supported"] / s["enumerated"])
+        self.assertEqual(s["enumeration_rate"], s["enumerated"] / s["dictionary_total"])
+        self.assertLess(s["coverage"], 1.0)          # 不许出现 100% 的自证式口号
+        self.assertLess(s["enumeration_rate"], 1.0)  # 坦白目录本身也没抄全
 
-    def test_every_listed_mid_has_a_pack(self):
-        """「完整度 100%」必须是算出来的，不是写出来的。"""
+    def test_every_mid_has_a_unique_code(self):
+        """带编号的目的就是可核对；编号重复等于自己骗自己。"""
+        seen = {}
         for row in taxonomy_cn.coverage_matrix():
-            self.assertEqual(row["gaps"], [], f"大类 {row['code']} 有中类没建词表")
+            for code in row["supported"] + [g.split()[0] for g in row["gaps"]]:
+                self.assertRegex(code, r"^\d-\d{2}$", f"中类编号格式可疑：{code}")
+                self.assertNotIn(code, seen, "编号重复")
+                seen[code] = True
+
+    def test_referenced_packs_actually_exist(self):
+        """对账表说"这个中类有词表"，那个词表就必须真的存在。
+
+        这条是被自己的疏漏催出来的：v0.8.26 先把 maritime / mining /
+        environment 写进了 OCCUPATION_TREE 的 packs，**当时 DOMAIN_PACKS 里还
+        没有这三个族**——对账表会一脸真诚地报"已支持"，而引擎压根抽不出东西。
+        """
+        from career_loop.matching.schema import DOMAIN_PACKS
+
+        missing = []
+        for row in taxonomy_cn.coverage_matrix():
+            for p in row["packs"]:
+                if p not in DOMAIN_PACKS:
+                    missing.append((row["code"], p))
+        self.assertEqual(missing, [], f"对账表引用了不存在的岗位族：{missing}")
 
     def test_rendered_table_carries_the_honest_boundary(self):
-        """改文案可以，但把「79 / 49% / 启发式」任何一项改没了都会被抓住。"""
+        """改文案可以，但把「79 / 启发式 / 覆盖率」任何一项改没了都会被抓住。"""
         out = taxonomy_cn.render_coverage()
-        self.assertIn("49%", out)
         self.assertIn("79", out)
         self.assertIn("启发式", out)
-        # 单独一个 100% 而没有广度说明 = 误导，所以两者必须同屏
-        self.assertTrue("100%" in out and "49%" in out)
+        self.assertIn(str(int(taxonomy_cn.coverage_summary()["coverage"] * 100)) + "%", out)
+        # 光有完整度（分母是自己整理的那份）没有覆盖率 = 误导，两者必须同屏
+        self.assertIn("词表覆盖", out)
+        self.assertIn("目录整理度", out)
 
     def test_numbers_match_readme_claim(self):
-        """README 写的是「收录 39 个中类 / 大典 79 个 / 49%」，别悄悄漂移。"""
+        """README 引用的中类口径别悄悄漂移。"""
         s = taxonomy_cn.coverage_summary()
-        self.assertEqual(s["listed_total"], 39)
-        self.assertEqual(round(s["breadth"] * 100), 49)
+        self.assertEqual(s["enumerated"], 76)   # 按编号整理出来的大典中类
+        self.assertEqual(s["supported"], 62)    # 其中真有词表支撑的
+        self.assertEqual(s["dictionary_total"], 79)
 
     def test_cli_exposes_it(self):
         """不是死代码的第一道保险：命令表里有它。"""

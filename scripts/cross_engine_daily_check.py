@@ -249,7 +249,7 @@ def main() -> int:
     # 这里刻意**枚举 summary 的全部 key**（而不是挑几个比）：网页第三张卡片
     # 要读 big_classes，而它曾经没被同步进去 —— 网页当场渲染出 "undefined"，
     # 当时的检查只比了其余五个 key，于是眼睁睁放过去了。
-    for key in ("listed_total", "listed_mapped", "dictionary_total", "big_classes"):
+    for key in ("enumerated", "supported", "dictionary_total", "big_classes"):
         if key not in web_sum:
             print(f"  ✗ {key:<18} 网页里没有这个字段（同步漏导出 → 页面上会显示 undefined）")
             fails += 1
@@ -257,7 +257,7 @@ def main() -> int:
         ok = web_sum[key] == s[key]
         fails += 0 if ok else 1
         print(f"  {'✓' if ok else '✗'} {key:<18} Python={s[key]}  Web={web_sum[key]}")
-    for key in ("completeness", "breadth"):
+    for key in ("completeness", "coverage", "enumeration_rate"):
         ok = abs(web_sum.get(key, 0) - s[key]) < 0.001
         fails += 0 if ok else 1
         print(f"  {'✓' if ok else '✗'} {key:<18} Python={s[key]:.4f}  Web={web_sum.get(key)}")

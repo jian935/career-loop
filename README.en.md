@@ -21,7 +21,7 @@
   
   <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">
   
-  <img alt="tests" src="https://img.shields.io/badge/tests-216%20passing-4f46e5.svg">
+  <img alt="tests" src="https://img.shields.io/badge/tests-224%20passing-4f46e5.svg">
   
 </p>
 
@@ -60,7 +60,7 @@ offer), and feed those outcomes back. Finally you get a **Pearson r** telling yo
 whether the score had any predictive power at all.
 
 The capability vocabulary is not AI-only. It covers AI/tech, general skills
-(communication, execution, writing…), and **66 job families** — product, marketing,
+(communication, execution, writing…), and **69 job families** — product, marketing,
 sales, finance, design, operations, HR, education, healthcare, legal, supply chain,
 manufacturing, backend, frontend, QA, DevOps, banking, consulting, media, gaming,
 customer service, retail, energy, automotive, agriculture, research, social work,
@@ -95,7 +95,7 @@ that means the model was guessing — and you now have the data to fix the weigh
 - Tells you **which single gap raises your score the most** (counterfactual), and
   **which job to apply to first** when you have a whole batch in front of you.
 - Logs applications and real outcomes, then checks the score with **Pearson r**.
-- Covers 66 job families; anything outside the vocabulary is still judged, not dropped.
+- Covers 69 job families; anything outside the vocabulary is still judged, not dropped.
 
 **Doesn't:**
 
@@ -552,7 +552,7 @@ Four layers of vocabulary, and **nothing outside it is thrown away**:
    evaluation…
 2. **General skills** — communication, execution, problem solving, self-directed
    learning, writing, customer orientation, leadership, languages, office software.
-3. **Job families (66 families / 171 capability items)** — AI specialisations (12),
+3. **Job families (69 families / 180 capability items)** — AI specialisations (12),
    business & management (16), R&D & engineering (9), finance (4), media &
    entertainment (4), services & retail (5), manufacturing / energy / agriculture (4),
    research & public sector (5), plus product, design, operations, education,
@@ -561,12 +561,16 @@ Four layers of vocabulary, and **nothing outside it is thrown away**:
    top-level classes of China's Occupation Classification Dictionary; run
    `career-loop occupations` to recompute the reconciliation table yourself
    (which mid-classes have a vocabulary, which are blank). Of 75 test roles,
-   the 66 with a built vocabulary reach **100% family-identification rate**
+   the 69 with a built vocabulary reach **100% family-identification rate**
    with a 3% fallback rate (`scripts/coverage.py`).
-   > Two different denominators, do not quote just one: **mapping completeness
-   > 39/39 = 100%** is measured against the mid-classes *this repo chose to
-   > include*; **coverage breadth 39/79 = 49%** is measured against all 79
-   > mid-classes in the Dictionary (40 still have no vocabulary at all).
+   > Three denominators, and the only one worth quoting is the first one:
+   > **coverage 62/79 = 78%** — measured against all 79 mid-classes in the
+   > Dictionary. The other two are internal bookkeeping: completeness 62/76
+   > (measured against the mid-classes *this repo transcribed, with codes*) and
+   > enumeration rate 76/79 (admitting that even the list itself is incomplete).
+   > An earlier version hand-picked the 39 mid-classes it happened to support and
+   > reported "100% + 49%" — both true, but **a percentage whose denominator you
+   > chose yourself is not evidence of coverage**.
 
    A real run of that table: [`docs/occupation-coverage.md`](docs/occupation-coverage.md).
    The web page's "Occupation classification · coverage reconciliation" block renders
@@ -631,7 +635,7 @@ career-loop/
 │   ├── dashboard.py     # Streamlit rendering layer (optional dep; draws only)
 │   ├── dashdata.py      # board data layer: funnel / calibration / CI / gaps (zero-dep, tested)
 │   ├── daily.py         # daily list: ranking + due-date parsing + md/csv/ics export
-│   └── tests/           # 216 unit tests
+│   └── tests/           # 224 unit tests
 ├── docs/                # zero-install web demo (index.html) + screenshots / GIF / demo video; also the Pages site root
 ├── data/
 │   ├── eval_sample.jsonl        # 60-row control regression set
@@ -652,7 +656,7 @@ career-loop/
 
 ## Quality & self-checks
 
-- **216 unit tests** — matching, calibration, storage, recommendation, collection,
+- **224 unit tests** — matching, calibration, storage, recommendation, collection,
   counterfactuals, non-AI generalisation, internship ranking, industry scan and
   level detection, LLM wiring and self-created capabilities, the LLM family
   backend (fallback, auto/blend split, prompt covering every family), `.env`

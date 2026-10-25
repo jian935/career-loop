@@ -140,9 +140,21 @@ def main() -> int:
          "--due", "2026-13-40"], expect=1, contains="YYYY-MM-DD", name="daily(bad due)")
 
     # occupations：README 宣称"可对齐到职业分类大典"，这条命令就是那个承诺的入口。
-    # 断言里带上 49% 而不是只看返回码：只检查"跑得通"等于什么都没检查——
+    # 断言里带上具体口径而不是只看返回码：只检查"跑得通"等于什么都没检查——
     # 这个模块曾经是零引用的死代码，跑得通却从没人调。
-    run(["occupations"], contains=["39/39", "49%", "启发式"], name="occupations")
+    #
+    # v0.8.26 重写了口径（旧版分母是自己挑的 39 个中类，于是只有 100% + 49%），
+    # 现在强制三口径同屏：覆盖率 62/79、完整度 62/76、目录整理度 76/79。
+    # 数字从 taxonomy_cn 现算，别写死——写死过一次，口径一改这条就失真。
+    from career_loop.matching import taxonomy_cn  # 本地导入：audit 只依赖 CLI 行为
+
+    s = taxonomy_cn.coverage_summary()
+    run(["occupations"],
+        contains=[f"{s['supported']}/{s['dictionary_total']}",
+                  f"{s['supported']}/{s['enumerated']}",
+                  f"{s['enumerated']}/{s['dictionary_total']}",
+                  "启发式"],
+        name="occupations")
 
     check_eval_baseline()
 
