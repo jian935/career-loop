@@ -78,6 +78,7 @@ Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的�
 
 - 直接打开 [`docs/index.html`](docs/index.html)：纯前端，粘贴 JD 和经历就在浏览器里算，数据不上传。
 - 部署到 GitHub Pages：`Settings → Pages → Source: Deploy from a branch → Branch: main, Folder: /docs`，之后地址形如 `https://jian35.github.io/career-loop/`。
+- 命令行零配置预览核心引擎：`python scripts/demo_cli.py`（免 API Key，离线跑「单 JD 匹配 → 多 JD 排序 → 补强性价比」）。
 
 ## 支持任意岗位（不只 AI）
 

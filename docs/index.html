@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>career-loop · 先看清你差在哪</title>
 <meta name="description" content="粘贴岗位描述和你的经历，10 秒得到匹配分、缺口清单，以及补哪一项分数涨最多。">
+  <meta name="theme-color" content="#07070A">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="career-loop · 先别投，先看清你差在哪">
+  <meta property="og:description" content="粘贴 JD 和经历，10 秒得到可证伪的匹配分、逐项缺口，以及补哪一项分数涨最多。纯前端、数据不上传。">
+  <meta property="og:image" content="og-cover.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://jian35.github.io/career-loop/">
+  <meta property="og:site_name" content="career-loop">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="career-loop · 先别投，先看清你差在哪">
+  <meta name="twitter:description" content="粘贴 JD 和经历，10 秒得到可证伪的匹配分、逐项缺口。纯前端、数据不上传。">
+  <meta name="twitter:image" content="og-cover.png">
 <style>
 
   :root{
@@ -172,6 +185,9 @@
     color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
   .foot a{color:var(--sub);text-decoration:none}
   .foot a:hover{color:var(--ink)}
+  .linkbtn{background:none;border:none;color:var(--violet);font:inherit;font-size:12px;
+    padding:0;margin:0;cursor:pointer}
+  .linkbtn:hover{color:var(--cyan)}
   @media(max-width:720px){.nav-links{display:none}.hero{padding-top:52px}.stats{gap:26px}}
 
 </style>
@@ -201,7 +217,7 @@
 </nav>
 
 <header class="hero">
-  <div class="pill"><span class="dot"></span>33 个岗位族 · 本地计算 · 零依赖核心</div>
+  <div class="pill"><span class="dot"></span>65 个岗位族 · 本地计算 · 零依赖核心</div>
   <h1>先别投。<br><span class="grad">先看清你到底差在哪。</span></h1>
   <p class="lead">粘贴 JD 和你的经历，10 秒得到加权匹配分、逐项缺口，以及「补哪一项分数涨最多」。数据不离开浏览器。</p>
   <div class="cta">
@@ -209,7 +225,7 @@
     <a class="btn-ghost" href="https://github.com/jian35/career-loop" target="_blank" rel="noopener">查看源码</a>
   </div>
   <div class="stats">
-    <div><b>33</b><span>岗位族</span></div>
+    <div><b>65</b><span>岗位族</span></div>
     <div><b>42</b><span>评测集</span></div>
     <div><b>0</b><span>核心依赖</span></div>
     <div><b>100%</b><span>本地计算</span></div>
@@ -258,7 +274,7 @@
 
 <footer class="foot">
   <span>MIT · 本地优先 · 匹配分可证伪</span>
-  <span><a href="https://github.com/jian35/career-loop">GitHub</a> · <a href="https://github.com/jian35/career-loop/tree/main/docs">方法论</a></span>
+  <span><a href="https://github.com/jian35/career-loop">GitHub</a> · <a href="https://github.com/jian35/career-loop/tree/main/docs">方法论</a> · <button type="button" class="linkbtn" onclick="try{navigator.clipboard.writeText(location.href);alert('链接已复制，带上活动话题去分享吧～');}catch(e){alert('请手动复制地址栏链接分享～');}">复制本页链接</button></span>
 </footer>
 
 <script>

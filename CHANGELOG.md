@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.2] - 2026-10-25
+
+### Added (1024 造物挑战投稿就绪)
+- **社媒分享富预览**：`docs/index.html` 增加 OG / Twitter 标签，并生成 1200×630 封面
+  `docs/og-cover.png`，分享链接可出卡片（直接服务评审「社媒分享 +30」）。
+- **页面底部「复制本页链接」按钮**，方便随手带话题分享。
+- **离线一键演示** `scripts/demo_cli.py`：免 API Key、不落库，演示「单 JD 匹配 → 多 JD 排序 →
+  补强性价比」全流程，供评委 / 用户一键看核心能力。
+- **投稿包** `docs/submission.md`（抄填投稿表单 + 与四项评审标准逐条对应）与 **社媒分享 Kit**
+  `docs/share-kit.md`（各平台现成文案、必带话题、素材清单、冲人气分方法）。
+- 修：网页 hero / 统计里的「岗位族」数字由陈旧值 33 更正为引擎真实值 **65**（引擎与 README 一致）。
+
+### Fixed
+- 清理仓库根目录测试残留的空杂物文件。
+
 ## [0.8.1] - 2026-10-24
 
 ### Added
