@@ -246,6 +246,36 @@
   .ind-miss{font-size:11px;color:var(--muted);font-family:var(--mono)}
   .hint{font-size:11.5px;color:var(--muted);margin:8px 0 0;font-family:var(--mono);line-height:1.5}
 
+  /* ---- 闭环校准看板 ---- */
+  .calib{background:rgba(124,92,255,.05);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:22px}
+  .calib-row{display:grid;grid-template-columns:1fr 150px 120px auto;gap:10px;align-items:end;margin-bottom:10px}
+  .calib-row label{display:block;font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:5px}
+  .calib-row input,.calib-row select{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:9px 11px;font-size:13px;font-family:inherit}
+  .calib-row input:focus,.calib-row select:focus{outline:none;border-color:var(--purple)}
+  .calib-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+  @media(max-width:720px){.calib-row{grid-template-columns:1fr 1fr}.calib-stats{grid-template-columns:1fr}}
+  .calib-stat{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:rgba(255,255,255,.02)}
+  .calib-stat .k{font:800 22px var(--mono);color:var(--cyan)}
+  .calib-stat.warn .k{color:#FCA5A5}
+  .calib-stat .l{font-size:11.5px;color:var(--sub);margin-top:3px}
+  .calib-buckets{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0}
+  @media(max-width:720px){.calib-buckets{grid-template-columns:repeat(2,1fr)}}
+  .calib-b{border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;background:rgba(255,255,255,.02)}
+  .calib-b .rng{font:700 11px var(--mono);color:var(--muted)}
+  .calib-b .rate{font:800 17px var(--mono);color:var(--emerald);margin:5px 0 2px}
+  .calib-b .n{font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+  .calib-verdict{font-size:12.5px;line-height:1.65;color:var(--sub);border-left:2px solid var(--purple);padding:10px 0 10px 13px;background:rgba(124,92,255,.06);border-radius:0 8px 8px 0;margin-top:6px}
+  .calib-list{margin-top:14px;max-height:260px;overflow:auto}
+  .calib-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:7px;background:rgba(255,255,255,.02);font-size:12.5px}
+  .calib-item .role{flex:1;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .calib-item .sc{font:700 12px var(--mono);color:var(--cyan)}
+  .calib-item .st{font-size:11px;padding:2px 8px;border-radius:99px;font-family:var(--mono)}
+  .st-pos{background:rgba(123,241,196,.14);color:#7BF1C4}
+  .st-neg{background:rgba(255,255,255,.07);color:var(--muted)}
+  .calib-item .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px 5px}
+  .calib-item .del:hover{color:#FCA5A5}
+  .calib-tools{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:12px}
+
 </style>
 </head>
 <body>
@@ -267,6 +297,7 @@
   <div class="nav-links">
     <a href="#app">Demo</a>
     <a href="#evidence">证据墙</a>
+    <a href="#calibrate">校准</a>
     <a href="https://github.com/jian35/career-loop/tree/main/benchmark">Benchmark</a>
     <a href="https://github.com/jian35/career-loop/tree/main/docs">Docs</a>
   </div>
@@ -284,7 +315,7 @@
   <div class="stats">
     <div><b>65</b><span>岗位族</span></div>
     <div><b>42</b><span>评测集</span></div>
-    <div><b>91.9%</b><span>真实JD族识别</span></div>
+    <div><b>93.6%</b><span>真实JD族识别</span></div>
     <div><b>0</b><span>核心依赖</span></div>
     <div><b>100%</b><span>本地计算</span></div>
   </div>
@@ -357,7 +388,7 @@
   <section class="evidence" id="evidence">
     <div class="sec-head"><h2>验证闭环 · 证据墙</h2><span>匹配分不是玄学：公开数据可复现，失效区间也公开</span></div>
     <div class="ev-grid">
-      <div class="ev-card"><div class="k">91.9<span class="u">%</span></div><div class="l">岗位族识别准确率</div><div class="n">1,167 条真实 JD · 公开数据集</div></div>
+      <div class="ev-card"><div class="k">93.6<span class="u">%</span></div><div class="l">岗位族识别准确率</div><div class="n">1,167 条真实 JD · 公开数据集</div></div>
       <div class="ev-card"><div class="k">0.193</div><div class="l">引擎分 ↔ 真实标注 Pearson r</div><div class="n">2,000 对 · 弱正相关（规则基线水位）</div></div>
       <div class="ev-card warn"><div class="k">−0.255</div><div class="l">作者私有 40 条真实投递</div><div class="n">关键词饱和导致反向 · 敢公开才叫可证伪</div></div>
     </div>
@@ -371,6 +402,34 @@
       <div class="ev-step"><div class="i">③ CALIBRATE</div><h4>Pearson r 打脸</h4><p>样本到量后检验预测分准不准：准就信，不准就反过来改权重。</p></div>
     </div>
     <p class="hint" style="margin-top:12px">公开数据来自 HuggingFace <code>nonameee12233/job-resume-matching</code>（CC BY，无 PII）。复现：<code>python scripts/real_eval_family.py</code> · <code>python scripts/real_eval_calibrate.py</code>。作者私有测试只公开聚合统计，不含任何个人信息。</p>
+  </section>
+
+  <section class="calib" id="calibrate">
+    <div class="sec-head"><h2>用你自己的结果校准</h2><span>这才是「可证伪」的真正含义——不是相信，是检验</span></div>
+    <p class="hint" style="margin-top:0;margin-bottom:14px">每投一家，把匹配分和真实结果如实记下来。样本够了，这里会直接算出 <b style="color:var(--cyan)">Pearson r</b> 和分桶正反馈率——<b>你的匹配分到底准不准，数据说了算</b>。全部存在浏览器 localStorage，不上传、不联网。</p>
+    <div class="calib-row">
+      <div><label for="calRole">岗位</label><input id="calRole" placeholder="AI 产品经理（AIGC 方向）"></div>
+      <div><label for="calScore">匹配分</label><input id="calScore" type="number" min="0" max="100" step="0.1" placeholder="62.5"></div>
+      <div><label for="calStatus">真实结果</label><select id="calStatus">
+        <option value="neg">已读 / 无回应</option>
+        <option value="pos">沟通 / 面试 / offer</option>
+      </select></div>
+      <div><button id="calAdd" class="btn-primary">记录</button></div>
+    </div>
+    <div class="calib-stats">
+      <div class="calib-stat"><div class="k" id="calN">0</div><div class="l">已记录投递</div></div>
+      <div class="calib-stat"><div class="k" id="calRate">—</div><div class="l">正反馈率</div></div>
+      <div class="calib-stat" id="calRBox"><div class="k" id="calR">—</div><div class="l">匹配分 ↔ 真实结果 Pearson r</div></div>
+    </div>
+    <div class="calib-buckets" id="calBuckets"></div>
+    <div class="calib-verdict" id="calVerdict">还没有数据。先记几条真实投递结果——建议至少 15 条，r 才有统计意义。</div>
+    <div class="calib-list" id="calList"></div>
+    <div class="calib-tools">
+      <button id="calDemo" class="btn-ghost sm">载入示例（演示用）</button>
+      <button id="calClear" class="btn-ghost sm">清空</button>
+      <button id="calExport" class="btn-export">导出 CSV</button>
+      <span class="hint" style="margin:0">示例数据是<strong style="color:#FCA5A5">编造的</strong>，只用于看界面效果，别当真。</span>
+    </div>
   </section>
 </main>
 
@@ -1169,6 +1228,117 @@ function loadBatchSample(){
   renderScan(el("batchProfile").value);
 }
 
+/* ============================================================
+   闭环校准看板：apply → log → calibrate 全在浏览器里
+   数学口径与 career_loop/calibrate.py 完全一致（Pearson + 20 分桶）
+   数据只存 localStorage，不上传、不联网
+   ============================================================ */
+const CAL_KEY="careerloop_calibration_v1";
+function calLoad(){
+  try{ const raw=localStorage.getItem(CAL_KEY); return raw?JSON.parse(raw):[]; }
+  catch(e){ return []; }
+}
+function calSave(rows){
+  try{ localStorage.setItem(CAL_KEY, JSON.stringify(rows)); }catch(e){}
+}
+function calPearson(xs,ys){
+  const n=xs.length; if(n<2) return null;
+  const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+  let num=0,dx=0,dy=0;
+  for(let i=0;i<n;i++){ const a=xs[i]-mx, b=ys[i]-my; num+=a*b; dx+=a*a; dy+=b*b; }
+  if(dx===0||dy===0) return null;
+  return num/(Math.sqrt(dx)*Math.sqrt(dy));
+}
+function calVerdict(r,n){
+  if(n===0) return "还没有数据。先记几条真实投递结果——建议至少 15 条，r 才有统计意义。";
+  if(r===null) return "样本太少或匹配分全相同，还算不出 r。再记几条。";
+  const a=Math.abs(r);
+  if(a<0.15) return "匹配分和真实结果几乎无关（|r| < 0.15）。说明现在的匹配模型基本在猜——它打的高分没有转化为更多面试。下一步应该降低对它的信任，转去收集更多真实结果反推权重。";
+  if(r<0.4) return "弱相关。匹配分方向大致对，但解释力有限。建议把预测误差最大的几类岗位（行业/职能）单独拆出来看，可能是它们拖低了相关性。";
+  return "中到强相关（|r| ≥ 0.4）。匹配分确实在预测真实结果，可以放心拿它做投递优先级，但仍要持续回流数据修正。";
+}
+function renderCalib(){
+  const rows=calLoad();
+  const n=rows.length;
+  el("calN").textContent=String(n);
+  const pos=rows.filter(r=>r.pos).length;
+  el("calRate").textContent = n? (Math.round(pos/n*1000)/10)+"%" : "—";
+
+  const xs=rows.map(r=>Number(r.score)), ys=rows.map(r=>r.pos?1:0);
+  const r=calPearson(xs,ys);
+  const rEl=el("calR");
+  if(r===null){ rEl.textContent="—"; el("calRBox").classList.remove("warn"); }
+  else{ rEl.textContent=(r>=0?"":"−")+Math.abs(r).toFixed(3);
+        el("calRBox").classList.toggle("warn", r<0); }
+
+  // 20 分桶
+  const bk=[];
+  for(let lo=0; lo<100; lo+=20) bk.push({lo,hi:lo+20,n:0,p:0});
+  for(const row of rows){
+    let i=Math.min(4, Math.floor(Number(row.score)/20)); if(i<0) i=0;
+    bk[i].n++; if(row.pos) bk[i].p++;
+  }
+  const bw=el("calBuckets"); bw.innerHTML="";
+  for(const b of bk){
+    const d=document.createElement("div"); d.className="calib-b";
+    const rate=b.n? Math.round(b.p/b.n*100)+"%" : "—";
+    d.innerHTML='<div class="rng">'+b.lo+'-'+b.hi+' 分</div><div class="rate">'+rate+'</div><div class="n">'+b.p+'/'+b.n+' 正反馈</div>';
+    bw.appendChild(d);
+  }
+  el("calVerdict").textContent=calVerdict(r,n);
+
+  const list=el("calList"); list.innerHTML="";
+  for(const row of rows){
+    const d=document.createElement("div"); d.className="calib-item";
+    const st=document.createElement("span"); st.className="st "+(row.pos?"st-pos":"st-neg");
+    st.textContent=row.pos?"正反馈":"未回应";
+    const del=document.createElement("button"); del.className="del"; del.textContent="×"; del.title="删除这条";
+    del.addEventListener("click",()=>{ calSave(calLoad().filter(x=>x.id!==row.id)); renderCalib(); });
+    d.innerHTML='<span class="role"></span><span class="sc"></span>';
+    d.querySelector(".role").textContent=row.role;
+    d.querySelector(".sc").textContent=Number(row.score).toFixed(1)+"%";
+    d.appendChild(st); d.appendChild(del);
+    list.appendChild(d);
+  }
+}
+function calAdd(){
+  const role=el("calRole").value.trim();
+  const score=el("calScore").value.trim();
+  const pos=el("calStatus").value==="pos";
+  if(!role){ alert("先填岗位名"); return; }
+  const sc=Number(score);
+  if(score===""||isNaN(sc)||sc<0||sc>100){ alert("匹配分要填 0~100 之间的数字"); return; }
+  const rows=calLoad();
+  rows.push({id:Date.now()+"-"+Math.random().toString(36).slice(2,7), role:role, score:sc, pos:pos, date:new Date().toISOString().slice(0,10)});
+  calSave(rows);
+  el("calRole").value=""; el("calScore").value="";
+  renderCalib();
+}
+function calExport(){
+  const rows=calLoad();
+  if(!rows.length){ alert("还没有记录"); return; }
+  const head="role,score,positive,date";
+  const body=rows.map(r=>[r.role, r.score, r.pos?1:0, r.date||""].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
+  const blob=new Blob([head+"\n"+body],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="career-loop-calibration.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function calDemo(){
+  // 演示数据是编造的，界面上已明确标注
+  const demo=[
+    ["AI 产品经理（AIGC）",78.4,true],["AI 产品经理（AIGC）",82.1,true],["大模型应用工程师",75.0,false],
+    ["AI 产品经理（AIGC）",85.6,true],["内容运营（AIGC）",71.2,true],["大模型应用工程师",88.3,false],
+    ["AI 产品经理（AIGC）",68.9,false],["创作者运营",79.5,true],["大模型应用工程师",92.0,false],
+    ["AI 产品经理（AIGC）",74.3,true],["私域运营",66.8,false],["大模型应用工程师",83.7,false],
+    ["AI 产品经理（AIGC）",81.1,true],["创作者运营",77.9,true],["大模型应用工程师",69.4,false],
+    ["AI 产品经理（AIGC）",87.2,false],["内容运营（AIGC）",73.6,true],["大模型应用工程师",80.5,false]
+  ];
+  calSave(demo.map((d,i)=>({id:"demo"+i,role:d[0],score:d[1],pos:d[2],date:"2026-01-"+String((i%28)+1).padStart(2,"0")})));
+  renderCalib();
+}
+
 let sampleIdx=0;
 function loadSample(i){
   el("jd").value=SAMPLES[i].jd;
@@ -1195,10 +1365,16 @@ el("rankBtn").addEventListener("click",()=>renderRanking(el("batchJDs").value, e
 el("scanBtn").addEventListener("click",()=>renderScan(el("batchProfile").value));
 el("exportBtn").addEventListener("click",exportReport);
 el("batchSample").addEventListener("click",loadBatchSample);
+el("calAdd").addEventListener("click",calAdd);
+el("calDemo").addEventListener("click",calDemo);
+el("calExport").addEventListener("click",calExport);
+el("calClear").addEventListener("click",()=>{ if(confirm("清空所有本地校准记录？")){ calSave([]); renderCalib(); } });
+el("calRole").addEventListener("keydown",e=>{ if(e.key==="Enter") calAdd(); });
 const qs=new URLSearchParams(location.search).get("s");
 sampleIdx = qs===null ? 0 : Math.max(0, Math.min(SAMPLES.length-1, parseInt(qs,10)||0));
 loadSample(sampleIdx);
 loadBatchSample();
+renderCalib();
 </script>
 </body>
 </html>

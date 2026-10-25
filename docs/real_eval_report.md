@@ -29,8 +29,8 @@ INFORMATION-TECHNOLOGY）作为 ground truth；用 `detect_domains()` 预测岗�
 | HR | 99.5% | 220 |
 | BUSINESS-DEVELOPMENT | 100% | 239 |
 | INFORMATION-TECHNOLOGY | 93.3% | 240 |
-| SALES | 69.8% | 232 |
-| **总体** | **91.9%** | **1,167** |
+| SALES | 78.4% | 232 |
+| **总体** | **93.6%** | **1,167** |
 
 **检验驱动的真实修复**（这些 bug 用合成数据永远发现不了）：
 1. AI 判定被通用业务词（`business process` / `kpi` / `sql`）触发 → 大量非 AI 岗位误判为 `ai`。
@@ -38,7 +38,8 @@ INFORMATION-TECHNOLOGY）作为 ground truth；用 `detect_domains()` 预测岗�
 2. design 族的 `ui` / `ux`、`ps` / `vi` 等过短词在英文里无处不在 → 大量跨族误判。已移除。
 3. sales 族未覆盖真实销售职位标题词（`sales representative` / `account executive`）→ 已补。
 
-SALES 69.8% 仍为短板：根因是通用软技能英文词（`performance management` / `training` 等）会跨族命中 hr；
+SALES 曾是最大短板（69.8%）：根因是通用软技能英文词（`performance management` / `training` 等）会跨族命中 hr。
+v0.8.7 用公开数据集的 `clean_skills` 统计补了高判别力销售词（relationship building / lead generation / account management / b2b sales…），提到 78.4%，其余四族不变；
 属于已知局限，列入待修（下一步：英文短词系统性治理）。
 
 ## 3. 匹配分校准检验（2,000 真实配对）

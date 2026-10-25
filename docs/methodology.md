@@ -128,7 +128,7 @@ known cases. It is synthetic and boundary-focused; it is **not** a claim of
 real-world accuracy.
 
 Separately, real-world end-to-end agreement is validated on the public
-`job-resume-matching` dataset (family-identification accuracy **91.9%**; engine score
+`job-resume-matching` dataset (family-identification accuracy **93.6%**; engine score
 vs. the dataset's `final_score` gives Pearson **r = 0.193** over 2,000 real pairs).
 That is a real-label check on real data — a different, honest claim from "this score
 predicts your offer". See `docs/benchmark.md` §2.2.

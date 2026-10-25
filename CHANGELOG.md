@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.7] - 2026-10-25
+
+### 引擎三项修复（真实数据暴露的真问题）
+- **否定辖域判定**（`matching/match.py`）：原实现用固定短语表穷举否定词，「没搭建过工作流」「没独立负责过项目」「没写过正式文档」这类「否定词+动作词」组合漏判成 full（实测 3/8 误判）。改为按中文否定辖域判定：否定词 + 填充词白名单 + 转折词切断 + 子句边界；另加「只/仅/光」限定词判定。评测集 50→60 条，一致率仍 1.0。
+- **英文 JD 降噪**（`matching/extract.py`）：加英文分节标记、URL / 全大写标题 / 招呼语 / 薪资行过滤。custom 垃圾项占抽取总数从 **29.5% → 0%**，平均能力项 17.1 → 12.08/JD，缺口清单不再列「ESSENTIAL DUTIES」这类模板标题。
+- **sales 族判别词**（`matching/schema.py`）：从公开数据集 SALES 类 `clean_skills` 统计出高判别力词（relationship building / lead generation / account management / b2b sales…）。族识别 **91.9% → 93.6%**，SALES **69.8% → 78.4%**，其余四族不变，每组新词配反向测试。
+
+### 闭环校准搬进浏览器（`docs/index.html`）
+- 新增「用你自己的结果校准」区块：记录每次投递的匹配分与真实结果（localStorage，不上传），实时算出 **Pearson r + 20 分桶正反馈率 + 结论**。
+- 数学口径与 `career_loop/calibrate.py` **完全一致**（已用同一份数据交叉验证：r = −0.06453413… 两边同值）。
+- 支持导出 CSV；示例数据明确标注为「编造的，仅用于看界面效果」。
+
+### 校验
+- 61 个单测全过（新增 14 条回归测试）、评测集 60 条一致率 1.0、`audit.py` 32/32、网页词表已同步。
+
 ## [0.8.6] - 2026-10-25
 
 ### 评测体系升级（W6）

@@ -1,31 +1,48 @@
 # Career-Loop
 
-<p align="center">  
+<p align="center">
+  
   <b>先别投。先看清你到底差在哪。</b>  
-  
-  粘贴 JD + 经历 → 匹配分 + 逐项缺口 + 「补哪一项分数涨最多」。  
+
+  
+  粘贴 JD + 经历 → 匹配分 + 逐项缺口 + 「补哪一项分数涨最多」。
+  
 </p>
 
-<p align="center">  
-  <a href="https://github.com/jian35/career-loop/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/jian35/career-loop?style=social"></a>  
-  <img alt="license" src="https://img.shields.io/badge/license-MIT-22c55e.svg">  
-  <img alt="python" src="https://img.shields.io/badge/python-3.10%2B-3776AB.svg">  
-  <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">  
+<p align="center">
+  
+  <a href="https://github.com/jian35/career-loop/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/jian35/career-loop?style=social"></a>
+  
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-22c55e.svg">
+  
+  <img alt="python" src="https://img.shields.io/badge/python-3.10%2B-3776AB.svg">
+  
+  <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">
+  
 </p>
 
-<p align="center">  
-  <a href="https://jian35.github.io/career-loop/"><b>▶ 在线试用（免安装，浏览器里跑）</b></a>  
-  \&nbsp;·\&nbsp;  
-  <a href="#三分钟演示视频">3 分钟演示视频</a>  
-  \&nbsp;·\&nbsp;  
-  <a href="#快速开始">命令行上手</a>  
+<p align="center">
+  
+  <a href="https://jian35.github.io/career-loop/"><b>▶ 在线试用（免安装，浏览器里跑）</b></a>
+  
+  \&nbsp;·\&nbsp;
+  
+  <a href="#三分钟演示视频">3 分钟演示视频</a>
+  
+  \&nbsp;·\&nbsp;
+  
+  <a href="#快速开始">命令行上手</a>
+  
 </p>
 
-<p align="center">  
-  <img src="docs/demo.png" alt="career-loop 网页演示：匹配分、能力矩阵与补强优先级" width="820">  
+<p align="center">
+  
+  <img src="docs/demo.png" alt="career-loop 网页演示：匹配分、能力矩阵与补强优先级" width="820">
+  
 </p>
 
-> 把「我到底适不适合这个 AI 岗位」从玄学，变成 **可证伪、可校准** 的数据闭环。>   
+> 把「我到底适不适合这个 AI 岗位」从玄学，变成 **可证伪、可校准** 的数据闭环。
+>   
 > 市面上大多数工具给你一个分数就走；career-loop 还会用你真实的投递结果，回算「这个分数到底准不准」。
 
 Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的开源小工具：它把一份 JD 和你的经历文本喂给一个匹配引擎，给出**预测匹配分 + 缺口清单**；你拿它去投递，再把真实结果（已读 / 面试 / offer）回流，最后用**相关系数**检验「这个匹配分到底准不准」。
@@ -99,8 +116,10 @@ Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的�
 4. **职业分类骨架**：岗位族可对齐到《职业分类大典》8 个职业大类；`scripts/coverage.py` 里的 75 个检验岗位中，66 个已建词表岗位的族识别率 100%、兜底占比 3%。
 5. **自定义兜底**：没被任何词表命中的要求，会原样保留，按文本相似度与你的经历比对，并标注「需人工确认」。
 
-<p align="center">  
-  <img src="docs/demo-finance.png" alt="会计岗位分析示例：81.8%，识别为财务族" width="820">  
+<p align="center">
+  
+  <img src="docs/demo-finance.png" alt="会计岗位分析示例：81.8%，识别为财务族" width="820">
+  
 </p>
 
 实测：会计岗识别为「财务」族、81.8%，缺口只剩「中级会计职称」；销售岗识别客户开发 / 谈判 / CRM；设计岗识别视觉 / 品牌 / 设计工具。浏览器 demo 里点「换个示例」就能看到 AI 岗和会计岗两种。
@@ -125,7 +144,7 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 | ----------- | --------------------------------------------------- |
 | 黑盒分数，不给依据   | 每项能力附 **JD 原文 + 你的原文证据**，可逐条审计                      |
 | 一次性打分，打完即忘  | **闭环**：投递 → 回流 → 校准，分数会随真实数据变准                      |
-| 声称「准确率 95%」 | 自带 **50 条控制回归集** 当回归锁，且明说这是「锁逻辑」不是「真实准确率」；真实端到端验证另用公开 HF 集（r=0.193）           |
+| 声称「准确率 95%」 | 自带 **60 条控制回归集** 当回归锁，且明说这是「锁逻辑」不是「真实准确率」；真实端到端验证另用公开 HF 集（r=0.193）           |
 | 依赖大模型 API   | **零依赖规则基线** 开箱即用，有 OpenAI 兼容 Key 才升级语义匹配，无 Key 自动回退 |
 
 ---
@@ -273,7 +292,7 @@ career-loop calibrate --data data/demo_applications.jsonl
 **真实数据检验（可复现）：** 用公开数据集 `job-resume-matching`（1,167 真实 JD + 9,544 真实简历
 + 122,560 真实匹配标注）跑出：
 
-- 族识别准确率 **91.9%**（FINANCE 96.6% / HR 99.5% / BUSINESS-DEVELOPMENT 100% / IT 93.3% / SALES 69.8%）
+- 族识别准确率 **93.6%**（FINANCE 96.6% / HR 99.5% / BUSINESS-DEVELOPMENT 100% / IT 93.3% / SALES 78.4%）
 - 匹配分 ↔ 真实标注 `final_score` 的 Pearson **r = 0.193**（2,000 真实配对，弱正相关）
 
 r 偏低且为正，符合预期：引擎当前是**规则关键词基线**，而 `final_score` 是**多维语义匹配**，
@@ -395,7 +414,8 @@ career-loop scan --profile examples/profile_me.md --jobs examples/jds \
   --level junior --goal ai --report scan.md
 ```
 
-输出四块：最适配岗位、行业适配度、最该补的能力、下一步建议。  
+输出四块：最适配岗位、行业适配度、最该补的能力、下一步建议。
+  
 `--level` 会把高一级的岗位降权（应届生别被 Senior 岗的高分骗）；`--goal ai` 会单独列出目标方向的岗位。
 
 ### 9) 看板（可选）
@@ -412,9 +432,11 @@ career-loop dashboard        # 没有真实数据时读 data/demo_applications.j
 
 - **AI / 技术层**：下表 14 项
 - **通用能力层**：执行推进、问题解决、学习自驱、责任心、文档表达、客户导向、领导力、外语、办公软件
-- **岗位族层**：65 个岗位族、166 个能力项（AI 细分 / 工商管理 / 研发工程 / 金融专业 / 传媒文娱 / 服务零售 / 制造能源农林 / 科研公共 / 其他），    
+- **岗位族层**：65 个岗位族、166 个能力项（AI 细分 / 工商管理 / 研发工程 / 金融专业 / 传媒文娱 / 服务零售 / 制造能源农林 / 科研公共 / 其他），
+    
   并可对齐到《职业分类大典》8 个职业大类（见 `career_loop/matching/taxonomy_cn.py`）
-- **自定义兜底**：未被以上任何词表命中的要求，按文本相似度匹配，不丢弃；    
+- **自定义兜底**：未被以上任何词表命中的要求，按文本相似度匹配，不丢弃；
+    
   开启大模型后还能自动创建 `custom:` / `llm:` 能力项（如茶艺师 → 茶艺冲泡、茶席设计）
 
 下表是 AI / 技术层的 14 项：
@@ -452,7 +474,7 @@ career-loop/
 │   └── tests/           # 36 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / 扫描 / LLM 接线 / .env / CLI 路由）
 ├── docs/                # 免安装网页 demo（index.html）＋ 截图 / 动图 / 演示视频，可挂 GitHub Pages
 ├── data/
-│   ├── eval_sample.jsonl        # 50 条控制回归集（回归锁）
+│   ├── eval_sample.jsonl        # 60 条控制回归集（回归锁）
 │   └── demo_applications.jsonl  # 29 条合成演示数据（校准演示）
 ├── examples/
 │   ├── profile_me.md            # 示例经历
@@ -498,9 +520,9 @@ career-loop/
 - ✅ **W3 — JD 采集**：`collect` 批量采集原始 JD（清招聘站噪声 + 按标题去重），`demand` 输出能力需求热力与补能力优先级。
 - ✅ **加分项**：反事实解释 `whatif` + 免安装网页 demo（`docs/`）+ 3 分钟旁白演示视频。
 - ✅ **W4 — 该投哪些（部分）**：网页 demo 新增「批量岗位排序」——粘贴一批 JD 立刻按匹配分排序并附最划算补强，回答「每天该投哪些」。每日清单/跟踪看板增强仍进行中。
-- ✅ **W5 — 校准上墙（部分）**：证据墙（91.9% / r=0.193 / 私有 −0.255）已做成网页常驻模块 + `docs/evidence.md`；真实回流 50 条仍待补。
-- ✅ **W6 — 评测体系升级**：控制回归集从 42→50 条（覆盖 `GENERAL_DIMS` 通用能力 writing/exec_project + 8 条边界/覆盖样本），并正式把公开 HF 集的真实端到端验证（族识别 91.9% / r=0.193）纳入评测体系第二根支柱。不再把合成控制集夸大为「真实标注」。
-- ✅ **W7 — Web 看板 / 分享页（部分）**：网页 demo 已升级为「工具」——除单 JD 匹配外，新增批量岗位排序、全行业适配（覆盖 65 岗位族）、一键导出 Markdown 报告；Streamlit 看板仍待做。
+- ✅ **W5 — 校准上墙（部分）**：证据墙（93.6% / r=0.193 / 私有 −0.255）已做成网页常驻模块 + `docs/evidence.md`；真实回流 50 条仍待补。
+- ✅ **W6 — 评测体系升级**：控制回归集从 42→50 条（覆盖 `GENERAL_DIMS` 通用能力 writing/exec_project + 8 条边界/覆盖样本），并正式把公开 HF 集的真实端到端验证（族识别 93.6% / r=0.193）纳入评测体系第二根支柱。不再把合成控制集夸大为「真实标注」。
+- ✅ **W7 — Web 看板 / 分享页（部分）**：网页 demo 已升级为「工具」——除单 JD 匹配外，新增批量岗位排序、全行业适配（覆盖 65 岗位族）、一键导出 Markdown 报告，以及**闭环校准看板**（浏览器内 apply→log→calibrate，实时算 Pearson r 与分桶正反馈率，数据只存 localStorage）；Streamlit 看板仍待做。
 - ✅ **W8 — 3 分钟演示视频（✅ 已完成）+ 复盘长文（✅ 已完成，见 `docs/retro.md`）**：用于简历附件和社区传播。
 
 ---

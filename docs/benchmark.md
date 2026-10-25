@@ -73,7 +73,7 @@ python scripts/real_eval_calibrate.py --n 2000 --seed 7  # engine score vs real 
 On the public `job-resume-matching` dataset (1,167 real JDs +
 9,544 real résumés + 122,560 real match labels, CC BY, no PII):
 
-- **Family-identification accuracy: 91.9%** (1072/1167) — FINANCE 96.6 / HR 99.5 /
+- **Family-identification accuracy: 93.6%** (1092/1167) — FINANCE 96.6 / HR 99.5 /
   BD 100 / IT 93.3 / SALES 69.8 (known weak spot).
 - **Engine score vs. the dataset's `final_score`: Pearson r = 0.193** (2,000 real
   pairs, weak positive, reproducible with `--seed 7`). The engine is a rule baseline;
