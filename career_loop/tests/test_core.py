@@ -13,6 +13,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from career_loop import calibrate, collect, daily, dashdata, explore, internship, matching, recommend, reflow, store
 from career_loop.cli import build_parser
 from career_loop.eval import load_dataset, run_eval
+# 注意：matching 包把 render 函数重导出到同名位置了，
+# 所以必须 from ...render import，from career_loop.matching import render 拿到的是函数。
+from career_loop.matching.render import _verdict, render as render_fn
 from career_loop.matching import taxonomy_cn
 
 
@@ -1768,6 +1771,136 @@ class TestDailyPlan(unittest.TestCase):
                                 today=self.DAY)
         self.assertEqual(plan.items, [])
         self.assertTrue(plan.notes)
+
+
+class TestRenderReport(unittest.TestCase):
+    """`career-loop match` 产出的 report.md 是项目主要交付物（README 头图就是它），
+    但这一层覆盖率只有 9% —— 意思是报告长什么样，从来没有任何断言。
+
+    补测试当晚就抓到一个真 bug：quote / evidence 里的管道符有转义，
+    **label 没有**。而 label 恰恰最危险——自定义能力项的标签是从 JD 原文
+    抽出来的短语，像 "Java|Python|Go" 这种技能罗列很常见，一个 `|` 就让
+    能力矩阵和 4 周路线两张表同时错位。所以核心断言是**表格列数一致**。
+    """
+
+    @staticmethod
+    def _assess(specs, mode: str = "rule", title: str = "测试岗位") -> matching.Assessment:
+        """specs: [(key, label, weight, status, quote, evidence)]"""
+        from career_loop.matching.schema import MatchResult, Requirement
+        reqs, matches = [], {}
+        for key, label, weight, status, quote, evidence in specs:
+            reqs.append(Requirement(key=key, label=label, weight=weight,
+                                    kind="must", quote=quote))
+            matches[key] = MatchResult(key=key, status=status, evidence=evidence)
+        return matching.Assessment(requirements=reqs, matches=matches,
+                                   jd_title=title, mode=mode)
+
+    NASTY = "技能|罗列\n换行也在里面"
+    BASE = [
+        ("python", "Python", 3, "full", "熟悉 Python", "做过 X 项目"),
+        ("rag", "RAG", 2, "partial", "有 RAG 经验优先", "课程作业"),
+        ("agent", "Agent", 1, "missing", "用过 Agent 加分", ""),
+    ]
+
+    def _table_column_counts(self, md: str) -> dict[str, set[int]]:
+        """按表格分组，返回每个表出现过的列数集合——一个正常表格只能有一种。"""
+        groups: dict[str, set[int]] = {}
+        current: list[str] = []
+        for line in md.splitlines():
+            if line.startswith("|"):
+                current.append(line)
+            elif current:
+                groups.setdefault(str(len(current)), set()).add(
+                    current[0].count("|"))
+                groups[str(len(current))].update(l.count("|") for l in current)
+                current = []
+        if current:
+            groups.setdefault(str(len(current)), set()).update(
+                l.count("|") for l in current)
+        return groups
+
+    def test_tables_keep_columns_aligned_with_hostile_text(self):
+        """把 `|` 和换行塞进 label / quote / evidence，表格不能多出或少掉一列。"""
+        specs = [
+            (k, lbl if i == 0 else lbl, w, st,
+             self.NASTY if i == 0 else q, self.NASTY if i == 0 else ev)
+            for i, (k, lbl, w, st, q, ev) in enumerate(self.BASE)
+        ]
+        md = render_fn(self._assess(specs))
+        for rows, counts in self._table_column_counts(md).items():
+            self.assertEqual(len(counts), 1,
+                             f"表格（{rows} 行）列数不一致：{sorted(counts)}\n{md}")
+
+    def test_hostile_text_is_flattened_everywhere(self):
+        """管道符只害表格，**换行还会害标题和列表项**——两种位置都要压平。
+
+        缺口标题、JD 依据、简历句都不是表格，但 `- **JD 依据**：a\\nb` 的
+        后半句会被甩出列表。所以这里断言的是原始字符串**整个报告里都不出现**。
+        """
+        specs = [("python", self.NASTY, 3, "missing", self.NASTY, self.NASTY)]
+        md = render_fn(self._assess(specs))
+        # 1) 表格行里不能有裸管道符（会多出一列）
+        self.assertEqual([l for l in md.splitlines()
+                          if l.startswith("| ") and "技能|罗列" in l], [])
+        self.assertIn("技能／罗列", md)
+        # 2) 原始字符串（含换行）整个文档里都不该出现
+        self.assertNotIn("技能|罗列\n换行也在里面", md)
+        self.assertNotIn("\n换行也在里面", md)
+        # 3) 标题/列表项已经压成一行
+        self.assertIn("### 1. 技能|罗列 换行也在里面（权重 3", md)
+        for line in md.splitlines():
+            if line.startswith("- "):
+                self.assertNotIn("\n", line)
+
+    def test_verdict_has_four_bands(self):
+        """4 档结论的边界必须逐档可断言——这是报告里唯一的一句判断。"""
+        cases = [
+            (100.0, "强匹配"), (75.0, "强匹配"),
+            (74.9, "基本匹配"), (60.0, "基本匹配"),
+            (59.9, "明显缺口"), (40.0, "明显缺口"),
+            (39.9, "当前不是这个岗位的主场"), (0.0, "当前不是这个岗位的主场"),
+        ]
+        for value, expect in cases:
+            self.assertTrue(expect in _verdict(value), f"{value} 分应判为「{expect}」")
+
+    def test_hard_gap_count_is_called_out(self):
+        """权重 3 的缺口是 '核心硬要求'，结论句里必须单独点出来。"""
+        md = render_fn(self._assess([
+            ("python", "Python", 3, "missing", "必须会 Python", ""),
+        ]))
+        self.assertIn("1 项是权重 3 的核心硬要求", md)
+        no_hard = render_fn(self._assess([
+            ("agent", "Agent", 2, "missing", "会用 Agent 加分", ""),
+        ]))
+        self.assertNotIn("核心硬要求", no_hard)
+
+    def test_status_counts_match_the_data(self):
+        md = render_fn(self._assess(self.BASE))
+        self.assertIn("1 项已覆盖、1 项部分覆盖、1 项缺失", md)
+
+    def test_no_gap_branch_has_its_own_advice(self):
+        """全命中时不能落进 `if gap_list` 之外还输出空章节。"""
+        md = render_fn(self._assess([
+            ("python", "Python", 3, "full", "熟悉 Python", "做过"),
+            ("rag", "RAG", 2, "full", "有 RAG 经验", "做过"),
+        ]))
+        self.assertIn("没有识别到缺口", md)
+        self.assertIn("建议配置 API Key 用语义匹配复核", md)
+
+    def test_roadmap_caps_at_four_weeks(self):
+        """5 个以上缺口时也只给 4 周计划，第 5 个不能变成 '第 5 周'。"""
+        keys = ["python", "rag", "agent", "prompt_eng", "eval", "data_analysis"]
+        specs = [(k, f"能力{k}", 3, "missing", f"要求 {k}", "") for k in keys]
+        md = render_fn(self._assess(specs))
+        self.assertIn("第 4 周", md)
+        self.assertNotIn("第 5 周", md)
+
+    def test_report_carries_mode_and_resume_sentences(self):
+        for mode, expect in (("rule", "规则基线"), ("llm", "LLM 语义匹配")):
+            md = render_fn(self._assess(self.BASE, mode=mode))
+            self.assertIn(expect, md)
+            self.assertIn("# 测试岗位 · 匹配报告", md)
+            self.assertIn("可直接写进简历的句子", md)
 
 
 class TestOccupationCoverage(unittest.TestCase):

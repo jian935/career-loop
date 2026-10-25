@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as _dt
+import re
 
 from .match import fix_for, gaps, score
 from .schema import STATUS_ICON, STATUS_LABEL, Assessment, Requirement
@@ -13,6 +14,32 @@ WEEK_PLAN = [
     ("第 3 周", "有对比", "v1 vs v2 指标对照"),
     ("第 4 周", "有结论", "能说出为什么涨、为什么没涨"),
 ]
+
+
+def _cell(text: str) -> str:
+    """把一段任意文本压成**能安全放进 Markdown 表格**的一格。
+
+    为什么必须这一个函数：report.md 的主体是表格，而表格是最脆的格式——
+    一个 `|` 就多出一列、一个换行就把一行拆成两行，整张表立刻错位。
+
+    以前只给 quote / evidence 做了替换，**label 漏了**。而 label 恰恰是最危险
+    的来源：自定义能力项的标签是从 JD 原文抽出来的短语（"Java|Python|Go"
+    这类技能罗列很常见），引擎不保证它不含管道符。
+    """
+    s = str(text or "")
+    s = s.replace("|", "／")
+    s = re.sub(r"\s*[\r\n]+\s*", " ", s)     # 换行会把一行表格拆成两行
+    return s.strip()
+
+
+def _inline(text: str) -> str:
+    """非表格位置（标题、列表项）也要压成一行。
+
+    这里不必管 `|`（表格外无害），但**换行必须处理**：Markdown 的列表项
+    和标题是一行的结构，一个裸换行会把 `- **JD 依据**：…` 的下半句甩到
+    列表外面去。这些文本来自 JD 原文，换行什么都有。
+    """
+    return re.sub(r"\s*[\r\n]+\s*", " ", str(text or "")).strip()
 
 
 def _verdict(score_value: float) -> str:
@@ -76,11 +103,10 @@ def render(assessment: Assessment, profile_name: str = "你的经历") -> str:
     for req in reqs:
         hit = matches.get(req.key)
         status = hit.status if hit else "missing"
-        evidence = (hit.evidence if hit else "") or "—"
-        quote = (req.quote or "—").replace("|", "／")
+        quote = _cell(req.quote) or "—"
         add(
-            f"| {req.label} | {req.weight} | {STATUS_ICON[status]} {STATUS_LABEL[status]} "
-            f"| {quote} | {evidence.replace('|', '／')} |"
+            f"| {_cell(req.label)} | {req.weight} | {STATUS_ICON[status]} {STATUS_LABEL[status]} "
+            f"| {quote} | {(_cell(hit.evidence) if hit else '') or '—'} |"
         )
     add("")
 
@@ -89,13 +115,13 @@ def render(assessment: Assessment, profile_name: str = "你的经历") -> str:
         add("")
         for idx, (req, status, prio) in enumerate(gap_list[:5], 1):
             hit = matches.get(req.key)
-            add(f"### {idx}. {req.label}（权重 {req.weight} · {STATUS_LABEL[status]} · 优先级 {prio}）")
+            add(f"### {idx}. {_inline(req.label)}（权重 {req.weight} · {STATUS_LABEL[status]} · 优先级 {prio}）")
             add("")
             if req.quote:
-                add(f"- **JD 依据**：{req.quote}")
+                add(f"- **JD 依据**：{_inline(req.quote)}")
             if hit and hit.note:
                 add(f"- **为什么判为{STATUS_LABEL[status]}**：{hit.note}")
-            add(f"- **怎么补**：{fix_for(req.key)}")
+            add(f"- **怎么补**：{_inline(fix_for(req.key))}")
             add("")
     else:
         add("## 缺口")
@@ -110,13 +136,13 @@ def render(assessment: Assessment, profile_name: str = "你的经历") -> str:
         add("| 周次 | 目标能力 | 做什么 | 验收 |")
         add("|---|---|---|---|")
         for week, req, note in roadmap:
-            add(f"| {week} | {req.label} | {fix_for(req.key)} | {note.split('验收：')[-1]} |")
+            add(f"| {week} | {_cell(req.label)} | {_cell(fix_for(req.key))} | {note.split('验收：')[-1]} |")
         add("")
 
     add("## 可直接写进简历的句子（把数字填上再抄）")
     add("")
     for req, _status, _prio in gap_list[:3]:
-        add(f"- 围绕「{req.label}」做一个最小项目：做了 ___ 条样本 / ___ 个用户，"
+        add(f"- 围绕「{_inline(req.label)}」做一个最小项目：做了 ___ 条样本 / ___ 个用户，"
             f"指标从 ___ 提升到 ___，单次成本 ___ 元。")
     add("")
     add("---")

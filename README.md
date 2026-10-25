@@ -599,7 +599,7 @@ career-loop/
 │   ├── dashboard.py     # Streamlit 看板渲染层（可选依赖，只负责画）
 │   ├── dashdata.py      # 看板数据层：漏斗 / 校准 / 置信区间 / 缺口，零依赖、可单测
 │   ├── daily.py         # 每日投递清单：排序 + 截止日解析 + md/csv/ics 导出
-│   └── tests/           # 202 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / 扫描 / LLM 接线 / .env / CLI 路由）
+│   └── tests/           # 210 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / 扫描 / LLM 接线 / .env / CLI 路由）
 ├── docs/                # 免安装网页 demo（index.html）＋ 截图 / 动图 / 演示视频，可挂 GitHub Pages
 ├── data/
 │   ├── eval_sample.jsonl        # 60 条控制回归集（回归锁）
