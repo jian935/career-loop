@@ -303,7 +303,8 @@ career-loop calibrate --data data/demo_applications.jsonl
   每个词必须过「词→族精确率 ≥60%」预检，且增益要在 dev/hold-out 两边都出现（防过拟合）。
   **中文场景本身更难**（300+ 细分行业、同岗位天然跨族、短 JD 信息量不足），
   如实与英文数字并列，不做取舍；仍弱的族（service 52% / product 70%）与 hr 词表 5% 的
-  精确率问题都写进了 `docs/evidence.md` 1.4 节，没有藏。
+  精确率问题都写进了 `docs/evidence.md` 1.4 节，没有藏。v0.8.16
+  专攻 service / project_mgmt 一轮，四条路试完确认补不动，证据链见 1.5 节。
 - 匹配分 ↔ 真实标注 `final_score` 的 Pearson **r = 0.193**（2,000 真实配对，弱正相关）
 
 r 偏低且为正，符合预期：引擎当前是**规则关键词基线**，而 `final_score` 是**多维语义匹配**，

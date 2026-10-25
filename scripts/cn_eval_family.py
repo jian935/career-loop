@@ -27,17 +27,34 @@ from __future__ import annotations
 
 import argparse
 import collections
+import hashlib
 import os
 import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from career_loop.matching.boilerplate import strip_boilerplate
 from career_loop.matching.extract import extract_by_rules
-from career_loop.matching.schema import detect_domains
+from career_loop.matching.schema import DOMAIN_PACKS, detect_domains
 
 DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                     "data", "cn_eval", "china_job.parquet")
+
+CONTRA_MIN = 3  # 正文指向别族的词数阈值：≥3 词算「标题-正文矛盾」
+
+
+def _fam_scores(low: str) -> dict[str, int]:
+    """各词表族在文本里的命中词数（与 detect_domains 同口径、不含 ai 父族推导）。
+
+    只用于数据质量备注（矛盾检测），不参与主口径判定。
+    """
+    s: dict[str, int] = {}
+    for name, packs in DOMAIN_PACKS.items():
+        c = sum(1 for spec in packs.values() for kw in spec["kw"] if kw in low)
+        if c:
+            s[name] = c
+    return s
 
 # 岗位名 → career-loop 岗位族集合。
 # 只收「岗位名里出现这些词就基本确定是这一族」的情况，宁缺毋滥。
@@ -194,6 +211,11 @@ def main() -> None:
     by_family_tot = collections.Counter()
 
     ext_total = ext_empty = ext_items = ext_custom = ext_jds = 0
+    # 数据质量备注（不影响主口径，透明起见单列）
+    n_contra = 0
+    contra_examples: list[str] = []
+    seen_hash: dict[str, bool] = {}  # 正文 hash → 是否命中（去重辅助口径）
+    n_dup = 0
 
     for r in rows:
         text = r.get("job_description") or ""
@@ -206,14 +228,31 @@ def main() -> None:
         total += 1
         per[title] += 1
 
+        low = strip_boilerplate(text).lower()
         preds = detect_domains(text)
+        ok = any(p in expected for p in preds)
         if preds:
             pred_counter[preds[0]] += 1
-        if any(p in expected for p in preds):
+        if ok:
             hit += 1
             per_hit[title] += 1
         else:
             misses.append((title, r.get("company_name") or "", text[:120]))
+            # 矛盾判定：期望族零命中 且 另一族 ≥CONTRA_MIN 词
+            sc = _fam_scores(low)
+            if (not any(f in sc for f in expected)
+                    and any(c >= CONTRA_MIN for f, c in sc.items() if f not in expected)):
+                n_contra += 1
+                if len(contra_examples) < 3:
+                    top = max(((f, c) for f, c in sc.items() if f not in expected),
+                              key=lambda x: x[1], default=("-", 0))
+                    contra_examples.append(f"{title} → 正文实为 {top[0]}（{top[1]} 词）")
+        # 去重辅助口径：按剥样板后的正文 hash
+        h = hashlib.md5(low.encode("utf-8")).hexdigest()
+        if h in seen_hash:
+            n_dup += 1
+        else:
+            seen_hash[h] = ok
 
         for fam in expected:
             by_family_tot[fam] += 1
@@ -245,6 +284,22 @@ def main() -> None:
         if c < 5:
             continue
         print(f"  {fam:20s} {by_family_hit[fam]:4d}/{c:4d} = {by_family_hit[fam] / c:.3f}")
+
+    # 数据质量备注：不改变上面的主口径，把已知的数据集问题摊开
+    n_miss = total - hit
+    n_dedup_hit = sum(1 for v in seen_hash.values() if v)
+    print("\n数据质量备注（主口径不变，透明起见单列）:")
+    print(f"  标题-正文矛盾: {n_contra} 条（占 miss 的 {n_contra / max(1, n_miss) * 100:.1f}%，"
+          f"占总数的 {n_contra / max(1, total) * 100:.1f}%）")
+    for e in contra_examples:
+        print(f"    例：{e}")
+    print(f"    这类记录 miss 不是词表问题——标题写「客服」正文是销售/工程话术，"
+          f"标签本身矛盾。")
+    print(f"  重复抓取: {n_dup} 条（{n_dup / max(1, total) * 100:.1f}%）；"
+          f"按正文去重后 {len(seen_hash)} 条，去重口径准确率 = "
+          f"{n_dedup_hit / max(1, len(seen_hash)):.3f}（辅助口径，不作对外主数字）")
+    print("    v0.8.7 以来的挖掘 df 口径已改为去重后统计（见 mine_recall_words.py）；"
+          "此处仍按记录算，与对外口径一致。")
 
     if args.show_misses and misses:
         print(f"\n误判样例（前 {min(args.show_misses, len(misses))} 条）:")
