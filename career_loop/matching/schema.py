@@ -134,7 +134,7 @@ DOMAIN_PACKS: dict[str, dict] = {
     },
     "marketing": {
         "mkt_content": {"label": "内容/文案", "kw": ["文案", "内容运营", "选题", "脚本", "种草", "小红书", "抖音"]},
-        "mkt_ads": {"label": "投放/广告", "kw": ["投放", "信息流", "sem", "千川", "roi", "cpa", "广告"]},
+        "mkt_ads": {"label": "投放/广告", "kw": ["投放", "信息流", "sem", "千川", "roi", "cpa", "广告", "海外投放", "预算调控", "投放定向", "买量", "广告素材"]},
         "mkt_brand": {"label": "品牌/公关", "kw": ["品牌", "公关", "传播", "媒介", "危机公关"]},
         "mkt_private": {"label": "私域/社群", "kw": ["私域", "社群", "企微", "用户运营"]},
     },
@@ -158,9 +158,9 @@ DOMAIN_PACKS: dict[str, dict] = {
         "ds_motion": {"label": "动效/三维", "kw": ["动效", "动画设计", "after effects", "lottie", "特效", "三维"]},
     },
     "operations": {
-        "ops_activity": {"label": "活动运营", "kw": ["活动策划", "活动运营", "执行落地", "活动复盘"]},
+        "ops_activity": {"label": "活动运营", "kw": ["活动策划", "活动运营", "执行落地", "活动复盘", "活动提报", "用户触达", "投放素材", "商家运营", "分层运营"]},
         "ops_user": {"label": "用户运营", "kw": ["用户运营", "留存", "用户召回", "流失召回", "分层", "社群运营"]},
-        "ops_content": {"label": "内容运营", "kw": ["内容运营", "选题", "编辑", "分发", "内容策划", "公众号"]},
+        "ops_content": {"label": "内容运营", "kw": ["内容运营", "选题", "编辑", "分发", "内容策划", "公众号", "短视频", "作者维护", "话题运营", "财经内容", "内容审核", "违规样本", "风控策略"]},
     },
     "hr": {
         "hr_recruit": {"label": "招聘", "kw": ["招聘", "面试", "人才盘点", "招聘渠道"]},
@@ -203,10 +203,10 @@ DOMAIN_PACKS: dict[str, dict] = {
         "nlp_text": {"label": "NLP/文本处理", "kw": ["nlp", "自然语言", "分词", "命名实体", "文本分类", "情感分析", "bert", "transformer", "微调", "pytorch", "tensorflow"]},
     },
     "ai_cv": {
-        "cv_vision": {"label": "计算机视觉", "kw": ["图像", "目标检测", "语义分割", "ocr", "opencv", "yolo", "人脸识别", "pytorch", "tensorflow"]},
+        "cv_vision": {"label": "计算机视觉", "kw": ["图像", "目标检测", "语义分割", "ocr", "opencv", "yolo", "人脸识别", "pytorch", "tensorflow", "缺陷检测", "图像处理", "暗光", "hdr效果", "isp联调", "相机", "雷达感知", "图像算法", "标注数据集"]},
     },
     "ai_recsys": {
-        "rec_ranking": {"label": "推荐/搜索", "kw": ["推荐系统", "推荐算法", "排序模型", "召回策略", "特征工程", "ctr", "搜索排序", "个性化推荐"]},
+        "rec_ranking": {"label": "推荐/搜索", "kw": ["推荐系统", "推荐算法", "排序模型", "召回策略", "特征工程", "ctr", "搜索排序", "个性化推荐", "短视频推荐", "样本清洗", "离线实验"]},
     },
     "ai_mlops": {
         "mlops_serve": {"label": "MLOps/模型部署", "kw": ["模型部署", "模型推理", "推理服务", "推理加速", "模型监控", "mlops", "kubernetes", "triton", "serving", "模型压缩"]},
@@ -260,10 +260,10 @@ DOMAIN_PACKS: dict[str, dict] = {
         "robot_embodied": {"label": "具身智能/机器人", "kw": ["机器人", "具身", "ros", "运动控制", "slam", "机械臂"]},
     },
     "ai_data": {
-        "data_pipeline": {"label": "数据工程", "kw": ["数据清洗", "etl", "数据管道", "数仓", "特征平台", "数据治理"]},
+        "data_pipeline": {"label": "数据工程", "kw": ["数据清洗", "etl", "数据管道", "数仓", "特征平台", "数据治理", "指标监控", "异常波动", "数据报送", "特征构建", "模型训练"]},
     },
     "ai_testing": {
-        "ai_qa": {"label": "AI 测试/质量", "kw": ["模型测试", "ai 测试", "效果测试", "评测方案", "质量保障", "交付质量"]},
+        "ai_qa": {"label": "AI 测试/质量", "kw": ["模型测试", "ai 测试", "效果测试", "评测方案", "质量保障", "交付质量", "模型监控", "漂移分析", "模型评估"]},
     },
     "property": {
         "prop_estate": {"label": "物业/房地产", "kw": ["物业", "房地产", "楼盘", "招商", "租赁", "业主"]},
@@ -276,35 +276,35 @@ DOMAIN_PACKS: dict[str, dict] = {
     },
     # ---- 研发/工程类 ----
     "backend": {
-        "be_lang": {"label": "服务端语言", "kw": ["java", "golang", "c++", "node.js", "服务端", "后端开发", "rust"]},
-        "be_arch": {"label": "架构/分布式", "kw": ["微服务", "分布式", "高并发", "架构设计", "消息队列", "kafka", "redis", "缓存"]},
-        "be_db": {"label": "数据库/存储", "kw": ["mysql", "postgres", "oracle", "数据库设计", "索引优化", "分库分表"]},
+        "be_lang": {"label": "服务端语言", "kw": ["java", "golang", "c++", "node.js", "服务端", "后端开发", "rust", "go语言", "c语言"]},
+        "be_arch": {"label": "架构/分布式", "kw": ["微服务", "分布式", "高并发", "架构设计", "消息队列", "kafka", "redis", "缓存", "etcd", "rpc", "tcp", "流媒体", "多租户"]},
+        "be_db": {"label": "数据库/存储", "kw": ["mysql", "postgres", "oracle", "数据库设计", "索引优化", "分库分表", "redis", "etcd", "存储组件", "文件系统", "io路径"]},
     },
     "frontend": {
-        "fe_framework": {"label": "前端框架", "kw": ["vue", "react", "angular", "前端框架", "组件化", "typescript"]},
-        "fe_mobile": {"label": "移动端/小程序", "kw": ["小程序", "uni-app", "flutter", "react native", "移动端", "h5"]},
-        "fe_build": {"label": "构建/性能", "kw": ["webpack", "vite", "构建优化", "首屏", "前端性能", "埋点"]},
+        "fe_framework": {"label": "前端框架", "kw": ["vue", "react", "angular", "前端框架", "组件化", "typescript", "组件封装", "浏览器渲染"]},
+        "fe_mobile": {"label": "移动端/小程序", "kw": ["小程序", "uni-app", "flutter", "react native", "移动端", "h5", "移动端适配", "android sdk", "车载安卓"]},
+        "fe_build": {"label": "构建/性能", "kw": ["webpack", "vite", "构建优化", "首屏", "前端性能", "埋点", "性能优化", "profiler"]},
     },
     "qa": {
-        "qa_functional": {"label": "功能测试", "kw": ["功能测试", "测试用例", "黑盒", "兼容性", "回归测试"]},
-        "qa_auto": {"label": "自动化测试", "kw": ["自动化测试", "selenium", "playwright", "接口测试", "脚本化"]},
-        "qa_perf": {"label": "性能/压力测试", "kw": ["性能测试", "压力测试", "jmeter", "loadrunner", "稳定性测试"]},
+        "qa_functional": {"label": "功能测试", "kw": ["功能测试", "测试用例", "黑盒", "兼容性", "回归测试", "版本自测", "bug闭环", "测试规范", "测试报告"]},
+        "qa_auto": {"label": "自动化测试", "kw": ["自动化测试", "selenium", "playwright", "接口测试", "脚本化", "测试程序"]},
+        "qa_perf": {"label": "性能/压力测试", "kw": ["性能测试", "压力测试", "jmeter", "loadrunner", "稳定性测试", "压测", "可靠性测试", "耐久测试", "高低温"]},
     },
     "devops": {
-        "devops_linux": {"label": "Linux/服务器运维", "kw": ["linux", "shell", "服务器", "运维", "nginx", "脚本运维"]},
-        "devops_container": {"label": "容器/编排", "kw": ["容器", "helm", "集群", "容器化", "swarm"]},
-        "devops_monitor": {"label": "监控/告警", "kw": ["监控告警", "监控体系", "告警体系", "prometheus", "grafana", "日志分析", "故障排查"]},
-        "devops_ci": {"label": "CI/CD 流水线", "kw": ["jenkins", "gitlab ci", "流水线", "发布流程", "灰度发布"]},
+        "devops_linux": {"label": "Linux/服务器运维", "kw": ["linux", "shell脚本", "服务器", "运维", "nginx", "脚本运维", "slurm", "作业调度", "集群监控"]},
+        "devops_container": {"label": "容器/编排", "kw": ["容器", "helm", "集群", "容器化", "swarm", "k8s", "kubernetes", "云原生", "编排"]},
+        "devops_monitor": {"label": "监控/告警", "kw": ["监控告警", "监控体系", "告警体系", "prometheus", "grafana", "日志分析", "故障排查", "告警日志", "性能调优"]},
+        "devops_ci": {"label": "CI/CD 流水线", "kw": ["jenkins", "gitlab ci", "流水线", "发布流程", "灰度发布", "版本合入"]},
     },
     "security": {
-        "sec_pentest": {"label": "渗透/漏洞", "kw": ["渗透", "漏洞", "安全测试", "owasp", "ctf", "代码审计"]},
+        "sec_pentest": {"label": "渗透/漏洞", "kw": ["渗透", "漏洞", "安全测试", "owasp", "ctf", "代码审计", "漏洞挖掘", "poc编写", "安全周报"]},
         "sec_compliance": {"label": "等保/安全合规", "kw": ["等保", "等级保护", "iso27001", "数据脱敏", "个人信息保护"]},
-        "sec_ops": {"label": "安全运营", "kw": ["安全运营", "应急响应", "防火墙", "入侵检测", "威胁情报"]},
+        "sec_ops": {"label": "安全运营", "kw": ["安全运营", "应急响应", "防火墙", "入侵检测", "威胁情报", "攻击链路", "siem", "威胁事件"]},
     },
     "embedded": {
-        "emb_mcu": {"label": "单片机/固件", "kw": ["单片机", "stm32", "嵌入式", "rtos", "驱动开发", "固件"]},
-        "emb_circuit": {"label": "电路/PCB", "kw": ["原理图", "pcb", "硬件设计", "altium", "电路设计"]},
-        "emb_bus": {"label": "总线/通信协议", "kw": ["can 总线", "modbus", "串口", "spi", "i2c", "485"]},
+        "emb_mcu": {"label": "单片机/固件", "kw": ["单片机", "stm32", "嵌入式", "rtos", "驱动开发", "固件", "mcu", "外设驱动", "蓝牙通信", "蓝牙协议", "芯片验证", "读写逻辑"]},
+        "emb_circuit": {"label": "电路/PCB", "kw": ["原理图", "pcb", "硬件设计", "altium", "电路设计", "示波器", "频谱仪", "射频", "ota测试", "调试工具", "测试设备", "测试仪器"]},
+        "emb_bus": {"label": "总线/通信协议", "kw": ["can 总线", "modbus", "串口", "spi", "i2c", "485", "工业总线", "jni", "aosp"]},
     },
     "electrical": {
         "elec_plc": {"label": "PLC/电气控制", "kw": ["plc", "梯形图", "伺服", "变频器", "电气控制"]},

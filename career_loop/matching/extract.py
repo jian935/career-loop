@@ -143,6 +143,62 @@ def _looks_like_title(line: str) -> bool:
     return not any(v in s for v in verbs)
 
 
+def _split_inline_segments(line: str) -> list[str]:
+    """把压在一行里的中文 JD 拆成独立要求条目。
+
+    真实中文 JD 极常见这种写法（整个 JD 只有一行）：
+
+        岗位职责：1、负责智能家电MCU固件开发；2、调试外设驱动、蓝牙通信；
+        3、版本自测、bug闭环。任职要求：1、自动化/电子；2、熟悉C语言；…
+
+    不拆的话，整段会被当成一行，`canonical_hits` 只能命中一个词
+    （实测：这类 JD 平均只抽出 1 个能力项，"蓝牙通信""示波器"全漏）。
+
+    切分点：分号 / 句号 / 中英文分节标题前。
+    序号（1、2、3）保留在片段里，抽取时会剥掉。
+    """
+    # 先在分节标题前断开（"…bug闭环。任职要求：1、…"）
+    parts: list[str] = []
+    buf = ""
+    i = 0
+    n = len(line)
+    while i < n:
+        matched = False
+        for section, markers in SECTION_MARKERS.items():
+            for m in markers:
+                # 标题必须出现在子句开头（前面只能有标点/空白），
+                # 否则"有K8s项目优先"里的"优先"会被误当成 nice 段标题
+                if not line.startswith(m, i):
+                    continue
+                if i > 0 and line[i - 1] not in "：:，,。；;、 \t":
+                    continue
+                head = buf.rstrip("：:，,。；; ")
+                if head:
+                    parts.append(head)
+                parts.append("\x00SECTION:" + section)
+                buf = ""
+                i += len(m)
+                matched = True
+                break
+            if matched:
+                break
+        if matched:
+            continue
+        ch = line[i]
+        if ch in "；;。":
+            seg = buf.strip("：:，, ")
+            if seg:
+                parts.append(seg)
+            buf = ""
+        else:
+            buf += ch
+        i += 1
+    tail = buf.strip("：:，, ")
+    if tail:
+        parts.append(tail)
+    return parts
+
+
 def _split_sections(text: str) -> list[tuple[str, str]]:
     """把 JD 切成 (section, line) 列表。"""
     out: list[tuple[str, str]] = []
@@ -165,7 +221,18 @@ def _split_sections(text: str) -> list[tuple[str, str]]:
                 continue
         if len(line) < 6:
             continue  # 导航行/编号残片
-        out.append((current, line))
+        # 一行里可能压着多条要求（中文 JD 常见），拆开再处理
+        for seg in _split_inline_segments(line):
+            if seg.startswith("\x00SECTION:"):
+                current = seg.split(":", 1)[1]
+                continue
+            seg = seg.strip()
+            if len(seg) < 4:
+                continue
+            # 内联段来自明确编号的列表（"1、…" "2、…"），本身就是要求项，
+            # 不该再套标题规则——否则「跟进线上问题排查」这类
+            # 动词不在表里的真实职责会被误当成岗位名丢掉。
+            out.append((current, seg))
     return out
 
 

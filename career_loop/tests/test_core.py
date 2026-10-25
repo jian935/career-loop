@@ -603,5 +603,81 @@ class TestSalesFamilyDiscriminators(unittest.TestCase):
         self.assertIn("finance", detect_domains(jd))
 
 
+class TestChineseInlineJD(unittest.TestCase):
+    """中文 JD 常把整份 JD 压在一行里，不拆会漏掉大量要求。
+
+    真实写法（来自一批真实中文 JD）：
+
+        岗位职责：1、负责智能家电MCU固件开发；2、调试外设驱动、蓝牙通信；
+        3、版本自测、bug闭环。任职要求：1、自动化/电子；2、熟悉C语言；…
+
+    不拆的话整段被当成一行，canonical_hits 只能命中一个词
+    （实测这类 JD 平均只抽出 1 个能力项，"蓝牙通信""示波器"全漏）。
+    """
+
+    JD = ("岗位职责：1、参与云原生存储组件的设计、编码与单元测试；2、跟进线上问题排查、性能调优；"
+          "3、参与技术方案评审，沉淀技术文档。任职要求：1、计算机相关本科及以上；"
+          "2、熟悉Go/C++，了解Linux内核、RPC框架；3、熟悉Redis、MySQL等存储；4、有K8s、etcd相关项目优先。")
+
+    def test_inline_segments_are_split(self):
+        from career_loop.matching.extract import _split_sections
+
+        segs = [line for _, line in _split_sections(self.JD)]
+        self.assertGreaterEqual(len(segs), 6, segs)
+        self.assertTrue(any("Linux内核" in s for s in segs), segs)
+        self.assertTrue(any("MySQL" in s for s in segs), segs)
+
+    def test_inline_split_keeps_section_weights(self):
+        from career_loop.matching.extract import _split_sections
+
+        secs = {line: sec for sec, line in _split_sections(self.JD)}
+        # 「有K8s、etcd相关项目优先」里的"优先"不能被当成 nice 段标题
+        k8s = [s for s in secs if "K8s" in s]
+        self.assertTrue(k8s)
+        self.assertEqual(secs[k8s[0]], "must", secs)
+
+    def test_inline_split_keeps_real_duties(self):
+        from career_loop.matching.extract import _split_sections
+
+        segs = [line for _, line in _split_sections(self.JD)]
+        # 「跟进线上问题排查」动词不在标题表里，但它是真实职责，不能丢
+        self.assertTrue(any("线上问题排查" in s for s in segs), segs)
+
+    def test_inline_split_improves_recall(self):
+        reqs, _ = matching.extract_requirements(self.JD, None)
+        keys = {r.key for r in reqs}
+        self.assertIn("be_db", keys)          # Redis / MySQL
+        self.assertIn("devops_linux", keys)   # Linux 内核
+        self.assertIn("writing", keys)        # 技术文档
+
+
+class TestChineseVocabFromRealData(unittest.TestCase):
+    """从真实中文 JD 补的词，要能命中且不误伤其他族。"""
+
+    def test_embedded_keywords_hit(self):
+        jd = "岗位职责：1、负责智能家电MCU固件开发；2、调试外设驱动、蓝牙通信。任职要求：1、熟悉C语言；2、了解蓝牙协议。"
+        reqs, _ = matching.extract_requirements(jd, None)
+        keys = {r.key for r in reqs}
+        self.assertIn("emb_mcu", keys, keys)
+
+    def test_devops_keywords_hit(self):
+        jd = "岗位职责：1、参与云原生存储组件的设计与编码。任职要求：1、熟悉K8s、etcd相关项目优先。"
+        reqs, _ = matching.extract_requirements(jd, None)
+        keys = {r.key for r in reqs}
+        self.assertTrue({"devops_container", "be_db"} & keys, keys)
+
+    def test_new_words_do_not_steal_hr(self):
+        jd = "岗位职责：1、负责员工招聘与绩效管理。任职要求：1、熟悉kpi体系；2、有培训经验优先。"
+        reqs, _ = matching.extract_requirements(jd, None)
+        keys = {r.key for r in reqs}
+        self.assertIn("hr_recruit", keys, keys)
+
+    def test_overgeneric_ts_is_not_frontend(self):
+        # "ts" 会命中 "consultan-ts"，属于过泛词，不能进前端族
+        jd = "ESSENTIAL DUTIES\nManage a team of 5-25 executive consultants in marketing."
+        reqs, _ = matching.extract_requirements(jd, None)
+        self.assertNotIn("fe_framework", {r.key for r in reqs})
+
+
 if __name__ == "__main__":
     unittest.main()
