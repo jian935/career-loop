@@ -370,7 +370,10 @@ def score_records(
             doms = matching.detect_domains(jd)
             sr.domain = doms[0] if doms else "未识别"
         if sr.status == STATUS_REJECTED:
-            sr.attr = attribute_rejection(sr.note)
+            # 记录里若已预置归因（脱敏场景：归因在原始备注上判完再压标签），
+            # 直接沿用——否则用脱敏后的标签重判会得出不同结论。
+            pre = rec.get("_attr")
+            sr.attr = pre if pre else attribute_rejection(sr.note)
         out.append(sr)
     return out
 

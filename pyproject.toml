@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "career-loop"
-version = "0.8.11"
+version = "0.8.12"
 description = "Job-fit scoring you can falsify: JD x experience -> weighted score + gaps + counterfactual, then calibrate against real outcomes. Works for any role, ships a labeled eval set."
 readme = "README.md"
 requires-python = ">=3.10"

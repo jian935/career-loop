@@ -248,6 +248,38 @@
     font:11px/1.7 var(--mono);color:var(--muted)}
   .cn-en-repro b{color:var(--cyan);font-weight:600}
 
+  /* ---- 真实回流报告样例 ---- */
+  .rf-sample{background:rgba(124,92,255,.05);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:22px}
+  .rf-top{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+  @media(max-width:820px){.rf-top{grid-template-columns:repeat(2,1fr)}}
+  .rf-stat{border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:rgba(255,255,255,.02)}
+  .rf-stat .k{font:800 19px var(--mono);color:var(--cyan)}
+  .rf-stat.warn .k{color:var(--amber)}
+  .rf-stat .l{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+  .rf-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.rf-cols{grid-template-columns:1fr}}
+  .rf-pane{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.02)}
+  .rf-pane>h4{margin:0;padding:10px 14px;font-size:12px;color:var(--ink);
+    border-bottom:1px solid var(--line);background:rgba(255,255,255,.03);font-weight:600}
+  .rf-pane>h4 span{color:var(--muted);font-weight:400;font-family:var(--mono);font-size:11px}
+  .rf-body{padding:12px 14px}
+  .rf-bar{display:flex;align-items:center;gap:9px;margin:7px 0;font:11.5px var(--mono)}
+  .rf-bar .lb{width:74px;color:var(--sub);flex:none}
+  .rf-bar .track{flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
+  .rf-bar .fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--violet),var(--cyan))}
+  .rf-bar .vl{width:62px;text-align:right;color:var(--muted);flex:none}
+  .rf-diag{border-left:2px solid var(--amber);padding:9px 12px;background:rgba(245,158,11,.06);
+    border-radius:0 8px 8px 0;font-size:12px;line-height:1.75;color:var(--sub)}
+  .rf-diag b{color:var(--amber)}
+  .rf-reasons{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .rf-reasons span{font:10.5px var(--mono);padding:3px 8px;border-radius:20px;
+    border:1px solid var(--line);color:var(--muted)}
+  .rf-reasons span.ext{border-color:rgba(245,158,11,.4);color:var(--amber)}
+  .rf-reasons span.ctl{border-color:rgba(52,211,153,.4);color:var(--emerald)}
+  .rf-foot{margin-top:13px;font:11px/1.75 var(--mono);color:var(--muted)}
+  .rf-foot a{color:var(--cyan);text-decoration:none}
+  .rf-foot a:hover{text-decoration:underline}
+
   /* ---- 中文抽取实验室 ---- */
   .lab{background:rgba(34,211,238,.04);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:22px}
   .lab-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
@@ -550,6 +582,53 @@
         </div>
       </div>
       <p class="lab-note" id="labNote"></p>
+    </div>
+
+    <div class="rf-sample">
+      <div class="sec-head"><h2>真实回流报告长什么样</h2><span>50 条真实中文 JD + 真实回流结果跑出来的报告（已脱敏）</span></div>
+      <p class="hint" style="margin-top:0;margin-bottom:14px">
+        上面所有数字都是<b>汇总</b>。这一块是<b>完整报告</b>：拿一份投递记录表，
+        一条命令跑完「算预测分 → 校准 r → 漏斗归因 → 方向对比」，
+        出来就是这样一份 markdown。公司名已替换成代号、回流备注压成归因标签，<b>不含任何可定位到具体投递的信息</b>。
+      </p>
+      <div class="rf-top">
+        <div class="rf-stat"><div class="k">50</div><div class="l">真实投递记录</div></div>
+        <div class="rf-stat"><div class="k">14.0%</div><div class="l">offer 率（7/50）</div></div>
+        <div class="rf-stat warn"><div class="k">0.003</div><div class="l">Pearson r（匹配分 ↔ offer）</div></div>
+        <div class="rf-stat"><div class="k">65%</div><div class="l">简历关属不可控因素</div></div>
+      </div>
+      <div class="rf-cols">
+        <div class="rf-pane">
+          <h4>分桶 offer 率 <span>匹配分越高，反而越低</span></h4>
+          <div class="rf-body" id="rfBuckets"></div>
+        </div>
+        <div class="rf-pane">
+          <h4>r ≈ 0 的时候，先看分布 <span>别急着怪引擎</span></h4>
+          <div class="rf-body">
+            <div class="rf-diag">
+              <b>正反馈组中位分 14</b> vs <b>非正反馈组中位分 25</b>——两组分布几乎重叠。
+              这意味着 <b>r ≈ 0 不是引擎没区分度，而是这批「拿到 offer」和「岗位契合度」本来就不相关</b>。
+              换更强的打分器也一样。<br><br>
+              r 低有两种成因：① 引擎该给高分的没给（要修引擎）；
+              ② 结果与岗位契合度无关（只能认这个数据）。<b>看分布重叠不重叠才能分清。</b>
+            </div>
+            <div class="rf-reasons">
+              <span class="ext">不可控：HC / 名额收紧</span>
+              <span class="ext">不可控：学历 / 院校门槛</span>
+              <span class="ext">不可控：地点 / 出差冲突</span>
+              <span class="ctl">可控：缺少相关项目经验</span>
+              <span class="ctl">可控：项目偏学术、缺落地</span>
+              <span>面试暴露：原理 / 深度理解不足</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="rf-foot">
+        完整报告（含逐条明细表、方向对比、边界声明）：<a href="reflow_sample.md">docs/reflow_sample.md</a><br>
+        自己也跑一遍：<code>career-loop reflow --records &lt;你的投递记录&gt; --profile &lt;你的经历&gt; --mode terminal</code><br>
+        <b>数据定位</b>：样例 / 验证数据（D001–D040 与 D041–D090 同源同格式、时间连续），
+        用于展示流水线在真实中文 JD 上的行为，<b>不</b>作为作者真实求职记录对外宣称。
+      </p>
     </div>
   </section>
 
@@ -1674,6 +1753,34 @@ function debounceLab(){
   labTimer=setTimeout(renderLab,220);
 }
 
+// 真实回流报告样例的分桶数据（来自 docs/reflow_sample.md，50 条真实中文 JD + 真实回流）
+const RF_BUCKETS=[{"r":"0-20","n":18,"p":4,"rate":22.2},{"r":"20-40","n":16,"p":0,"rate":0.0},{"r":"40-60","n":9,"p":1,"rate":11.1},{"r":"60-80","n":7,"p":2,"rate":28.6},{"r":"80-100","n":0,"p":0,"rate":null}];
+
+function renderRfSample(){
+  const box=el("rfBuckets"); if(!box) return;
+  // 显式清空（不用 innerHTML=""）——保证重复调用不会叠加 DOM
+  while(box.firstChild) box.removeChild(box.firstChild);
+  const maxN=Math.max.apply(null, RF_BUCKETS.map(b=>b.n));
+  for(const b of RF_BUCKETS){
+    const row=document.createElement("div"); row.className="rf-bar";
+    const lb=document.createElement("div"); lb.className="lb";
+    lb.textContent=b.r+" 分";
+    const tr=document.createElement("div"); tr.className="track";
+    const fl=document.createElement("div"); fl.className="fill";
+    fl.style.width=Math.max(2, b.n/maxN*100)+"%";
+    tr.appendChild(fl);
+    const vl=document.createElement("div"); vl.className="vl";
+    vl.textContent = b.n===0 ? "0 条" : (b.rate.toFixed(1)+"% · "+b.n+"条");
+    row.appendChild(lb); row.appendChild(tr); row.appendChild(vl);
+    row.title = b.n===0 ? "该区间无记录" : (b.n+" 条记录中 "+b.p+" 条拿到 offer（"+b.rate.toFixed(1)+"%）");
+    box.appendChild(row);
+  }
+  const tip=document.createElement("div");
+  tip.className="hint"; tip.style.margin="10px 0 0";
+  tip.textContent="条长 = 该区间记录数，右侧 = offer 率。0-20 档（最低分）offer 率反而最高——这就是「分布重叠、r≈0」的直接证据。";
+  box.appendChild(tip);
+}
+
 let sampleIdx=0;
 function loadSample(i){
   el("jd").value=SAMPLES[i].jd;
@@ -1715,6 +1822,7 @@ loadSample(sampleIdx);
 loadBatchSample();
 renderCalib();
 renderCnEn();
+renderRfSample();
 el("labJD").value=LAB_SAMPLES[0];
 renderLab();
 </script>

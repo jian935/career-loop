@@ -931,5 +931,64 @@ class TestReflowCalibration(unittest.TestCase):
             reflow.analyze_reflow([], "x", "bogus")
 
 
+class TestAnonymizationAudit(unittest.TestCase):
+    """脱敏审计脚本的自测。
+
+    一个只会说"通过"的检查脚本毫无价值——必须验证它**真能抓到泄露**，
+    同时**不误报**正常的行业名词。
+    """
+
+    @staticmethod
+    def _audit(text: str, rows: list[dict]) -> list[str]:
+        import importlib.util
+        import tempfile
+
+        root = Path(__file__).parent.parent.parent
+        spec = importlib.util.spec_from_file_location(
+            "audit_anon", root / "scripts" / "audit_anonymization.py"
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "t.md"
+            p.write_text(text, encoding="utf-8")
+            return mod.audit_file(p, rows)
+
+    def setUp(self):
+        self.rows = [
+            {"id": "D1", "company": "旷视", "role": "AI产品经理",
+             "outcome": "简历筛选拒绝", "note": "缺少To G项目经验"},
+            {"id": "D2", "company": "商汤", "role": "智慧城市解决方案",
+             "outcome": "面试环节淘汰", "note": "售前方案汇报逻辑不够清晰"},
+        ]
+
+    def test_clean_report_passes(self):
+        text = "| D1 | 企业 28 | AI产品经理 | 61.1 | 9 | 2 | rejected |"
+        self.assertEqual(self._audit(text, self.rows), [])
+
+    def test_real_company_with_role_on_same_line_is_caught(self):
+        text = "| D1 | 旷视 | AI产品经理 | 61.1 | rejected |"
+        problems = self._audit(text, self.rows)
+        self.assertTrue(problems, problems)
+
+    def test_original_note_is_caught(self):
+        problems = self._audit("缺少To G项目经验", self.rows)
+        self.assertTrue(problems, problems)
+
+    def test_personal_info_is_caught(self):
+        problems = self._audit("陈默，塔里木大学工商管理", self.rows)
+        self.assertTrue(problems, problems)
+
+    def test_industry_name_alone_is_not_a_leak(self):
+        # 「用友」「金蝶」是词表里的财务软件行业名词，单独出现不是泄露
+        text = "财务软件(用友/金蝶/SAP) 词表条目"
+        self.assertEqual(self._audit(text, self.rows), [])
+
+    def test_company_name_alone_is_not_a_leak(self):
+        # 公司名出现在行业讨论里、且没有和具体岗位/结果同行 → 不是泄露
+        text = "商汤在计算机视觉领域有代表性"
+        self.assertEqual(self._audit(text, self.rows), [])
+
+
 if __name__ == "__main__":
     unittest.main()
