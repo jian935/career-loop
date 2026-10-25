@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
-## [0.8.15] - 2026-10-26
+## [0.8.15] - 2026-10-25
 
 ### W8：评测体系上墙（证据墙新增「这些数字是怎么被检验的」常驻模块）
 
@@ -25,7 +25,7 @@ versioning follows [Semantic Versioning](https://semver.org/).
 页面内所有数字与 v0.8.14 实测一致；改动只涉及 `docs/index.html`，
 `sync_web_vocab.py --check` 与 `cross_engine_check.py`（51/51 五项）复验通过。
 
-## [0.8.14] - 2026-10-26
+## [0.8.14] - 2026-10-25
 
 ### W7：中文族识别 77.8% → 86.0%（先诊断，再动手）
 
