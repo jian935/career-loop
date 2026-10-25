@@ -313,6 +313,36 @@
     background:rgba(255,255,255,.05);padding:1px 6px;border-radius:5px;margin:2px 4px 0 0}
   .lab-note{font-size:11.5px;color:var(--muted);line-height:1.65;margin-top:12px;
     border-left:2px solid var(--cyan);padding-left:11px}
+
+  /* ---- 评测体系：这些数字是怎么被检验的 ---- */
+  .esys{background:rgba(52,211,153,.04);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:22px}
+  .esys-pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+  @media(max-width:820px){.esys-pillars{grid-template-columns:1fr}}
+  .esys-pillar{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);padding:14px 16px;display:flex;flex-direction:column}
+  .esys-pillar .no{font:800 11px var(--mono);color:var(--emerald);letter-spacing:.5px}
+  .esys-pillar h4{margin:6px 0 2px;font-size:13.5px;color:var(--ink)}
+  .esys-pillar .k{font:800 24px/1 var(--mono);letter-spacing:-1px;color:var(--ink);margin:8px 0 2px}
+  .esys-pillar .k .u{font-size:12px;color:var(--muted);margin-left:2px}
+  .esys-pillar .k.warn{color:var(--amber)}
+  .esys-pillar .d{font-size:11.5px;color:var(--sub);line-height:1.6;margin:6px 0 0}
+  .esys-pillar .src{margin-top:auto;padding-top:10px;font:10.5px/1.6 var(--mono);color:var(--muted)}
+  .esys-pillar .src code{font-size:10.5px}
+  .esys-table{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:14px 0;background:rgba(255,255,255,.02)}
+  .esys-tr{display:grid;grid-template-columns:200px 130px 1fr;gap:10px;padding:9px 14px;border-top:1px solid var(--line);align-items:baseline;font-size:11.5px}
+  .esys-tr:first-child{border-top:none;background:rgba(255,255,255,.03);font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.5px}
+  .esys-tr .a{color:var(--sub)}
+  .esys-tr .b{font:700 12px var(--mono);color:var(--emerald)}
+  .esys-tr .b.amber{color:var(--amber)}
+  .esys-tr .c{font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.5}
+  @media(max-width:720px){.esys-tr{grid-template-columns:1fr;gap:2px}.esys-tr .b{margin-top:2px}}
+  .esys-method{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+  @media(max-width:820px){.esys-method{grid-template-columns:1fr}}
+  .esys-method>div{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:rgba(255,255,255,.02)}
+  .esys-method h4{margin:0 0 6px;font-size:12.5px;color:var(--ink)}
+  .esys-method p{margin:0;font-size:11.5px;color:var(--sub);line-height:1.6}
+  .esys-method .falsified h4{color:var(--amber)}
+  .esys-repro{border:1px dashed var(--line);border-radius:10px;padding:11px 14px;font:11px/1.8 var(--mono);color:var(--muted)}
+  .esys-repro b{color:var(--cyan);font-weight:600}
   @media(max-width:720px){.nav-links{display:none}.hero{padding-top:52px}.stats{gap:26px}}
 
   /* 批量岗位 · 全行业适配 */
@@ -629,6 +659,83 @@
         <b>数据定位</b>：样例 / 验证数据（D001–D040 与 D041–D090 同源同格式、时间连续），
         用于展示流水线在真实中文 JD 上的行为，<b>不</b>作为作者真实求职记录对外宣称。
       </p>
+    </div>
+
+    <div class="esys">
+      <div class="sec-head"><h2>评测体系 · 这些数字是怎么被检验的</h2><span>三根支柱 + 回归护栏：任何一个数字都能一键复现，任何一次失效都记录在案</span></div>
+      <p class="hint" style="margin-top:0;margin-bottom:14px">
+        上面每个数字都不是「跑出来很好看」就放上去的。这个项目对「可证伪」的兑现方式是：
+        <b>公开数据检验 + 人工标注检验 + 每次改动全量回归</b>，三者互相咬合。
+      </p>
+
+      <div class="esys-pillars">
+        <div class="esys-pillar">
+          <div class="no">支柱一 · 合成对照集</div>
+          <h4>锁匹配逻辑</h4>
+          <div class="k">1.0</div>
+          <div class="d">60 条<b>合成</b>边界用例，逐条断言 full / partial / missing 判定与族识别。
+            合成数据<strong>明确声明不是真实标注</strong>——它锁的是「逻辑别被改坏」，不是证明效果。</div>
+          <div class="src"><code>data/eval_sample.jsonl</code> → <code>scripts/coverage.py</code></div>
+        </div>
+        <div class="esys-pillar">
+          <div class="no">支柱二 · 英文公开集</div>
+          <h4>真实数据 + 真实标注</h4>
+          <div class="k">93.6<span class="u">%</span></div>
+          <div class="d">1,167 条真实 JD 判岗位族（数据集自带 category 当标签）；
+            另有 2,000 对 (简历, JD) 算引擎分与真实匹配标注的 <b>Pearson r = 0.193</b>——弱正相关，如实呈现。</div>
+          <div class="src">HuggingFace <code>nonameee12233/job-resume-matching</code>（CC BY，无 PII）</div>
+        </div>
+        <div class="esys-pillar">
+          <div class="no">支柱三 · 中文公开集</div>
+          <h4>中文场景单独检验</h4>
+          <div class="k">86.0<span class="u">%</span></div>
+          <div class="d">1,838 条真实中文 JD 判族（岗位名当标签）；能力抽取另有
+            <b>45 条人工标注</b>（100%）+ <b>10,613 条留出检验</b>——语境约束贡献 +13.8pt，
+            两个数都在从未参与标注的数据上得出。</div>
+          <div class="src">HuggingFace <code>ngtranai09/china_job</code> + <code>data/eval_real_jd.jsonl</code></div>
+        </div>
+      </div>
+
+      <div class="esys-table">
+        <div class="esys-tr"><span class="a">回归检验项</span><span class="b" style="color:var(--muted)">当前状态</span><span class="c">复现命令</span></div>
+        <div class="esys-tr"><span class="a">单元测试</span><span class="b">124 / 124</span><span class="c">python -m unittest career_loop.tests.test_core</span></div>
+        <div class="esys-tr"><span class="a">对照集匹配判定（60 条）</span><span class="b">1.0</span><span class="c">python scripts/coverage.py</span></div>
+        <div class="esys-tr"><span class="a">对照集族识别（66 个已建词表岗位）</span><span class="b">100%</span><span class="c">python scripts/coverage.py</span></div>
+        <div class="esys-tr"><span class="a">英文集族识别（不回退闸门）</span><span class="b">93.6%</span><span class="c">python scripts/real_eval_family.py</span></div>
+        <div class="esys-tr"><span class="a">中文集族识别</span><span class="b">86.0%</span><span class="c">python scripts/cn_eval_family.py</span></div>
+        <div class="esys-tr"><span class="a">中文能力抽取（标注 45 + 留出 10,613）</span><span class="b">100% / 86.2%</span><span class="c">python scripts/eval_real_jd.py</span></div>
+        <div class="esys-tr"><span class="a">网页 ↔ CLI 跨引擎一致性（5 项）</span><span class="b">51 / 51</span><span class="c">python scripts/cross_engine_check.py</span></div>
+        <div class="esys-tr"><span class="a">网页词表同步（无漂移）</span><span class="b">✓ 一致</span><span class="c">python scripts/sync_web_vocab.py --check</span></div>
+        <div class="esys-tr"><span class="a">脱敏审计（含 6 条自测）</span><span class="b">✓ 干净</span><span class="c">python scripts/audit_anonymization.py</span></div>
+        <div class="esys-tr"><span class="a">仓库结构审计</span><span class="b">32 / 32</span><span class="c">python scripts/audit.py</span></div>
+      </div>
+
+      <div class="esys-method">
+        <div>
+          <h4>防过拟合：dev / hold-out 拆分</h4>
+          <p>词表挖掘与标注只看 dev（70%），增益必须在 hold-out 复现才算数。
+             v0.8.14 中文族识别：dev 77.9→85.9、hold-out 79.2→86.2，
+             <b>hold-out 增益 ≥ dev</b>——过拟合的特征恰好相反。</p>
+        </div>
+        <div>
+          <h4>防拍脑袋：精确率 ≥60% 闸</h4>
+          <p>每个候选词先算「族内出现次数 ÷ 全部出现次数」，<b>不到 60% 不收</b>。
+             v0.8.14 因此拦下 24 个词（「数据分析」只有 14%、「客户服务」13.7%）。
+             service 52% 的缺口至今没硬凑，就摆在那里。</p>
+        </div>
+        <div class="falsified">
+          <h4>防迁就：标注错了改标注</h4>
+          <p>人工标注集判错了，<b>改标注，不改引擎去迁就</b>（P39 漏 <code>pub_document</code> 就是这么修的）。
+             被证伪的想法也写在 evidence.md 里（词长加权、咨询/顾问入族），别重走。</p>
+        </div>
+      </div>
+
+      <div class="esys-repro">
+        <b>失效区间同样公开</b>：作者私有投递 r = −0.255（关键词饱和）、终局 r = 0.003（分布重叠）、
+        hr 词表精确率 5%、service 族 52%——全部写进 <code>docs/evidence.md</code>，没有藏。
+        <b>一条命令跑完全部</b>：<code>python scripts/audit.py &amp;&amp; python scripts/coverage.py &amp;&amp; python scripts/real_eval_family.py &amp;&amp; python scripts/cn_eval_family.py &amp;&amp; python scripts/eval_real_jd.py &amp;&amp; python scripts/cross_engine_check.py</code>
+        （评测数据集需先执行 <code>scripts/fetch_real_eval_data.py</code> / <code>scripts/fetch_cn_eval_data.py</code> 下载，均不入库）
+      </div>
     </div>
   </section>
 
