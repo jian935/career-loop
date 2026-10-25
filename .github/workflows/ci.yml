@@ -38,3 +38,23 @@ jobs:
       # 所以能进 CI：网页与 CLI 判的族必须是同一件事。
       - name: Cross-engine check (LLM family)
         run: python scripts/cross_engine_llm_check.py
+      # 离线静态校验：本机通常没有 docker，靠这一步挡住最常见的腐坏
+      # （COPY 源改名、运行时资产目录漏 COPY、ENTRYPOINT 与 pyproject 不一致）。
+      - name: Dockerfile static check
+        run: python scripts/check_dockerfile.py
+
+  # 静态检查只能证明"路径和入口没写错"，容器真能起来只有 build 一次才知道。
+  # 这个 Dockerfile 曾经从未被任何自动化跑过，任何一处基础镜像/权限改动都不会被发现。
+  docker:
+    name: docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -t career-loop:ci .
+      - name: Entry point works
+        run: docker run --rm career-loop:ci --help
+      - name: Reads its own data inside the image
+        run: docker run --rm career-loop:ci occupations | grep -q "49%"
+      - name: Full eval runs inside the image
+        run: docker run --rm career-loop:ci eval --data data/eval_sample.jsonl

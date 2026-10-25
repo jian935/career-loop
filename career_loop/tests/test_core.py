@@ -1903,6 +1903,35 @@ class TestRenderReport(unittest.TestCase):
             self.assertIn("可直接写进简历的句子", md)
 
 
+class TestDockerfileStatic(unittest.TestCase):
+    """README 说「Docker 见 Dockerfile」，但这个文件曾经从未被自动化验证过。
+
+    本机没有 docker，CI 里加一个 build job；这里跑的是**离线静态校验**——
+    它不需要 docker，因此挂在普通单测里，改 Dockerfile 当场就能红。
+    静态校验放不住镜像能不能拉的下来，那部分交给 CI 那个 docker job。
+    """
+
+    def test_dockerfile_passes_static_check(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "scripts"))
+        try:
+            import check_dockerfile as cd
+        finally:
+            sys.path.pop(0)
+        problems = cd.check()
+        self.assertEqual(problems, [], "Dockerfile 静态校验不过：\n  " + "\n  ".join(problems))
+
+    def test_runtime_assets_are_not_empty(self):
+        """推断器本身要能找到东西——找到 0 个说明路径规则失效了，检查会空转。"""
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "scripts"))
+        try:
+            import check_dockerfile as cd
+        finally:
+            sys.path.pop(0)
+        assets = cd.pytest_assets()
+        self.assertTrue(any(a.startswith("data/") for a in assets),
+                        f"没推断出 data/ 下的运行时资产：{assets}")
+
+
 class TestOccupationCoverage(unittest.TestCase):
     """README 宣称「可对齐到职业分类大典」，就必须有命令能把它跑出来。
 
