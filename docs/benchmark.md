@@ -11,7 +11,7 @@ python -m career_loop eval --data data/eval_sample.jsonl --badcases badcases.jso
 Expected:
 
 ```
-评测集 50 条　规则基线一致率 1.0
+评测集 60 条　规则基线一致率 1.0
 逐能力：
   agent              1.0  (4/4)
   coding_tools       1.0  (3/3)
@@ -74,7 +74,7 @@ On the public `job-resume-matching` dataset (1,167 real JDs +
 9,544 real résumés + 122,560 real match labels, CC BY, no PII):
 
 - **Family-identification accuracy: 93.6%** (1092/1167) — FINANCE 96.6 / HR 99.5 /
-  BD 100 / IT 93.3 / SALES 69.8 (known weak spot).
+  BD 100 / IT 93.3 / SALES 78.4 (known weak spot).
 - **Engine score vs. the dataset's `final_score`: Pearson r = 0.193** (2,000 real
   pairs, weak positive, reproducible with `--seed 7`). The engine is a rule baseline;
   a weak-but-positive r is expected next to a multi-dimensional semantic label.
@@ -120,6 +120,52 @@ What this found and fixed — see `docs/evidence.md` §7.1:
 generic words caused **44.1%** precision on `engineering` ("服务质量" ≠ engineering)
 and **8.0%** on `adm_archive` ("办理证照" ≠ archive management). After the fix:
 **92.7%** and **92.1%**, with recall essentially unchanged.
+
+### 2.4 Job-family identification on real Chinese JDs (v0.8.14–v0.8.17)
+
+Extraction (§2.3) asks "which capability did this line ask for". Family
+identification asks a coarser question: "which of the 66 job families is this
+JD about". Same public dataset (`ngtranai09/china_job`, 8,674 JDs), labels taken
+from `job_title` only (the dataset's own `searched_job_title` is a *search term*
+and is far too noisy to use as ground truth — see `docs/evidence.md` §1.2).
+
+**Rule mode** (v0.8.14, after stripping platform boilerplate):
+
+| Family-identification accuracy (any-in) | Rows |
+| --- | ---: |
+| **86.0%** | 1581 / 1838 |
+
+**Optional LLM backend** (v0.8.17) — same rows, same labels, same input field
+(the job title is *not* fed to the model, to avoid leaking the label):
+
+| Mode | any-in | top-1 | avg families / JD |
+| --- | ---: | ---: | ---: |
+| `rules` — vocabulary only | 86.0% | 56.6% | 4.88 |
+| `llm` — model only | 86.5% | 73.5% | 2.20 |
+| `auto` — ask the model only when rules return nothing | 87.0% | 57.6% | 4.90 |
+| **`blend` — model's first pick first, vocabulary fills in** (default) | **93.4%** | **73.5%** | 5.49 |
+
+The two engines fail on *different* jobs: the vocabulary misses short / heavily
+paraphrased JDs, the model misses "consulting / implementation / pre-sales"
+families. Their blind spots barely overlap, which is why the union works.
+`blend` and `union` produce the same family set, but `blend` ranks the model's
+first pick first and therefore scores **16 points higher on top-1**.
+
+**Honest limits.** Across runs the LLM numbers move by ~0.1pt: temperature is
+0.2 and the dataset contains 383 duplicate rows, so concurrent sampling can
+answer the same text differently (first run 1592, cache-normalised 1590). The
+cache keys on model+system+prompt, so a single run is exactly reproducible.
+1,838 calls took 517s and cost roughly ¥9; one HTTP failure (0.05%).
+
+```bash
+python scripts/fetch_cn_eval_data.py     # 9.3MB, needs pip install pyarrow
+python scripts/llm_family_eval.py --modes rules,llm,auto,blend,union
+```
+
+The **main pipeline never calls the LLM** for family identification — `match`,
+`whatif`, `reflow` and `calibrate` stay rule-only, because the calibration
+`r` must be reproducible offline. The LLM backend is opt-in via
+`career-loop domains --file jd.md --backend blend`.
 
 ## 3. Cross-engine parity (Python vs browser)
 

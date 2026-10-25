@@ -70,11 +70,33 @@ CASES = [
     ("domain", "需要深入理解某业务场景的痛点与流程。", "梳理了客服业务全流程，标出人力和耗时最贵的三步。", "full"),
     ("domain", "要求理解业务场景。", "了解业务流程大概，知道要找痛点。", "partial"),
     ("domain", "需要业务理解能力。", "对相关方向完全没有概念。", "missing"),
+    # ---- W6：通用能力（GENERAL_DIMS）+ 8 条边界样本 ----
+    # 这 18 条是评测集扩到 60 条时补的：writing / exec_project 属通用能力层，
+    # llm_basics / agent 各留了「同一句 JD、不同经历写法」的边界样本，
+    # 用来锁住"证据归因"在同义改写下不被误判。
+    ("writing", "任职要求：良好的文档与报告撰写能力，能输出 PRD。", "独立撰写过 3 份产品 PRD 和项目复盘报告，给团队传阅。", "full"),
+    ("writing", "要求具备文档写作与汇报能力。", "了解文档写作的基本格式和逻辑，但缺少独立产出的经验。", "partial"),
+    ("writing", "需要有良好的文案与文档撰写能力。", "完全没有写过正式文档，平时都是口头沟通。", "missing"),
+    ("exec_project", "需要有项目管理和落地推进经验，负责过排期与交付。", "主导过两个项目的排期、资源协调与最终交付，按时上线。", "full"),
+    ("exec_project", "要求有项目推进与统筹能力。", "对项目管理有概念性了解，跟过别人的项目流程。", "partial"),
+    ("exec_project", "需要有项目落地与执行能力。", "从没独立负责过项目，都是执行别人安排的任务。", "missing"),
+    ("llm_basics", "要求精通大模型原理与微调经验，理解 Transformer。", "了解过 GPT 这类大模型，但没训过模型，也没做过微调，只停留在概念层面。", "missing"),
+    ("agent", "需要有 Agent 开发经验，能搭建多智能体工作流。", "知道 Agent 的基本概念和工作原理，仅停留在理论了解阶段。", "partial"),
+    ("agent", "需要有 Agent 开发经验，能搭建多智能体工作流。", "了解 Agent 的基本概念，跟过教程但没自己独立搭建过工作流。", "partial"),
+    ("agent", "需要有 Agent 开发经验，能搭建多智能体工作流。", "没搭建过多智能体工作流，只在课程作业里跑通过单 Agent 例子。", "partial"),
+    ("exec_project", "需要有项目管理和落地推进经验，负责过排期与交付。", "没独立负责过项目交付，都是执行别人安排的任务。", "partial"),
+    ("writing", "需要有良好的文案与文档撰写能力。", "没写过正式文档，平时都是口头沟通。", "partial"),
+    ("llm_basics", "要求精通大模型原理与微调经验。", "未使用过大模型 API，只停留在概念层面。", "partial"),
+    ("agent", "需要有 Agent 开发经验，能搭建多智能体工作流。", "独立搭建过多智能体 Agent 工作流并上线，负责调度与评测。", "full"),
+    ("agent", "需要有 Agent 开发经验，能搭建多智能体工作流。", "不仅实现了 Agent 工作流，还落地到生产环境并持续迭代。", "full"),
+    ("writing", "需要有良好的文案与文档撰写能力。", "撰写过 3 份 PRD 与项目复盘报告，给团队传阅。", "full"),
+    ("writing", "需要有良好的文案与文档撰写能力。", "没写过正式文档，但独立落地过内容运营项目。", "partial"),
+    ("agent", "需要有 Agent 开发经验，能搭建多智能体工作流。", "不同渠道搭建过多智能体工作流，累计上线 3 个业务场景。", "full"),
 ]
 
 
 def main() -> None:
-    out = Path(__file__).parent / "data" / "eval_sample.jsonl"
+    out = Path(__file__).resolve().parent.parent / "data" / "eval_sample.jsonl"
     out.parent.mkdir(exist_ok=True)
     with out.open("w", encoding="utf-8") as f:
         for i, (cap, jd, profile, expected) in enumerate(CASES, 1):

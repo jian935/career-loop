@@ -266,12 +266,12 @@ career-loop eval --data data/eval_sample.jsonl --badcases badcases.jsonl
 ```
 
 ```
-评测集 50 条　规则基线一致率 1.0
+评测集 60 条　规则基线一致率 1.0
 逐能力：python 1.0 / agent 1.0 / rag 1.0 / ... (14 项全 1.0)
 无 badcase。
 ```
 
-> ⚠️ **诚实声明**：一致率 1.0 是在一份**人工构造、刻意覆盖边界case** 的 50 条评测集上取得的，它的作用是**锁住匹配逻辑不被改坏**（回归测试），**不**代表真实世界 100% 准确。真实准确率要靠下面第 4 步的校准和更多真实回流来逼近；另有公开 HF 集的真实端到端验证（r=0.193，见 `docs/benchmark.md` §2.2）。
+> ⚠️ **诚实声明**：一致率 1.0 是在一份**人工构造、刻意覆盖边界case** 的 60 条评测集上取得的，它的作用是**锁住匹配逻辑不被改坏**（回归测试），**不**代表真实世界 100% 准确。真实准确率要靠下面第 4 步的校准和更多真实回流来逼近；另有公开 HF 集的真实端到端验证（r=0.193，见 `docs/benchmark.md` §2.2）。
 
 ### 3) 校准：匹配分到底准不准
 
@@ -333,6 +333,7 @@ r 偏低且为正，符合预期：引擎当前是**规则关键词基线**，�
 python scripts/real_eval_family.py                        # 族识别准确率（真实 JD）
 python scripts/real_eval_calibrate.py --n 2000 --seed 7    # 真实 r（2,000 配对）
 python scripts/real_eval_scatter.py  --n 2000 --seed 7     # 重画 docs/evidence-scatter.png
+python scripts/gen_eval.py                                 # 重新生成 60 条控制回归集（逐字节可复现）
 ```
 
 ### 4) 真实闭环：记录投递 → 回流结果 → 校准
@@ -512,7 +513,7 @@ career-loop dashboard        # 没有真实数据时读 data/demo_applications.j
 ```
 career-loop/
 ├── career_loop/
-│   ├── matching/        # 匹配引擎：schema(词表) / extract / match / llm / render
+│   ├── matching/        # 匹配引擎：schema(词表) / extract / match / llm / family_llm(LLM 族识别后端) / boilerplate / render
 │   ├── store.py         # SQLite 存储：候选人 / JD / 投递记录
 │   ├── calibrate.py     # Pearson 校准 + 分桶 + 结论
 │   ├── eval.py          # 标注评测集加载 + 跑分
@@ -520,7 +521,7 @@ career-loop/
 │   ├── collect.py       # W3：批量采集原始 JD + 需求热力 / 补能力优先级
 │   ├── internship.py    # 实习方向推荐：目标契合排序 + 届别时间线
 │   ├── explore.py       # 全行业扫描：岗位排序 + 行业适配 + 职级降权 + 推荐
-│   ├── cli.py           # 命令行入口（init / doctor / add-* / match / whatif / apply / status / log / calibrate / eval / recommend / collect / demand / intern / scan / dashboard）
+│   ├── cli.py           # 命令行入口（init / doctor / add-* / match / whatif / apply / status / log / calibrate / eval / recommend / collect / demand / intern / scan / dashboard / domains）
 │   ├── dashboard.py     # Streamlit 看板（可选依赖）
 │   └── tests/           # 138 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / 扫描 / LLM 接线 / .env / CLI 路由）
 ├── docs/                # 免安装网页 demo（index.html）＋ 截图 / 动图 / 演示视频，可挂 GitHub Pages
@@ -532,7 +533,9 @@ career-loop/
 │   ├── profile_me.md            # 示例经历
 │   ├── jds/                     # 示例 JD 池（已清洗）
 │   └── raw_jds/                 # 带招聘站噪声的原始 JD（演示 collect）
-└── gen_eval.py          # 生成评测集的脚本
+└── scripts/
+    ├── gen_eval.py      # 生成 60 条控制回归集（评测集的唯一真源，跑一次可完全复现）
+    └── ...              # 评测 / 采集 / 校准 / 词表同步 / 脱敏审计 等工具脚本
 ```
 
 ---
@@ -549,7 +552,7 @@ career-loop/
 
 1. **规则基线优先，LLM 可选**：没有 API Key 也要能跑、能测、能证伪。LLM 只在可用时作为语义匹配升级，失败自动回退规则。
 2. **证据必须逐字摘自原文**：禁止模型「发挥」出证据，保证可审计。这是它和黑盒打分最本质的区别。
-3. **评测集当回归锁而非准确率宣称**：50 条全对的意义是「逻辑没被改坏」，不是「真实世界 100% 准」；真实端到端验证见 `docs/benchmark.md` §2.2（公开 HF 集，r=0.193）。
+3. **评测集当回归锁而非准确率宣称**：60 条全对的意义是「逻辑没被改坏」，不是「真实世界 100% 准」；真实端到端验证见 `docs/benchmark.md` §2.2（公开 HF 集，r=0.193）。
 4. **相关性而非因果**：校准只回答「匹配分和结果是否单调相关」，不直接说「因为你 score 高所以拿到面试」。
 5. **本地优先**：数据存在你自己的 SQLite，不上传任何平台。
 
@@ -565,7 +568,7 @@ career-loop/
 
 ---
 
-## 路线图（W1–W3 已完成，W4–W8 进行中）
+## 路线图（W1–W11 已完成）
 
 - ✅ **W1 — 核心闭环**：匹配引擎 + 规则基线 + 评测集锁 + 校准数学（本仓库）。
 - ✅ **W2 — 双向匹配**：`recommend` 人→JD 排序 + 缺口性价比分析，直接回答「下一步该做什么项目」。
@@ -573,9 +576,12 @@ career-loop/
 - ✅ **加分项**：反事实解释 `whatif` + 免安装网页 demo（`docs/`）+ 3 分钟旁白演示视频。
 - ✅ **W4 — 该投哪些（部分）**：网页 demo 新增「批量岗位排序」——粘贴一批 JD 立刻按匹配分排序并附最划算补强，回答「每天该投哪些」。每日清单/跟踪看板增强仍进行中。
 - ✅ **W5 — 校准上墙**：证据墙（英文 93.6% / 中文 86.0% / r=0.193）已做成网页常驻模块 + `docs/evidence.md`；**真实回流 50 条的完整脱敏报告已上墙**（`docs/reflow_sample.md` + 网页「真实回流报告长什么样」区块），并收成一条命令 `career-loop reflow`。
-- ✅ **W6 — 评测体系升级**：控制回归集从 42→50 条（覆盖 `GENERAL_DIMS` 通用能力 writing/exec_project + 8 条边界/覆盖样本），并正式把公开 HF 集的真实端到端验证（族识别 93.6% / r=0.193）纳入评测体系第二根支柱。不再把合成控制集夸大为「真实标注」。
+- ✅ **W6 — 评测体系升级**：控制回归集从 42→60 条（覆盖 `GENERAL_DIMS` 通用能力 writing/exec_project + 8 条边界/覆盖样本），并正式把公开 HF 集的真实端到端验证（族识别 93.6% / r=0.193）纳入评测体系第二根支柱。不再把合成控制集夸大为「真实标注」。
 - ✅ **W7 — Web 看板 / 分享页（部分）**：网页 demo 已升级为「工具」——除单 JD 匹配外，新增批量岗位排序、全行业适配（覆盖 66 岗位族）、一键导出 Markdown 报告，以及**闭环校准看板**（浏览器内 apply→log→calibrate，实时算 Pearson r 与分桶正反馈率，数据只存 localStorage）；证据墙新增**「中文 vs 英文」对比**与**中文抽取实验室**（粘贴中文 JD 实时看引擎认出了什么、漏了什么）；Streamlit 看板仍待做。
 - ✅ **W8 — 3 分钟演示视频（✅ 已完成）+ 复盘长文（✅ 已完成，见 `docs/retro.md`）**：用于简历附件和社区传播。
+- ✅ **W9 — 专攻最弱两族**：service / project_mgmt 四条路（单词 / 短语 / 语境约束 / 人工过目）全部试完，结论是**补不动**（真 miss 仅 8 / 6 条），证据链上墙（`docs/evidence.md` §1.5）。
+- ✅ **W10 — LLM 族识别后端**：岗位族识别加**可选** LLM 后端（`career-loop domains --backend blend`）。同一公开中文集实测 **86.0% → 93.4%**；主链路（match / whatif / reflow / calibrate）**不接 LLM**，保证校准 r 离线可复现。
+- ✅ **W11 — 投稿材料打磨**：数字勘误（用当前引擎重算，不手改）、配图与演示视频按当前引擎重制、GitHub ID 统一。
 
 ---
 
