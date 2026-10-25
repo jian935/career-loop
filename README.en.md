@@ -563,6 +563,8 @@ Four layers of vocabulary, and **nothing outside it is thrown away**:
    > 39/39 = 100%** is measured against the mid-classes *this repo chose to
    > include*; **coverage breadth 39/79 = 49%** is measured against all 79
    > mid-classes in the Dictionary (40 still have no vocabulary at all).
+
+   A real run of that table: [`docs/occupation-coverage.md`](docs/occupation-coverage.md).
 5. **Custom fallback** — a requirement that no vocabulary hits is kept verbatim and
    compared by text similarity, marked *"needs manual confirmation"*.
 
