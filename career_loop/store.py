@@ -13,6 +13,15 @@ DEFAULT_DB = Path(os.getenv("CAREER_LOOP_DB", Path.home() / ".career_loop" / "lo
 
 POSITIVE_STATUSES = {"replied", "interview", "offer"}
 
+# 可记录的全部状态 —— 与 reflow 的口径枚举必须逐条一致（有单测锁）。
+# 为什么 7 个而不是原来 CLI 那 5 个：reflow 定义并在报告里单列的
+# 「进面试但淘汰」「沉默（结果未知）」如果 CLI 记不了，纯 CLI 闭环的用户
+# 就拿不到 terminal 口径所需的数据。database 里 status 是纯 TEXT，加状态无需迁移。
+ALL_STATUSES = frozenset({
+    "applied", "replied", "interview", "interview_eliminated",
+    "offer", "rejected", "silent",
+})
+
 
 def get_db() -> Path:
     return DEFAULT_DB

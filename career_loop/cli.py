@@ -95,6 +95,33 @@ def cmd_domains(args) -> int:
     return 0
 
 
+def cmd_occupations(args) -> int:
+    """职业分类覆盖面对账——README 声称的「可对齐到职业分类大典」必须能跑出来。
+
+    这个表原本藏在 taxonomy_cn.py 里没人调用（死代码），对外又宣称有这个能力：
+    评审照着 README 找不到命令，就只能读源码。把它接出来，同时把两种口径
+    写在一起（详情见 coverage_summary 的 docstring）。
+    """
+    from .matching import taxonomy_cn as tx
+
+    table = tx.render_coverage()
+    s = tx.coverage_summary()
+    print("职业分类大典（2022 年版）× career-loop 岗位族　对账表")
+    print()
+    print(table)
+    print()
+    print(f"映射完整度 {s['listed_mapped']}/{s['listed_total']} = {s['completeness']:.0%}"
+          f"（分母＝本仓库收录）　｜　"
+          f"覆盖广度 {s['listed_total']}/{s['dictionary_total']} = {s['breadth']:.0%}"
+          f"（分母＝大典全部中类）")
+    if args.out:
+        Path(args.out).write_text(
+            f"# 职业分类大典 × career-loop 覆盖面对账\n\n{table}\n",
+            encoding="utf-8")
+        print(f"\n已写入 {args.out}")
+    return 0
+
+
 def cmd_llm_proxy(args) -> int:
     """启动本地 LLM 代理，让浏览器里的网页 demo 能用上你自己配置的模型。
 
@@ -194,9 +221,12 @@ def cmd_status(args) -> int:
     if not rows:
         print("还没有投递记录。用 `apply` 添加，或用 `calibrate --data data/demo_applications.jsonl` 看演示。")
         return 0
-    print(f"{'id':>3}  {'匹配分':>5}  {'状态':<10} {'候选人':<8} {'JD'}")
+    # 状态列宽度按数据算：`interview_eliminated` 有 20 个字符，写死宽度会把
+    # 后面的列挤到看不出从哪开始。宁可表宽一点，也不要解析不了的列。
+    width = max([10] + [len(str(r["status"])) for r in rows])
+    print(f"{'id':>3}  {'匹配分':>5}  {'状态':<{width}}  {'候选人':<8}  JD")
     for r in rows:
-        print(f"{r['id']:>3}  {r['fit_score']:>5}  {r['status']:<10} {r['profile_name']:<8} {r['jd_title']}")
+        print(f"{r['id']:>3}  {r['fit_score']:>5}  {r['status']:<{width}}  {r['profile_name']:<8}  {r['jd_title']}")
     return 0
 
 
@@ -570,6 +600,9 @@ def build_parser() -> argparse.ArgumentParser:
                          "auto=规则先判、规则空结果时才问模型（省调用）；"
                          "blend=LLM 首选优先+规则补充（实测最优）")
 
+    oc = sub.add_parser("occupations", help="职业分类大典覆盖面对账（哪些行业有词表、空白在哪）")
+    oc.add_argument("--out", default=None, help="把对账表写成 Markdown 文件")
+
     ap = sub.add_parser("add-profile", help="保存候选人经历")
     ap.add_argument("--file", required=True)
     ap.add_argument("--name", required=True)
@@ -591,7 +624,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     lg = sub.add_parser("log", help="更新投递状态")
     lg.add_argument("--app-id", type=int, required=True)
-    lg.add_argument("--status", required=True, choices=["applied", "replied", "interview", "offer", "rejected"])
+    # 状态必须与 reflow 的口径枚举一致 —— 少了 interview_eliminated，
+    # terminal 口径（"只算 offer"）在 CLI 侧就记不出"进面试但淘汰"这个中间态，
+    # 用户只能记成 rejected，而 rejected 在 terminal 口径是"简历关拒绝"，意思完全不同。
+    lg.add_argument("--status", required=True, choices=sorted(store.ALL_STATUSES))
     lg.add_argument("--note", default="")
 
     cb = sub.add_parser("calibrate", help="校准：匹配分能否预测真实结果")
@@ -692,7 +728,7 @@ def main(argv: list[str] | None = None) -> int:
         "match": cmd_match, "apply": cmd_apply, "status": cmd_status,
         "log": cmd_log, "calibrate": cmd_calibrate, "eval": cmd_eval,
         "reflow": cmd_reflow,
-        "dashboard": cmd_dashboard, "recommend": cmd_recommend, "daily": cmd_daily,
+        "dashboard": cmd_dashboard, "recommend": cmd_recommend, "occupations": cmd_occupations, "daily": cmd_daily,
         "collect": cmd_collect, "demand": cmd_demand, "whatif": cmd_whatif,
         "intern": cmd_intern, "scan": cmd_scan, "domains": cmd_domains,
         "llm-proxy": cmd_llm_proxy,

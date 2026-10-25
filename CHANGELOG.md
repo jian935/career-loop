@@ -4,6 +4,49 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.24] - 2026-10-26
+
+### 体检：把「README 承诺的能力」和「实际能跑的命令」逐条对一遍
+
+一次全仓库体检的结果。21 个命令逐个真跑了一遍（不是看 `--help`），
+自检全绿，但**全绿不等于没缺口**——下面两处都是"承诺在、入口不在"。
+
+**1. `taxonomy_cn.py` 是死代码，而它背着一个对外承诺（已修）**
+README 两处写"岗位族可对齐到《职业分类大典》8 个大类（见
+`career_loop/matching/taxonomy_cn.py`）"。但全仓库零引用：
+`coverage_matrix() / render_coverage()` 实现完整，没有任何命令能把它跑出来。
+评审照着 README 找不到入口，只能读源码——能力不是写错的，是**没有入口**。
+
+- 接出来：`career-loop occupations [--out FILE]`，输出对账表。
+- **顺手拆掉一个口径陷阱**：模块算出来是 39/39 = 100%，而这个 100% 读起来像
+  "覆盖了大典全部中类"——实际只是"我收录的都建了词表"，大典有 79 个中类，
+  还有 40 个完全没有词表。现在 `coverage_summary()` 同时返回两种口径
+  （**映射完整度 39/39** vs **覆盖广度 39/79 = 49%**），渲染结果与 CLI 输出
+  都强制两者同屏出现，有单测锁住"改文案也别把 79 改没了"。
+
+**2. CLI 能记的状态比回流口径窄（已修）**
+`career-loop log` 只认 5 个状态，而 `reflow` 定义了 7 个。缺的两个恰好是关键：
+`interview_eliminated`（进面试但淘汰）是 terminal 口径专门从"简历关拒绝"里
+拆出来的中间态；`silent`（超期无反馈）是数量往往最多的一档。
+走 CLI 闭环的用户记不了前者，只能记成 `rejected`——含义完全不同。
+另外 `reflow --db-write` **写进库里的就有这两个状态**，等于 `log` 改不回来。
+
+- `log --status` 改为随之扩展（`status` 是纯 TEXT，无需迁移），
+  新加 `TestStatusEnumParity` 锁住 CLI / reflow / DB 三处枚举逐条一致。
+- 顺手修 `career-loop status` 输出被 20 字符的长状态挤到列读不清（动态列宽）。
+
+**3. 把这类缺口变成不可能再发生**
+新增 `test_every_cli_command_is_documented`：双向比对**已注册命令**与**两版
+README 里出现的命令**，缺一边就红。它当场抓到刚加的 `occupations` 还没写进文档。
+A/B 自测 3/3（删光提及 / 写不存在的命令 / 拼错命令名都必须红，真实文档绿）。
+首版全文正则把英文散文里的 "career-loop web demo:" "career-loop also asks…"
+当成命令（两条假阳性）——限定到**代码块行首 + 内联反引号**两种位置后干净了；
+一个会误报的检查脚本很快就会被 ignore，所以这一步不能省。
+
+自检：单测 192 → **202**；`scripts/audit.py` 40 → **41**（`occupations` 必跑，
+且断言输出含 `39/39` + `49%` + `启发式`——只查返回码等于没查）；
+词表同步 / 跨引擎一致性仍全绿。
+
 ## [0.8.23] - 2026-10-26
 
 ### W16：每日投递清单——今天先投哪个、投之前改哪一句

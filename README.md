@@ -117,7 +117,8 @@ Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的�
    - 制造能源农林（4）：能源化工 / 汽车 / 农林牧渔 / 物流
    - 科研公共（5）：科研 / 公务公共事务 / 社工 / 心理 / 体育
    - 其余：产品 / 设计 / 运营 / 教育 / 医疗 / 法务 / 制造 / 导游讲解
-4. **职业分类骨架**：岗位族可对齐到《职业分类大典》8 个职业大类；`scripts/coverage.py` 里的 75 个检验岗位中，66 个已建词表岗位的族识别率 100%、兜底占比 3%。
+4. **职业分类骨架**：岗位族可对齐到《职业分类大典》8 个职业大类，`career-loop occupations` 会现场算对账表（哪些中类有词表、哪些是空白）；`scripts/coverage.py` 里的 75 个检验岗位中，66 个已建词表岗位的族识别率 100%、兜底占比 3%。
+   > 注意两个数字不是一回事：**映射完整度 39/39 = 100%** 的分母是本仓库收录的中类，**覆盖广度 39/79 = 49%** 的分母才是大典全部中类（还有 40 个中类没词表）。
 5. **自定义兜底**：没被任何词表命中的要求，会原样保留，按文本相似度与你的经历比对，并标注「需人工确认」。
 
 <p align="center">
@@ -368,7 +369,7 @@ career-loop add-jd      --file examples/jds/jd_backend_pm.md
 # 记下打印出的 id，比如 profile=1, jd=1
 career-loop apply --jd-id 1 --profile-id 1    # 记录一次投递，自动算预测匹配分
 career-loop status                            # 看所有投递
-career-loop log --app-id 1 --status interview # 回流真实结果
+career-loop log --app-id 1 --status interview # 回流真实结果（另有 interview_eliminated / silent）
 career-loop calibrate                         # 用真实数据重新校准
 ```
 
@@ -557,7 +558,7 @@ career-loop daily 同上 --out today.ics --format ics    # 进日历与待办 Ap
 - **通用能力层**：执行推进、问题解决、学习自驱、责任心、文档表达、客户导向、领导力、外语、办公软件
 - **岗位族层**：66 个岗位族、171 个能力项（AI 细分 / 工商管理 / 研发工程 / 金融专业 / 传媒文娱 / 服务零售 / 制造能源农林 / 科研公共 / 其他），
     
-  并可对齐到《职业分类大典》8 个职业大类（见 `career_loop/matching/taxonomy_cn.py`）
+  并可对齐到《职业分类大典》8 个职业大类（`career-loop occupations` 输出对账表）
 - **自定义兜底**：未被以上任何词表命中的要求，按文本相似度匹配，不丢弃；
     
   开启大模型后还能自动创建 `custom:` / `llm:` 能力项（如茶艺师 → 茶艺冲泡、茶席设计）
@@ -592,11 +593,11 @@ career-loop/
 │   ├── collect.py       # W3：批量采集原始 JD + 需求热力 / 补能力优先级
 │   ├── internship.py    # 实习方向推荐：目标契合排序 + 届别时间线
 │   ├── explore.py       # 全行业扫描：岗位排序 + 行业适配 + 职级降权 + 推荐
-│   ├── cli.py           # 命令行入口（init / doctor / add-* / match / whatif / apply / status / log / calibrate / eval / recommend / collect / demand / intern / scan / dashboard / domains / llm-proxy / daily）
+│   ├── cli.py           # 命令行入口（init / doctor / add-* / match / whatif / apply / status / log / calibrate / eval / recommend / collect / demand / intern / scan / dashboard / domains / llm-proxy / daily / occupations）
 │   ├── dashboard.py     # Streamlit 看板渲染层（可选依赖，只负责画）
 │   ├── dashdata.py      # 看板数据层：漏斗 / 校准 / 置信区间 / 缺口，零依赖、可单测
 │   ├── daily.py         # 每日投递清单：排序 + 截止日解析 + md/csv/ics 导出
-│   └── tests/           # 192 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / 扫描 / LLM 接线 / .env / CLI 路由）
+│   └── tests/           # 202 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / 扫描 / LLM 接线 / .env / CLI 路由）
 ├── docs/                # 免安装网页 demo（index.html）＋ 截图 / 动图 / 演示视频，可挂 GitHub Pages
 ├── data/
 │   ├── eval_sample.jsonl        # 60 条控制回归集（回归锁）
@@ -618,7 +619,7 @@ career-loop/
 ## 质量与自检
 
 - **192 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 非 AI 岗位泛化 / 实习推荐 / 全行业扫描与职级识别 / LLM 接线与自建能力项 / **LLM 族识别后端（回退、auto/blend 分工、提示词覆盖全部岗位族）** / `.env` 解析，以及 CLI 的 `--db` 路由（防止命令串库）。
-- **40 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态、坏截止日）+ `doctor` + `scan` + `daily` 三种导出都要跑得通且文件非空。
+- **41 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态、坏截止日、职业分类对账）+ `doctor` + `scan` + `daily` 三种导出都要跑得通且文件非空。
 - 一条命令复现：`python -m unittest discover -s career_loop/tests`。
 
 ---

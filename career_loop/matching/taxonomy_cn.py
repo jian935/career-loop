@@ -20,6 +20,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
+# 《职业分类大典（2022 年版）》公开表述中的中类总数（8 大类 / 79 中类 / 449 小类）。
+# 这是"分母"——用来算**覆盖广度**：本仓库收录的中类 ÷ 大典全部中类。
+# 它和 coverage_matrix() 里的 mid_total（本仓库收录了多少）是两件事，
+# 混在一起就会得出"覆盖率 100%"这种完全没有边界的说法。
+MIDS_IN_DICTIONARY_2022 = 79
+
+
 @dataclass
 class CategoryHit:
     code: str                       # 大类编号，如 "2"
@@ -173,12 +180,61 @@ def coverage_matrix() -> list[dict]:
     return rows
 
 
+def coverage_summary() -> dict:
+    """两种口径，**必须一起给**，单独给任何一个都是误导。
+
+    - `completeness`（映射完整度）= 已映射中类 / 本仓库收录的中类。
+      这里是 100%，但它的含义仅仅是"凡是我收录进来的中类都建了词表"，
+      **不等于**我把大典覆盖全了——哪些中类进来是我挑的。
+    - `breadth`（覆盖广度）= 本仓库收录的中类 / 大典全部中类（79）。
+      这才是回答"覆盖了多少职业版图"的数字，目前约 49%。
+
+    曾经踩过的坑：只把第一个数字（当时 39/39）贴出去，读者会理解成
+    "覆盖了大典 100% 的中类"。所以 summary 同时返回两者，且 render 里
+    两者相邻出现——有单测锁住这条（改文案也别把 79 改没了）。
+    """
+    rows = coverage_matrix()
+    listed_total = sum(r["mid_total"] for r in rows)
+    listed_mapped = sum(r["mid_mapped"] for r in rows)
+    return {
+        "listed_total": listed_total,
+        "listed_mapped": listed_mapped,
+        "dictionary_total": MIDS_IN_DICTIONARY_2022,
+        "big_classes": len(rows),
+        "completeness": listed_mapped / listed_total if listed_total else 0.0,
+        "breadth": listed_total / MIDS_IN_DICTIONARY_2022,
+        "gaps": [g for r in rows for g in r["gaps"]],
+    }
+
+
 def render_coverage() -> str:
-    """生成对账表（Markdown）。"""
-    lines = ["| 大类 | 名称 | 中类(已映射/总数) | 已建词表岗位族 | 空白中类 |",
-             "|---|---|---|---|---|"]
+    """生成对账表（Markdown）。
+
+    表头那个「已映射/总数」是**完整度**口径，容易误读，所以表下紧跟一段
+    口径说明把「广度」一起说清楚（两者的差别见 coverage_summary）。
+    """
+    lines = [
+        "| 大类 | 名称 | 中类(已映射/收录) | 已建词表岗位族 | 未映射中类 |",
+        "|---|---|---|---|---|",
+    ]
     for r in coverage_matrix():
         packs = "、".join(r["packs"]) or "—"
         gaps = "、".join(r["gaps"]) or "—"
         lines.append(f"| {r['code']} | {r['label']} | {r['mid_mapped']}/{r['mid_total']} | {packs} | {gaps} |")
+
+    s = coverage_summary()
+    lines += [
+        "",
+        f"**口径（两个数字含义不同，别只引用一个）**",
+        "",
+        f"- 映射完整度：**{s['listed_mapped']}/{s['listed_total']} = {s['completeness']:.0%}**"
+        f"　——分母是**本仓库收录**的中类，说明凡收录进来的都建了词表；"
+        f"它**不代表**覆盖了大典多少，因为哪些中类进来是我挑的。",
+        f"- 覆盖广度：**{s['listed_total']}/{s['dictionary_total']} = {s['breadth']:.0%}**"
+        f"　——分母是大典全部中类（{s['dictionary_total']} 个），"
+        f"即还有 **{s['dictionary_total'] - s['listed_total']} 个中类完全没有词表**。",
+        "",
+        "> 映射是**启发式**的：中类名称参考 2022 年版公开表述，靠关键词命中，",
+        "> 不是官方逐条数据。大类 7（军人）不在求职场景内，保留占位但不建词表。",
+    ]
     return "\n".join(lines)

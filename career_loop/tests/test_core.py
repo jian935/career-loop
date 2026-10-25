@@ -11,7 +11,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from career_loop import calibrate, collect, daily, dashdata, explore, internship, matching, recommend, reflow, store
+from career_loop.cli import build_parser
 from career_loop.eval import load_dataset, run_eval
+from career_loop.matching import taxonomy_cn
 
 
 class TestMatching(unittest.TestCase):
@@ -1485,7 +1487,7 @@ class TestDocsConsistency(unittest.TestCase):
     KEY_NUMBERS = (
         "66", "171", "60", "93.6%", "86.0%", "93.4%", "0.193", "56.6%", "73.5%",
         "52%", "78%", "70%", "83%", "45", "10,613", "13.8", "86.2%", "100.0%",
-        "1,167", "1,838", "40", "75", "3%", "16", "50", "29", "0.694",
+        "1,167", "1,838", "41", "75", "3%", "16", "50", "29", "0.694",
         "-0.059", "0.03", "9,544", "122,560", "8,674", "35+",
     )
 
@@ -1520,6 +1522,52 @@ class TestDocsConsistency(unittest.TestCase):
         self.assertIn(f"v{ver}",
                       (self.ROOT / "docs" / "index.html").read_text(encoding="utf-8"),
                       f"网页角标没跟着升到 v{ver}")
+
+    def test_every_cli_command_is_documented(self):
+        """每个已注册的子命令都必须在 README 里出现，反之亦然。
+
+        这条锁来自一次体检：`taxonomy_cn.py` 里有完整的
+        `coverage_matrix() / render_coverage()`，README 两处宣称"可对齐到职业
+        分类大典"，但全仓库零调用 —— 评审照着文档找不到命令，只能读源码。
+        能力的敌人不是写错，是**没有入口**。反过来，README 写了不存在的命令
+        同样是假承诺，所以两边都查。
+        """
+        import re
+        from career_loop import cli
+        route_names = set(getattr(cli, "ROUTES", {}).keys())
+        route_names |= {n for n, m in vars(cli).items()
+                        if n.startswith("cmd_") and callable(m)}
+        route_names = {n[4:].replace("_", "-") for n in route_names} - {"help"}
+        self.assertTrue(route_names, "没抓到任何命令名，检查 cli 结构是否变了")
+
+        zh, en = self._read("README.md"), self._read("README.en.md")
+        documented = self._documented_commands(zh) | self._documented_commands(en)
+        missing = sorted(route_names - documented)
+        phantom = sorted(documented - route_names)
+        self.assertTrue(not missing, f"已注册但两版 README 都没提的命令：{missing}")
+        self.assertTrue(not phantom, f"README 写了但实际不存在的命令：{phantom}")
+
+    @staticmethod
+    def _documented_commands(text: str) -> set[str]:
+        """只认**命令行**里的 `career-loop xxx`：代码块内、且出现在一行开头。
+
+        一开始图省事全文正则匹配，结果把英文散文里的
+        "career-loop web demo:" "career-loop also asks you to ..." 也当成了命令
+        （两条假阳性）。限定两种位置后就干净了：代码块里的命令行，
+        以及内联反引号 `` `career-loop xxx` `` —— 后者同样是货真价实的承诺
+        （README 里 `domains` / `occupations` 就是这么写的）。
+        """
+        import re
+        out = set()
+        blocks = re.findall(r"```(?:bash|sh|shell|console)?\s*\n(.*?)```", text, re.S)
+        for block in blocks:
+            for line in block.splitlines():
+                m = re.match(r"\s*career-loop\s+([a-z][a-z-]*)", line)
+                if m:
+                    out.add(m.group(1))
+        for m in re.finditer(r"`\s*career-loop\s+([a-z][a-z-]*)", text):
+            out.add(m.group(1))
+        return out
 
     def test_unit_test_count_matches_readme(self):
         """README 里写的单测条数必须等于实际条数（含 badge）。"""
@@ -1720,6 +1768,83 @@ class TestDailyPlan(unittest.TestCase):
                                 today=self.DAY)
         self.assertEqual(plan.items, [])
         self.assertTrue(plan.notes)
+
+
+class TestOccupationCoverage(unittest.TestCase):
+    """README 宣称「可对齐到职业分类大典」，就必须有命令能把它跑出来。
+
+    这组测试的背景是一次体检发现：taxonomy_cn.py 全仓库零引用，是死代码，
+    而 README 两处指向它。更危险的是 coverage_matrix() 会给出 39/39 = 100%，
+    这个数字单独拿出来读，会被理解成"覆盖了大典全部中类"——实际只收录了 39 个，
+    大典有 79 个。所以这里锁的不是数字本身，而是**两个口径必须同时出现**。
+    """
+
+    def test_summary_reports_both_denominators(self):
+        s = taxonomy_cn.coverage_summary()
+        self.assertEqual(s["listed_mapped"], s["listed_total"])   # 收录的都有词表
+        self.assertLess(s["breadth"], 1.0)                        # 但远没覆盖全大典
+        self.assertEqual(s["dictionary_total"], taxonomy_cn.MIDS_IN_DICTIONARY_2022)
+
+    def test_every_listed_mid_has_a_pack(self):
+        """「完整度 100%」必须是算出来的，不是写出来的。"""
+        for row in taxonomy_cn.coverage_matrix():
+            self.assertEqual(row["gaps"], [], f"大类 {row['code']} 有中类没建词表")
+
+    def test_rendered_table_carries_the_honest_boundary(self):
+        """改文案可以，但把「79 / 49% / 启发式」任何一项改没了都会被抓住。"""
+        out = taxonomy_cn.render_coverage()
+        self.assertIn("49%", out)
+        self.assertIn("79", out)
+        self.assertIn("启发式", out)
+        # 单独一个 100% 而没有广度说明 = 误导，所以两者必须同屏
+        self.assertTrue("100%" in out and "49%" in out)
+
+    def test_numbers_match_readme_claim(self):
+        """README 写的是「收录 39 个中类 / 大典 79 个 / 49%」，别悄悄漂移。"""
+        s = taxonomy_cn.coverage_summary()
+        self.assertEqual(s["listed_total"], 39)
+        self.assertEqual(round(s["breadth"] * 100), 49)
+
+    def test_cli_exposes_it(self):
+        """不是死代码的第一道保险：命令表里有它。"""
+        args = build_parser().parse_args(["occupations"])
+        self.assertTrue(hasattr(args, "out"))
+
+
+class TestStatusEnumParity(unittest.TestCase):
+    """CLI 能记的状态 与 reflow 的口径枚举 必须是同一套。
+
+    这条锁的由来：CLI `log` 曾经只认 5 个状态，而 reflow 定义了 7 个。
+    后果不是"少两个选项"这么轻——terminal 口径专门把「进面试但淘汰」和
+    「简历关拒绝」分开（这是它和 early 口径的唯一实质差别），而 CLI 用户
+    记不了前者，只能记成 rejected，terminal 口径在纯 CLI 闭环下就是失真的。
+    """
+
+    def test_cli_accepts_every_reflow_status(self):
+        reflow_all = {
+            reflow.STATUS_OFFER, reflow.STATUS_INTERVIEW,
+            reflow.STATUS_INTERVIEW_ELIMINATED, reflow.STATUS_REPLIED,
+            reflow.STATUS_APPLIED, reflow.STATUS_REJECTED, reflow.STATUS_SILENT,
+        }
+        self.assertEqual(set(store.ALL_STATUSES), reflow_all)
+
+    def test_positive_set_matches_early_mode(self):
+        """DB 侧判正反馈必须与 reflow 的 early 口径同一套，否则校准数字对不上。"""
+        self.assertEqual(set(store.POSITIVE_STATUSES), set(reflow.EARLY_POSITIVE))
+
+    def test_silent_is_not_a_positive_outcome(self):
+        """沉默是"结果未知"，不是负面的 HR 动作——早期版本踩过这个坑。"""
+        self.assertNotIn("silent", store.POSITIVE_STATUSES)
+        self.assertNotIn(reflow.STATUS_SILENT, reflow.EARLY_POSITIVE)
+        self.assertNotIn(reflow.STATUS_SILENT, reflow.TERMINAL_POSITIVE)
+
+    def test_interview_eliminated_is_not_confused_with_rejected(self):
+        """两者都不是正反馈，但在 terminal 口径下是不同格子，不能合并。"""
+        order = reflow.FUNNEL_ORDER["terminal"]
+        self.assertIn(reflow.STATUS_INTERVIEW_ELIMINATED, order)
+        self.assertIn(reflow.STATUS_REJECTED, order)
+        self.assertNotEqual(order.index(reflow.STATUS_INTERVIEW_ELIMINATED),
+                            order.index(reflow.STATUS_REJECTED))
 
 
 class TestCorrelationCI(unittest.TestCase):

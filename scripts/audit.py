@@ -139,6 +139,11 @@ def main() -> int:
     run(["daily", "--profile", "examples/profile_me.md", "--jds", "examples/daily_jds",
          "--due", "2026-13-40"], expect=1, contains="YYYY-MM-DD", name="daily(bad due)")
 
+    # occupations：README 宣称"可对齐到职业分类大典"，这条命令就是那个承诺的入口。
+    # 断言里带上 49% 而不是只看返回码：只检查"跑得通"等于什么都没检查——
+    # 这个模块曾经是零引用的死代码，跑得通却从没人调。
+    run(["occupations"], contains=["39/39", "49%", "启发式"], name="occupations")
+
     check_eval_baseline()
 
     passed = sum(1 for _, ok, _ in RESULTS if ok)

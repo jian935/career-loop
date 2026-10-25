@@ -21,7 +21,7 @@
   
   <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">
   
-  <img alt="tests" src="https://img.shields.io/badge/tests-192%20passing-4f46e5.svg">
+  <img alt="tests" src="https://img.shields.io/badge/tests-202%20passing-4f46e5.svg">
   
 </p>
 
@@ -411,7 +411,7 @@ career-loop add-jd      --file examples/jds/jd_backend_pm.md
 # note the ids printed, e.g. profile=1, jd=1
 career-loop apply --jd-id 1 --profile-id 1    # record an application, score computed
 career-loop status                            # list all applications
-career-loop log --app-id 1 --status interview # feed the real outcome back
+career-loop log --app-id 1 --status interview # feed back (also: interview_eliminated / silent)
 career-loop calibrate                         # recalibrate on real data
 ```
 
@@ -554,9 +554,15 @@ Four layers of vocabulary, and **nothing outside it is thrown away**:
    research & public sector (5), plus product, design, operations, education,
    healthcare, legal, manufacturing, guiding & commentary.
 4. **Occupation-classification skeleton** — families can be mapped onto the 8
-   top-level classes of China's Occupation Classification Dictionary. Of 75 test
-   roles, the 66 with a built vocabulary reach **100% family-identification rate**
+   top-level classes of China's Occupation Classification Dictionary; run
+   `career-loop occupations` to recompute the reconciliation table yourself
+   (which mid-classes have a vocabulary, which are blank). Of 75 test roles,
+   the 66 with a built vocabulary reach **100% family-identification rate**
    with a 3% fallback rate (`scripts/coverage.py`).
+   > Two different denominators, do not quote just one: **mapping completeness
+   > 39/39 = 100%** is measured against the mid-classes *this repo chose to
+   > include*; **coverage breadth 39/79 = 49%** is measured against all 79
+   > mid-classes in the Dictionary (40 still have no vocabulary at all).
 5. **Custom fallback** — a requirement that no vocabulary hits is kept verbatim and
    compared by text similarity, marked *"needs manual confirmation"*.
 
@@ -611,11 +617,11 @@ career-loop/
 │   ├── collect.py       # bulk JD collection + demand heatmap
 │   ├── internship.py    # internship direction recommendation + term timeline
 │   ├── explore.py       # industry-wide scan: ranking, fit, level down-weighting
-│   ├── cli.py           # CLI entry point (init / doctor / add-* / match / whatif / apply / status / log / calibrate / eval / reflow / recommend / collect / demand / intern / scan / dashboard / domains / llm-proxy / daily)
+│   ├── cli.py           # CLI entry point (init / doctor / add-* / match / whatif / apply / status / log / calibrate / eval / reflow / recommend / collect / demand / intern / scan / dashboard / domains / llm-proxy / daily / occupations)
 │   ├── dashboard.py     # Streamlit rendering layer (optional dep; draws only)
 │   ├── dashdata.py      # board data layer: funnel / calibration / CI / gaps (zero-dep, tested)
 │   ├── daily.py         # daily list: ranking + due-date parsing + md/csv/ics export
-│   └── tests/           # 192 unit tests
+│   └── tests/           # 202 unit tests
 ├── docs/                # zero-install web demo (index.html) + screenshots / GIF / demo video; also the Pages site root
 ├── data/
 │   ├── eval_sample.jsonl        # 60-row control regression set
@@ -636,14 +642,14 @@ career-loop/
 
 ## Quality & self-checks
 
-- **192 unit tests** — matching, calibration, storage, recommendation, collection,
+- **202 unit tests** — matching, calibration, storage, recommendation, collection,
   counterfactuals, non-AI generalisation, internship ranking, industry scan and
   level detection, LLM wiring and self-created capabilities, the LLM family
   backend (fallback, auto/blend split, prompt covering every family), `.env`
   parsing, and the CLI `--db` routing (prevents cross-database mix-ups).
-- **40 end-to-end CLI audit checks** — happy path + edge cases (invalid ids, empty
+- **41 end-to-end CLI audit checks** — happy path + edge cases (invalid ids, empty
   JD, insufficient samples, empty DB, empty directory, duplicate collection,
-  illegal states, malformed due dates) + `doctor` + `scan` + all three `daily`
+  illegal states, malformed due dates, occupation reconciliation) + `doctor` + `scan` + all three `daily`
   exports must run and produce non-empty files.
 - **Cross-engine parity** — the browser demo reimplements the rules in JavaScript.
   `scripts/cross_engine_check.py` compares both engines on real Chinese and English
