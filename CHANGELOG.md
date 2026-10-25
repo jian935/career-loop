@@ -6,6 +6,12 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [0.8.9] - 2026-10-25
 
+### 网页「中文 vs 英文」对比模块
+- 证据墙新增对比区：顶部并排显示两个公开数据集的族识别准确率（英文 93.6% / 中文 77.8%），下方列出中文 32 个族（n≥25）的分族表现，**弱族在前并用琥珀色标出**。
+- 两栏解释差距来源：英文集只有 5 大类、边界清晰；中文市场 300+ 细分行业、同岗位天然跨族，且客服/助理类 JD 描述大半是福利模板。
+- 附复现命令与「两个数据集均不入库」说明。
+- 数据为脚本产出的静态快照（`scripts/real_eval_family.py` / `scripts/cn_eval_family.py`），第三方可自行下载复现；渲染逻辑做了幂等保护与宽度/数值一致性校验。
+
 ### 中文真实 JD 族识别检验（新增，公开可复现）
 - 新增 `scripts/cn_eval_family.py` + `scripts/fetch_cn_eval_data.py`：基于公开数据集 HuggingFace `ngtranai09/china_job`（8,674 条真实中文招聘 JD）。
 - **标签用岗位名而非数据集自带的 `searched_job_title`**：后者是采集时的搜索词，噪声极高（搜 "Program Development" 的 30 条里只有 1 条岗位名对得上），拿它当 ground truth 会得出错误结论。

@@ -210,6 +210,43 @@
   .ev-step p{margin:0;font-size:12px;color:var(--sub);line-height:1.55}
   .evidence code{font-family:var(--mono);font-size:11.5px;color:var(--cyan);
     background:rgba(34,211,238,.08);padding:1px 5px;border-radius:5px}
+
+  /* ---- 中英对比 ---- */
+  .cn-en{margin:18px 0 4px;border:1px solid var(--line);border-radius:14px;
+    background:rgba(255,255,255,.02);overflow:hidden}
+  .cn-en-head{padding:15px 18px;border-bottom:1px solid var(--line);
+    display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .cn-en-head h3{margin:0;font-size:14px;color:var(--ink);font-weight:700}
+  .cn-en-head .t{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+  .cn-en-head .grow{flex:1}
+  .cn-en-bars{padding:14px 18px 4px}
+  .cn-en-row{display:grid;grid-template-columns:88px 1fr 1fr;gap:10px;align-items:center;
+    margin-bottom:9px;font-size:12px}
+  @media(max-width:720px){.cn-en-row{grid-template-columns:64px 1fr 1fr;font-size:11px}}
+  .cn-en-row .lab{color:var(--sub);font-family:var(--mono);font-size:11px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cn-en-bar{position:relative;height:22px;border-radius:6px;background:rgba(255,255,255,.05);overflow:hidden}
+  .cn-en-bar>i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;display:block}
+  .cn-en-bar.en>i{background:linear-gradient(90deg,#7C5CFF,#A78BFA)}
+  .cn-en-bar.cn>i{background:linear-gradient(90deg,#22D3EE,#67E8F9)}
+  .cn-en-bar>span{position:absolute;right:7px;top:0;line-height:22px;font:700 11px var(--mono);color:var(--ink)}
+  .cn-en-legend{display:flex;gap:16px;padding:6px 18px 12px;font-size:11px;color:var(--muted);
+    font-family:var(--mono)}
+  .cn-en-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;
+    vertical-align:-1px}
+  .cn-en-legend .e{background:#A78BFA}
+  .cn-en-legend .c{background:#67E8F9}
+  .cn-en-why{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 18px 16px}
+  @media(max-width:720px){.cn-en-why{grid-template-columns:1fr}}
+  .cn-en-why>div{border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    background:rgba(255,255,255,.02)}
+  .cn-en-why h4{margin:0 0 6px;font-size:12.5px;color:var(--ink)}
+  .cn-en-why p{margin:0;font-size:11.5px;color:var(--sub);line-height:1.6}
+  .cn-en-why .good h4{color:var(--emerald)}
+  .cn-en-why .hard h4{color:var(--amber)}
+  .cn-en-repro{grid-column:1/-1;border:1px dashed var(--line);border-radius:10px;padding:11px 14px;
+    font:11px/1.7 var(--mono);color:var(--muted)}
+  .cn-en-repro b{color:var(--cyan);font-weight:600}
   @media(max-width:720px){.nav-links{display:none}.hero{padding-top:52px}.stats{gap:26px}}
 
   /* 批量岗位 · 全行业适配 */
@@ -403,6 +440,43 @@
       <div class="ev-step"><div class="i">③ CALIBRATE</div><h4>Pearson r 打脸</h4><p>样本到量后检验预测分准不准：准就信，不准就反过来改权重。</p></div>
     </div>
     <p class="hint" style="margin-top:12px">公开数据来自 HuggingFace <code>nonameee12233/job-resume-matching</code>（CC BY，无 PII）。复现：<code>python scripts/real_eval_family.py</code> · <code>python scripts/real_eval_calibrate.py</code>。作者私有测试只公开聚合统计，不含任何个人信息。</p>
+
+    <div class="cn-en">
+      <div class="cn-en-head">
+        <h3>中文 vs 英文：同一个引擎，两种真实数据</h3>
+        <span class="t">career-loop 的词表是中文为主——只用英文数据检验，等于没测</span>
+        <span class="grow"></span>
+        <span class="t">两个数据集都是公开、可自行下载复现</span>
+      </div>
+
+      <div class="cn-en-bars" id="cnEnTop"></div>
+      <div class="cn-en-legend">
+        <span><i class="e"></i>英文 JD · 1,167 条 · 5 个大类</span>
+        <span><i class="c"></i>中文 JD · 1,853 条 · 35 个族</span>
+      </div>
+
+      <div class="cn-en-bars" id="cnEnByFamily" style="padding-top:6px"></div>
+
+      <div class="cn-en-why">
+        <div class="good">
+          <h4>为什么英文数字更高</h4>
+          <p>英文公开集只有 5 个大类别，类间边界清晰，判错就直接错；
+             它的 SALES 一个类就覆盖了中文市场的销售 / BD / 电商运营 / 外贸好几类。</p>
+        </div>
+        <div class="hard">
+          <h4>为什么中文场景本身更难</h4>
+          <p>中文招聘市场有 300+ 细分行业，同一个岗位天然跨族
+             （"投资经理"既属证券也属财务），标签本身更模糊；
+             而且客服 / 助理 / 项目专员这类 JD 描述大半是福利模板，信息量不足。</p>
+        </div>
+        <div class="cn-en-repro">
+          <b>复现（无需 API Key）</b><br>
+          python scripts/fetch_real_eval_data.py &nbsp;&amp;&nbsp; python scripts/real_eval_family.py &nbsp;→ 93.6%<br>
+          python scripts/fetch_cn_eval_data.py &nbsp;&amp;&nbsp; python scripts/cn_eval_family.py &nbsp;→ 77.8%<br>
+          两个数据集均不入库（data/real_eval、data/cn_eval 已在 .gitignore）
+        </div>
+      </div>
+    </div>
   </section>
 
   <section class="calib" id="calibrate">
@@ -1340,6 +1414,64 @@ function calDemo(){
   renderCalib();
 }
 
+/* ============================================================
+   中英对比模块：同一个引擎，在两个公开数据集上的真实表现
+   数字来自 scripts/real_eval_family.py 与 scripts/cn_eval_family.py
+   （静态快照；两个数据集都不入库，脚本可自行下载复现）
+   ============================================================ */
+const CN_FAMILY_ACC = [{"f":"data_analysis","n":29,"a":0.207},{"f":"ai_data","n":29,"a":0.207},{"f":"film","n":42,"a":0.5},{"f":"quality","n":25,"a":0.52},{"f":"service","n":69,"a":0.522},{"f":"project_mgmt","n":63,"a":0.54},{"f":"media","n":91,"a":0.659},{"f":"agriculture","n":44,"a":0.659},{"f":"product","n":71,"a":0.704},{"f":"banking","n":204,"a":0.706},{"f":"consulting","n":89,"a":0.719},{"f":"legal","n":68,"a":0.735},{"f":"public_admin","n":55,"a":0.745},{"f":"ai_solution","n":73,"a":0.753},{"f":"securities","n":162,"a":0.759},{"f":"it_systems","n":84,"a":0.786},{"f":"energy","n":68,"a":0.794},{"f":"finance","n":195,"a":0.795},{"f":"logistics","n":58,"a":0.81},{"f":"healthcare","n":117,"a":0.829},{"f":"marketing","n":117,"a":0.838},{"f":"ecommerce","n":117,"a":0.838},{"f":"operations","n":117,"a":0.838},{"f":"supply","n":84,"a":0.869},{"f":"education","n":63,"a":0.873},{"f":"property","n":40,"a":0.875},{"f":"retail","n":40,"a":0.875},{"f":"trade","n":47,"a":0.894},{"f":"manufacturing","n":45,"a":0.933},{"f":"admin","n":108,"a":0.935},{"f":"design","n":34,"a":0.941},{"f":"sales","n":190,"a":0.953}];
+function cnEnBar(kind, pct, label){
+  const d=document.createElement("div");
+  d.className="cn-en-bar "+kind;
+  const fill=document.createElement("i");
+  fill.style.width=Math.max(2,pct)+"%";
+  const txt=document.createElement("span");
+  txt.textContent=label;
+  d.appendChild(fill);
+  d.appendChild(txt);
+  return d;
+}
+function cnEnLabel(text, cls){
+  const d=document.createElement("div");
+  d.className=cls||"lab";
+  d.textContent=text;
+  return d;
+}
+function renderCnEn(){
+  // 顶部：两个数据集的总体准确率
+  const top=el("cnEnTop");
+  if(top){
+    while(top.children.length) top.removeChild(top.children[0]);
+    const r1=document.createElement("div"); r1.className="cn-en-row";
+    r1.appendChild(cnEnLabel("族识别准确率"));
+    r1.appendChild(cnEnBar("en",93.6,"93.6%"));
+    r1.appendChild(cnEnBar("cn",77.8,"77.8%"));
+    top.appendChild(r1);
+  }
+  // 按族：中文真实 JD 的分族表现（弱族在前，如实暴露）
+  const box=el("cnEnByFamily");
+  if(box){
+    while(box.children.length) box.removeChild(box.children[0]);
+    const head=document.createElement("div"); head.className="cn-en-row";
+    head.appendChild(cnEnLabel("中文 · 分族"));
+    head.appendChild(cnEnLabel("准确率（弱族在前）"));
+    head.appendChild(cnEnLabel("样本量"));
+    box.appendChild(head);
+    for(const it of CN_FAMILY_ACC){
+      const row=document.createElement("div"); row.className="cn-en-row";
+      const name=DOMAIN_CN[it.f]||it.f;
+      const lab=cnEnLabel(name);
+      if(it.a<0.6) lab.style.color="var(--amber)";
+      row.appendChild(lab);
+      row.appendChild(cnEnBar("cn",it.a*100,(it.a*100).toFixed(1)+"%"));
+      const n=cnEnLabel("n="+it.n);
+      n.style.color="var(--muted)";
+      row.appendChild(n);
+      box.appendChild(row);
+    }
+  }
+}
+
 let sampleIdx=0;
 function loadSample(i){
   el("jd").value=SAMPLES[i].jd;
@@ -1376,6 +1508,7 @@ sampleIdx = qs===null ? 0 : Math.max(0, Math.min(SAMPLES.length-1, parseInt(qs,1
 loadSample(sampleIdx);
 loadBatchSample();
 renderCalib();
+renderCnEn();
 </script>
 </body>
 </html>
