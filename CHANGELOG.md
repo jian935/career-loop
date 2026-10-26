@@ -4,6 +4,37 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.31] - 2026-10-26
+
+### 投稿可交付化：单文件发布 + 材料勘误（1024 造物挑战）
+
+活动细则拿到后逐条核对，修掉材料里的过期数字与虚标，并补上真正的阻塞项——
+**作品没有可访问链接**（原材料指向从未部署的 GitHub Pages）。
+
+**新增发布路径（`scripts/build_standalone.py`）**
+- 从 `docs/index.html` 生成自包含单文件 `docs/standalone.html`：把
+  `evidence-scatter.png` 内联为 data URI、改写本地 md 链接、把 `og:url` /
+  `og:image` 换成发布地址与公网直链。幂等，`--check` 可校验同步，已接入 CI。
+- 为什么需要两份：`index.html` 依赖相对路径资源、绑定 GitHub Pages 的多文件布局；
+  资料库发布只接受单文件，直接上传会裂图。
+
+**已上线**
+- 资料库网页作品：`https://workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE`
+  （实测 301→200，`<title>` 正常渲染、免登录可访问）
+
+**材料勘误**（`docs/submission.md` / `docs/share-kit.md` / `docs/repo-page.md`）
+- 话题：占位 `#1024造物挑战` → 活动细则规定的 `#WorkBuddy` `#1024程序员节`
+  （话题写错直接丢掉 10 分社媒基础分）
+- 链接：死链 `jian935.github.io/career-loop/` → 已发布的真实链接
+- 数字：单测 231→238、CLI 子命令 16→22、"66 个岗位族"→69
+- 表述：「60 秒上手」→ README 实际章节「快速开始」；「一键复制链接」→ 实际叫
+  「复制本页链接」
+- 补漏：v0.8.29 报告导出 PDF、v0.8.30 benchmark 标注框架（材料此前均未提）
+
+**实测发现（已写进 share-kit）**
+- 发布平台会覆写页面的 `og:image`（线上读到的是 WorkBuddy 默认图标），
+  自定义封面不生效 → 社媒发帖必须**手动上传配图**，不能指望链接卡片出图。
+
 ## [0.8.30] - 2026-10-26
 
 ### benchmark v1 脚手架（C 类可扩展项）——把"看起来对"变成可复现的一致性数字

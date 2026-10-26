@@ -23,7 +23,7 @@
 
 <p align="center">
   
-  <a href="https://jian935.github.io/career-loop/"><b>▶ 在线试用（免安装，浏览器里跑）</b></a>
+  <a href="https://workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE"><b>▶ 在线试用（免安装，浏览器里跑）</b></a>
   
   \&nbsp;·\&nbsp;
   
@@ -97,8 +97,9 @@ Career-Loop 是一个面向 **所有岗位求职者（尤其应届生）** 的�
 
 ## 在线体验（免安装）
 
-- 直接打开 [`docs/index.html`](docs/index.html)：纯前端，粘贴 JD 和经历就在浏览器里算，数据不上传。
-- 部署到 GitHub Pages：直接跑 `bash scripts/publish_github.sh`（建仓 + 推送 + 开 Pages + 自检一条龙），或手动 `Settings → Pages → Source: Deploy from a branch → Branch: main, Folder: /docs`，之后地址形如 `https://jian935.github.io/career-loop/`。
+- **在线体验（推荐）**：[workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE](https://workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE) —— 免安装、无需登录，粘贴 JD 和经历就在浏览器里算，数据不上传。
+- 本地打开 [`docs/standalone.html`](docs/standalone.html)：同一份自包含单文件（图片已内联），双击即可运行。
+- 部署到 GitHub Pages（备用路径，需能访问 github.com）：跑 `bash scripts/publish_github.sh`（建仓 + 推送 + 开 Pages + 自检一条龙），或手动 `Settings → Pages → Source: Deploy from a branch → Branch: main, Folder: /docs`。
 - 命令行零配置预览核心引擎：`python scripts/demo_cli.py`（免 API Key，离线跑「单 JD 匹配 → 多 JD 排序 → 补强性价比」）。
 
 ## 支持任意岗位（不只 AI）

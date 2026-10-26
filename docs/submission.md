@@ -11,19 +11,25 @@
 ## 2. 一句话简介
 一个可证伪的求职匹配工具：粘贴 JD 和经历，10 秒得到匹配分、逐项缺口，再用你真实的投递结果回算「这个分数到底准不准」。纯前端、数据不上传。
 
-## 3. 访问链接（部署后填）
+## 3. 访问链接
 
-> ⚠️ **当前状态：两条线上地址都还没生效，别直接贴进表单。**
-> - `https://jian935.github.io/career-loop/` —— 仓库未推送、Pages 未开，**打不开**
-> - `https://github.com/jian935/career-loop` —— 同上，**不存在**
->
-> 本机到 github.com 网络不通（DNS 解析到 Twitter/Facebook 的 IP 段、HTTPS 502）。
-> 打通后跑 `bash scripts/publish_github.sh` 即可同时补齐下面两条；
-> 若活动只要求"能打开的作品"，可改用 WorkBuddy 内置「发布为应用」先拿到临时链接。
+### 主链接（已上线，可直接打开）
 
-- 在线体验（GitHub Pages）：`https://jian935.github.io/career-loop/`（部署步骤见第 7 节；未部署前用本地 `docs/index.html` 直接打开）
-- 源码仓库：`https://github.com/jian935/career-loop`
-- 演示视频（2 分 15 秒，135 秒已实测）：`docs/career-loop-demo.mp4`（2026-10-25 按当前引擎数字重制：校准段为同源样例数据真实重算值 r=0.03 并标注数据性质，证据墙含规则+LLM 混合 93.4%）
+**`https://workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE`**
+
+- 形态：资料库网页作品（对应活动要求的「网页应用，含具有明确使用场景和可体验形态的资料库网页作品」）
+- 2026-10-26 实测：`301 → 200 OK`，无需登录即可打开，页面标题正确渲染为
+  「career-loop · 先看清你差在哪」
+- 内容：单文件自包含 HTML（`docs/standalone.html`，234 KB，散点图已内联），
+  粘贴 JD + 经历即在浏览器本地算分，数据不上传
+
+### 辅助材料
+
+- 源码仓库：`https://github.com/jian935/career-loop`（**尚未推送**：本机到 github.com 不通。
+  活动规则不要求开源仓库，仅作加分项，不阻塞投稿）
+- 演示视频（2 分 15 秒 / 135 秒已实测）：`docs/career-loop-demo.mp4`
+  （2026-10-25 按当前引擎数字重制：校准段为同源样例数据真实重算值 r=0.03 并标注数据性质，
+  证据墙含规则+LLM 混合 93.4%）
 
 ## 4. 封面 / 截图
 - 社媒卡片封面：`docs/og-cover.png`（1200×630，已配 OG/Twitter 标签）
@@ -68,23 +74,42 @@ career-loop 面向所有岗位求职者（尤其应届生），解决一个真�
 > 根因是关键词覆盖率在该候选人身上饱和）。评委/面试官可一键
 > `python scripts/real_eval_family.py` / `real_eval_calibrate.py` 复现。网页底部也内嵌了这个「验证闭环 · 证据墙」区块。
 
-## 7. GitHub Pages 部署
-仓库根 `.gitignore` 已排除个人数据；`docs/` 即站点根：
+## 7. 发布方式
 
-**方式 A（推荐，一条命令）**——在能访问 github.com 的网络下：
+### 主路径：资料库网页发布（已完成）
+
+活动要求「通过资料库活动入口投稿」，且接受「资料库网页作品」，因此发布走资料库而非外部托管：
+
+1. `python scripts/build_standalone.py` —— 从 `docs/index.html` 生成自包含单文件
+   `docs/standalone.html`（把 `evidence-scatter.png` 内联为 data URI，改写本地 md 链接；
+   幂等，可用 `--check` 校验是否与 index.html 同步）
+2. 上传到资料库 → 得到节点 `Jt3O7bi3SUFYI3SG1iOVDE`（kind=web）
+3. 发布该页面 → 公开链接 `https://workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE`
+4. 校验：`curl -sIL` 跟随后为 200，`<title>` 为作品标题（不是登录页）
+
+### 备用：GitHub Pages（本机网络恢复后可补）
+
+仓库根 `.gitignore` 已排除个人数据；`docs/` 即站点根。在能访问 github.com 的网络下：
+
 ```bash
 bash scripts/publish_github.sh
 ```
-脚本会依次做：网络体检（github.com 可达性 + DNS 污染诊断）→ 本地体检（工作区干净 /
+
+脚本依次做：网络体检（github.com 可达性 + DNS 污染诊断）→ 本地体检（工作区干净 /
 密钥扫描 / 站点根就绪）→ 认证检查（gh CLI 或 `GH_TOKEN`）→ 创建 public 仓库 →
 推送 `main` → 开启 Pages（来源 `main` / `/docs`）→ 访问自检。
 凭证只从 `gh auth login` 或环境变量读取，**不写入任何文件、不打印**。
 
-**方式 B（手动）**
-1. GitHub 仓库 → Settings → Pages → Source: Deploy from a branch → Branch: `main`, Folder: `/docs`。
-2. 约 1 分钟后访问 `https://jian935.github.io/career-loop/`。
-3. 校验：链接能打开、og-cover.png 正常加载、分享到社交平台能出富预览卡片。
+手动方式：仓库 → Settings → Pages → Source: Deploy from a branch → `main` / `/docs`，
+约 1 分钟后访问 `https://jian935.github.io/career-loop/`。
 
-## 8. 活动话题（发布时带上，具体以活动官方话题为准）
-- 占位：`#1024造物挑战` / `#WorkBuddy程序员节`（**以活动页公布的准确话题为准**，替换本行）
-- 文案与话题用法见 `docs/share-kit.md`。
+## 8. 活动话题（活动页已明确，非占位）
+
+- **`#WorkBuddy` `#1024程序员节`** —— 活动细则「加分项 · 社交媒体分享」写明，
+  必须带上这两个话题标签
+- ⚠️ 前期占位写的 `#1024造物挑战` 是错的，已全仓库替换
+- 有效分享的四项硬条件（缺一不给分）：① 含本活动或参赛作品信息；② 内容公开可见；
+  ③ **链接可在活动期内正常打开**；④ 带上述话题
+- 社媒分构成：基础 **10 分** + 人气分最高 **20 分**（点赞+收藏 10–30 → +5；31–60 → +10；
+  61–100 → +15；101 及以上 → +20）；点赞数据由主办方 **2026-11-02** 统一核验
+- 文案见 `docs/share-kit.md`（含各平台现成文案，链接与话题已更新为最终值）

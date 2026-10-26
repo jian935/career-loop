@@ -42,6 +42,10 @@ jobs:
         run: python scripts/audit.py
       - name: Web vocabulary parity
         run: python scripts/sync_web_vocab.py --check
+      # 资料库发布用的单文件页（docs/standalone.html）由 index.html 生成。
+      # 改了 index.html 却忘记重跑构建，线上体验版就会是旧内容——用 --check 锁住。
+      - name: Standalone page in sync
+        run: python scripts/build_standalone.py --check
       # 这两项不需要任何私有数据（不像 cross_engine_check 依赖 gitignore 的校准 CSV），
       # 所以能进 CI：网页与 CLI 判的族必须是同一件事。
       - name: Cross-engine check (LLM family)
