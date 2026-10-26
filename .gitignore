@@ -26,3 +26,5 @@ data/llm_eval/
 data/calibration/
 # 截图/出图的中间产物（整页大图等，可由 scripts/ 重跑再生）
 .tmp/
+# 投稿填表实值（含 UserID 等账号标识，绝不入库）
+.local/
