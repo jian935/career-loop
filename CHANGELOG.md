@@ -4,6 +4,32 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.30] - 2026-10-26
+
+### benchmark v1 脚手架（C 类可扩展项）——把"看起来对"变成可复现的一致性数字
+
+补齐 `docs/benchmark-plan.md` 列为缺失的可报告基础设施，**零运行时依赖、全离线**：
+
+- `benchmark/agreement.py` 升级：
+  - `bootstrap_kappa()` 用纯 Python 算 95% CI（numpy 不可用也不引入依赖），
+    `--bootstrap / --seed` 可复现——plan §3「永远报 CI、不报单点估计」落地。
+  - `--datacard` 自动导出 markdown 数据卡（样本量 / 双标注比例 / kappa+CI /
+    分能力表 / 引擎-人工 / 分歧样例 / 复现命令）。
+  - `--consensus` 导出仲裁用标签：一致项 `needs_review=False`；分歧或单标注项
+    `needs_review=True` 并保留 `raw_a / raw_b`，第三轮仲裁不丢原始判断。
+  - 顺手修了 `--engine` 路径的老 bug：`matching.match` 返回 `(matches, used)` 元组，
+    旧代码直接 `.get()` 会崩（因 cases_v0 无标签从未被走到）。
+- `benchmark/annotate.html` 加双标注对比模式：载入第二标注人 JSONL，分歧项红框 +
+  `B: …` 标签高亮，实时「分歧 N / 双标注 M」计数；对比逻辑抽成纯函数
+  `computeDisagreements`（冒烟里真测，还抓出并修了「两人都标时重复计数」的 bug）。
+- `benchmark/build_v1.py`：`plan`（300 对 / 30 族目标）、`scaffold`（空槽位，明确
+  TODO，绝不伪造 JD）、`validate`（族覆盖 + 双标注就绪 + 未就绪检查）。
+- `benchmark/datacard_template.md`：数据卡模板（数值自动填，叙事/法律手工填）。
+
+锁：单测 **231 → 238**（新增 7 条 agreement 测试：kappa 已知值 / bootstrap 确定性 /
+CI 含点估计 / 空对 / 数据卡段落 / 共识标记）；`smoke_web` 新增 annotate.html
+隔离进程自测（4 项）。真实标注数据仍需人工/志愿者提供（不伪造）。
+
 ## [0.8.29] - 2026-10-26
 
 ### 网页报告可导出 PDF / 打印（C 类可扩展项）

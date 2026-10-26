@@ -54,6 +54,8 @@
     transition:border-color .15s,background .15s}
   .req:hover{background:rgba(255,255,255,.04)}
   .req.focus{outline:2px solid rgba(124,92,255,.4);border-color:rgba(124,92,255,.75)}
+  .req.conflict{border-color:var(--bad);box-shadow:0 0 0 2px rgba(251,113,133,.25)}
+  .verdict-b{font-size:11px;color:var(--bad);font-family:var(--mono);margin-left:8px;white-space:nowrap}
   .req .name{font-weight:650}
   .req .key{font-size:11px;color:var(--muted);margin-left:6px;font-family:var(--mono)}
   .req .line{grid-column:1/-1;font-size:11.5px;color:var(--sub);font-family:var(--mono)}
@@ -78,6 +80,8 @@
   <span class="brand">career-loop · annotator</span>
   <input type="text" id="annotator" placeholder="标注人" value="a1">
   <input type="file" id="file" accept=".jsonl,.json,application/json" style="font-size:12px">
+  <input type="file" id="fileB" accept=".jsonl,.json,application/json" style="font-size:12px" title="加载第二标注人 JSONL（双标注对比）">
+  <span class="meta" id="disagreements">分歧 — / 双标注 —</span>
   <span class="meta" id="progress">0 / 0</span>
   <span class="spacer"></span>
   <button id="prev">← 上一条 (p)</button>
@@ -94,7 +98,9 @@
   <p class="hint">
     快捷键：<kbd>1</kbd> 已具备 / <kbd>2</kbd> 部分 / <kbd>3</kbd> 缺失 ·
     <kbd>↑</kbd><kbd>↓</kbd> 切换要求 · <kbd>n</kbd>/<kbd>p</kbd> 换案例 ·
-    进度自动存本地浏览器。判定规则见 <code>annotation_guide.md</code>。
+    进度自动存本地浏览器。判定规则见 <code>annotation_guide.md</code>。<br>
+    双标注：用「第二标注人」按钮载入另一人的 JSONL，分歧项会被红框标出并在标题后显示
+    <code>B: …</code>，右上「分歧 N / 双标注 M」实时统计，便于第三轮仲裁。
   </p>
 </main>
 
@@ -114,6 +120,7 @@ let cases=[];
 let idx=0;
 let focusIdx=0;
 let ann={};
+let annB={};
 let annotator="a1";
 
 function storeKey(){ return "careerloop_bench_v1"; }
@@ -137,6 +144,38 @@ function evidenceOf(c,key){
   const l=labelsOf(c)[key];
   return l?l.evidence||"":"";
 }
+function statusOfB(c,key){
+  const l=annB[c.id];
+  return (l&&l[key])?(l[key].status||""):"";
+}
+function zhStatus(s){ return s==="full"?"已具备":s==="partial"?"部分":"缺失"; }
+
+// Pure: given two annotation maps and the case id order, return the list of
+// (case, capability) where both annotators labeled but disagreed, plus how many
+// cases were double-labeled. No DOM access -> unit-testable in Node.
+function computeDisagreements(aAnn, bAnn, caseIds){
+  const disagreements=[];
+  let doubleLabeled=0;
+  for(const cid of caseIds){
+    const la=aAnn[cid]||{}; const lb=bAnn[cid]||{};
+    const keys=[...new Set(Object.keys(la).concat(Object.keys(lb)))];
+    let caseDouble=false;
+    for(const k of keys){
+      const sa=(la[k]||{}).status; const sb=(lb[k]||{}).status;
+      if(sa&&sb){ caseDouble=true; if(sa!==sb) disagreements.push({id:cid,key:k,a:sa,b:sb}); }
+    }
+    if(caseDouble) doubleLabeled++;
+  }
+  return {disagreements, doubleLabeled};
+}
+
+function updateDisagreements(){
+  const elc=document.getElementById("disagreements");
+  if(!elc) return;
+  if(!Object.keys(annB).length){ elc.textContent="分歧 — / 双标注 —"; return; }
+  const {disagreements, doubleLabeled}=computeDisagreements(ann, annB, cases.map(c=>c.id));
+  elc.textContent=`分歧 ${disagreements.length} / 双标注 ${doubleLabeled}`;
+}
 function reviewed(c){
   return c.requirements.length>0 && c.requirements.every(r=>statusOf(c,r.key));
 }
@@ -151,14 +190,21 @@ function render(){
   focusIdx=Math.min(focusIdx, c.requirements.length-1);
 
   c.requirements.forEach((r,i)=>{
+    const sa=statusOf(c,r.key), sb=statusOfB(c,r.key);
     const row=document.createElement("div");
     row.className="req"+(i===focusIdx?" focus":"");
+    if(sb && sb!==sa) row.className+=" conflict";
     row.dataset.i=i;
 
     const left=document.createElement("div");
     const name=document.createElement("span"); name.className="name"; name.textContent=r.label;
     const key=document.createElement("span"); key.className="key"; key.textContent=r.key+" · w"+r.weight;
     left.appendChild(name); left.appendChild(key);
+    if(sb && sb!==sa){
+      const vb=document.createElement("span"); vb.className="verdict-b";
+      vb.textContent="B: "+zhStatus(sb);
+      left.appendChild(vb);
+    }
 
     const btns=document.createElement("div"); btns.className="btns";
     ["full","partial","missing"].forEach((s,si)=>{
@@ -215,6 +261,18 @@ document.getElementById("file").addEventListener("change", async (e)=>{
   const text=await f.text();
   cases=parseJSONL(text);
   idx=0; focusIdx=0;
+  annB={}; updateDisagreements();
+  render();
+});
+
+document.getElementById("fileB").addEventListener("change", async (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const text=await f.text();
+  annB={};
+  for(const row of parseJSONL(text)){
+    if(row.id && row.labels) annB[row.id]=row.labels;
+  }
+  updateDisagreements();
   render();
 });
 

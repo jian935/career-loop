@@ -350,6 +350,43 @@ if (__alerts.length) out.alertsNote = __alerts.slice(0, 5);
 process.stdout.write(JSON.stringify(out));
 """
 
+# 单独隔离跑 benchmark/annotate.html（不与 index.html 同进程，避免函数名重定义污染）。
+# 重点验证：① 整段脚本加载期不崩（render 级崩溃的类）；
+#          ② 双标注对比纯函数 computeDisagreements 算得对。
+ANNOTATE_DRIVER = r"""
+function el(id){ return document.getElementById(id); }
+const aOut = {steps: [], errors: []};
+function step(name, fn){
+  try { fn(); aOut.steps.push({name, ok:true}); }
+  catch(e){ aOut.steps.push({name, ok:false}); aOut.errors.push(name+"\n    "+(e&&e.stack||e).split("\n").slice(0,3).join("\n    ")); }
+}
+step("脚本加载后 computeDisagreements 是函数", () => {
+  if(typeof computeDisagreements !== "function") throw new Error("computeDisagreements 未定义");
+});
+step("parseJSONL 能解析标注行", () => {
+  const rows = parseJSONL('{"id":"c1","labels":{"k1":{"status":"full"}}}\n\n{"id":"c2","labels":{}}');
+  if(rows.length !== 2) throw new Error("应解析出 2 行，实际 " + rows.length);
+  if(rows[0].id !== "c1") throw new Error("第一行 id 不对");
+});
+step("computeDisagreements 找到 1 处分歧、双标注 2", () => {
+  const aAnn = {"c1":{"k1":{"status":"full"}}, "c2":{"k1":{"status":"full"}}};
+  const bAnn = {"c1":{"k1":{"status":"partial"}}, "c2":{"k1":{"status":"full"}}};
+  const r = computeDisagreements(aAnn, bAnn, ["c1","c2"]);
+  if(r.disagreements.length !== 1) throw new Error("应 1 处分歧，实际 " + r.disagreements.length);
+  if(r.disagreements[0].id !== "c1" || r.disagreements[0].key !== "k1")
+    throw new Error("分歧定位错了：" + JSON.stringify(r.disagreements[0]));
+  if(r.doubleLabeled !== 2) throw new Error("双标注数应为 2，实际 " + r.doubleLabeled);
+});
+step("computeDisagreements：仅单标注不计分歧/双标注", () => {
+  const aAnn = {"c1":{"k1":{"status":"full"}}};
+  const bAnn = {};
+  const r = computeDisagreements(aAnn, bAnn, ["c1","c2"]);
+  if(r.disagreements.length !== 0) throw new Error("单标注不应计分歧");
+  if(r.doubleLabeled !== 0) throw new Error("单标注不应计双标注");
+});
+process.stdout.write(JSON.stringify(aOut));
+"""
+
 
 def _node() -> str:
     for cand in (r"C:\Users\llj12\.workbuddy\binaries\node\versions\22.22.2-6\node.exe",
@@ -362,7 +399,54 @@ def _node() -> str:
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
-    return self_test() if "--self-test" in argv else _run()
+    if "--self-test" in argv:
+        return self_test()
+    rc = _run()
+    rc |= _run_annotate()
+    return rc
+
+
+def _run_annotate() -> int:
+    """隔离跑 benchmark/annotate.html 的 <script>，验证双标注对比逻辑。"""
+    import re
+    import tempfile
+
+    ann_html = ROOT / "benchmark" / "annotate.html"
+    if not ann_html.exists():
+        print("[error] 找不到 benchmark/annotate.html", file=sys.stderr)
+        return 1
+    src = ann_html.read_text(encoding="utf-8")
+    m = re.search(r"<script>(.*)</script>", src, re.S)
+    if not m:
+        print("[error] benchmark/annotate.html 里没找到 <script>", file=sys.stderr)
+        return 1
+    js = m.group(1)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        f = Path(tmp) / "smoke_annotate.js"
+        f.write_text(STUB + "\n" + js + "\n" + ANNOTATE_DRIVER, encoding="utf-8")
+        r = subprocess.run([_node(), str(f)],
+                           capture_output=True, text=True, encoding="utf-8")
+        if r.returncode != 0:
+            print("[error] annotate.html JS 跑挂了：", file=sys.stderr)
+            print(r.stderr[:3000], file=sys.stderr)
+            return 1
+        try:
+            out = json.loads(r.stdout)
+        except json.JSONDecodeError:
+            print("[error] annotate 输出不是 JSON:", r.stdout[:400], file=sys.stderr)
+            return 1
+
+    print("benchmark/annotate.html 双标注对比逻辑冒烟")
+    for s in out["steps"]:
+        print(f"  {'✓' if s['ok'] else '✗'} {s['name']}")
+    if out["errors"]:
+        print(f"结论：{len(out['errors'])} 项炸了 ✗")
+        for e in out["errors"]:
+            print("  -", e)
+        return 1
+    print(f"结论：{len(out['steps'])} 项全绿 ✓\n")
+    return 0
 
 
 def self_test() -> int:

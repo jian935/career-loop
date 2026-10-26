@@ -18,6 +18,13 @@ from career_loop.eval import load_dataset, run_eval
 from career_loop.matching.render import _verdict, render as render_fn
 from career_loop.matching import taxonomy_cn
 
+# benchmark/ 下的纯逻辑也要被单测覆盖（agreement.py 的 kappa / bootstrap / 数据卡）。
+# 它零运行时依赖，直接挂到 sys.path 上 import 即可。
+_BENCH_DIR = str(Path(__file__).resolve().parent.parent.parent / "benchmark")
+if _BENCH_DIR not in sys.path:
+    sys.path.insert(0, _BENCH_DIR)
+from agreement import cohen_kappa, bootstrap_kappa  # noqa: E402
+
 
 class TestMatching(unittest.TestCase):
     def test_strong_negative_is_missing(self):
@@ -2393,6 +2400,104 @@ class TestDashboardData(unittest.TestCase):
                     dashdata.render_gaps_svg(board)):
             self.assertTrue(svg.strip())
             self.assertNotIn("<circle", svg)
+
+
+class TestBenchmarkAgreement(unittest.TestCase):
+    """agreement.py 的纯逻辑：kappa / bootstrap CI / 数据卡 / 共识导出。
+
+    这部分是 benchmark v1 框架里最该被锁住的统计逻辑——它零运行时依赖、
+    可离线，且直接决定「kappa >= 0.70」这条对外结论能不能站得住。
+    """
+
+    def setUp(self):
+        self._d = tempfile.mkdtemp()
+
+    def _tmp(self, name, text):
+        p = Path(self._d) / name
+        p.write_text(text, encoding="utf-8")
+        return str(p)
+
+    def test_cohen_kappa_perfect_agreement_is_one(self):
+        pairs = [("full", "full"), ("partial", "partial"), ("missing", "missing")]
+        self.assertAlmostEqual(cohen_kappa(pairs), 1.0, places=4)
+
+    def test_cohen_kappa_chance_agreement_is_zero(self):
+        # A/B 各 50% 分布且相互独立 → 期望一致率 == 偶然一致率 → kappa≈0
+        pairs = [("full", "full"), ("full", "partial"),
+                 ("partial", "full"), ("partial", "partial")]
+        self.assertAlmostEqual(cohen_kappa(pairs), 0.0, places=4)
+
+    def test_bootstrap_kappa_deterministic_same_seed(self):
+        pairs = [("full", "full"), ("full", "partial"), ("partial", "full"),
+                 ("partial", "partial"), ("full", "full"), ("partial", "partial")]
+        self.assertEqual(bootstrap_kappa(pairs, 500, 7), bootstrap_kappa(pairs, 500, 7))
+
+    def test_bootstrap_kappa_contains_point_estimate(self):
+        pairs = [("full", "full"), ("full", "partial"), ("partial", "partial"),
+                 ("missing", "missing"), ("full", "full"), ("partial", "partial"),
+                 ("missing", "full"), ("full", "full")]
+        point = cohen_kappa(pairs)
+        lo, hi = bootstrap_kappa(pairs, 1000, 0)
+        self.assertIsNotNone(lo)
+        self.assertLessEqual(lo, point)
+        self.assertGreaterEqual(hi, point)
+
+    def test_bootstrap_kappa_too_few_pairs_returns_none(self):
+        self.assertEqual(bootstrap_kappa([("full", "full")], 100, 0), (None, None))
+        self.assertEqual(bootstrap_kappa([], 100, 0), (None, None))
+
+    def _make_files(self):
+        cases = [
+            {"id": "c1", "language": "zh", "job_family": "finance", "jd": "JD1",
+             "profile": "P1", "requirements": [{"key": "fin_tax", "label": "税", "weight": 2, "line": "l"}], "labels": {}},
+            {"id": "c2", "language": "zh", "job_family": "sales", "jd": "JD2",
+             "profile": "P2", "requirements": [{"key": "sales_bd", "label": "bd", "weight": 2, "line": "l"}], "labels": {}},
+        ]
+        cases_p = self._tmp("cases.jsonl", "\n".join(json.dumps(c, ensure_ascii=False) for c in cases) + "\n")
+        a = [{"id": "c1", "annotator": "a1", "labels": {"fin_tax": {"status": "full", "evidence": "e"}}, "reviewed": True},
+             {"id": "c2", "annotator": "a1", "labels": {"sales_bd": {"status": "full", "evidence": "e"}}, "reviewed": True}]
+        b = [{"id": "c1", "annotator": "a2", "labels": {"fin_tax": {"status": "partial", "evidence": "e"}}, "reviewed": True},
+             {"id": "c2", "annotator": "a2", "labels": {"sales_bd": {"status": "full", "evidence": "e"}}, "reviewed": True}]
+        a_p = self._tmp("a.jsonl", "\n".join(json.dumps(x, ensure_ascii=False) for x in a) + "\n")
+        b_p = self._tmp("b.jsonl", "\n".join(json.dumps(x, ensure_ascii=False) for x in b) + "\n")
+        return cases_p, a_p, b_p
+
+    def test_datacard_export_contains_key_sections(self):
+        import agreement
+        cases_p, a_p, b_p = self._make_files()
+        dc = self._tmp("datacard.md", "")
+        argv = ["agreement.py", "--cases", cases_p, "--a", a_p, "--b", b_p,
+                "--bootstrap", "2000", "--seed", "0", "--datacard", dc]
+        old = sys.argv
+        sys.argv = argv
+        try:
+            self.assertEqual(agreement.main(), 0)
+        finally:
+            sys.argv = old
+        text = Path(dc).read_text(encoding="utf-8")
+        for needle in ("Cohen's kappa", "## 2. 标注一致性", "## 3. 分能力一致性",
+                      "复现命令", "分歧样例"):
+            self.assertIn(needle, text)
+
+    def test_consensus_export_flags_disagreements(self):
+        import agreement
+        cases_p, a_p, b_p = self._make_files()
+        cs = self._tmp("consensus.jsonl", "")
+        argv = ["agreement.py", "--cases", cases_p, "--a", a_p, "--b", b_p, "--consensus", cs]
+        old = sys.argv
+        sys.argv = argv
+        try:
+            self.assertEqual(agreement.main(), 0)
+        finally:
+            sys.argv = old
+        rows = [json.loads(l) for l in Path(cs).read_text(encoding="utf-8").splitlines() if l.strip()]
+        by_id = {r["id"]: r for r in rows}
+        # c1 的 fin_tax：A=full / B=partial → 分歧 → needs_review=True
+        self.assertTrue(by_id["c1"]["labels"]["fin_tax"]["needs_review"])
+        self.assertEqual(by_id["c1"]["labels"]["fin_tax"]["raw_a"], "full")
+        self.assertEqual(by_id["c1"]["labels"]["fin_tax"]["raw_b"], "partial")
+        # c2 两人均 full → 一致 → needs_review=False
+        self.assertFalse(by_id["c2"]["labels"]["sales_bd"]["needs_review"])
 
 
 if __name__ == "__main__":

@@ -287,6 +287,27 @@ The mapping is heuristic keyword matching, not official data.
 If you have a labeled dataset of (JD, profile, outcome), open an issue — a shared
 benchmark is the most useful contribution this project could receive.
 
+## 8. Human-labeled benchmark (v1 framework, `benchmark/`)
+
+`benchmark/` holds the public, **human-labeled** benchmark that turns "it looks
+right" into numbers other people can reproduce. The **v1 framework is ready and
+fully offline** (zero runtime dependency):
+
+- `build_v1.py plan|scaffold|validate` — the 300-case / 30-family target manifest,
+  empty id/family slots, and coverage + double-label readiness checks.
+- `annotate.html` — keyboard-first labeling UI with a **double-label compare mode**
+  (load a second annotator's JSONL, disagreements highlighted live).
+- `agreement.py` — Cohen's kappa **with bootstrap 95% CI**, a reproducible
+  auto-generated data card (`--datacard`), and adjudication-ready consensus labels
+  (`--consensus`).
+- `datacard_template.md` — the data-card template (numbers auto-filled; narrative +
+  legal sections filled by hand).
+
+What is still pending is **human labeling**: 300 real pairs, two independent
+annotators on >= 20%, kappa >= 0.70. See `benchmark/README.md`. Until real labels
+exist, **no accuracy number is quoted from that directory** — the v0 seed cases
+ship with `labels: {}`.
+
 What building that benchmark actually requires (data volume, annotation rules,
 statistical power, legal constraints) is documented in
 [benchmark-plan.md](benchmark-plan.md).

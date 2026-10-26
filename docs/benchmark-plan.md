@@ -121,13 +121,13 @@ no evidence or an explicit negative.
 **Can be done without your private data (v0 kit is in `benchmark/`):**
 
 - JSONL schema and annotation guide. ✅ `benchmark/schema.md`, `annotation_guide.md`
-- Offline annotation tool. ✅ `benchmark/annotate.html`
-- Cohen's kappa + engine-vs-human script. ✅ `benchmark/agreement.py`
+- Offline annotation tool with double-label compare mode. ✅ `benchmark/annotate.html`
+- Cohen's kappa + bootstrap 95% CI + data card + consensus export. ✅ `benchmark/agreement.py`
+- Data-card template. ✅ `benchmark/datacard_template.md`
+- v1 scaffold (300-case / 30-family plan, empty slots, validate). ✅ `benchmark/build_v1.py`
 - Seed cases. ✅ `benchmark/cases_v0.jsonl` (10 pairs, labels empty)
-- A local annotation tool (single HTML, keyboard-first, exports JSONL).
-- Cohen's kappa + confusion-matrix script.
 - Public-ATS fetcher for greenhouse/lever/ashby (respecting their public JSON).
-- Metrics report + data card template + CI job.
+- Metrics report + CI job.
 
 **Only you (or a volunteer cohort) can provide:**
 
