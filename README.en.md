@@ -35,7 +35,7 @@
   
   &nbsp;·&nbsp;
   
-  <a href="#the-demo-video-2m15s">Demo video (2m15s)</a>
+  <a href="#the-demo-video-2m11s">Demo video (2m11s)</a>
   
   &nbsp;·&nbsp;
   
@@ -110,12 +110,12 @@ that means the model was guessing — and you now have the data to fix the weigh
 
 ---
 
-## The demo video (2m15s)
+## The demo video (2m11s)
 
 A narrated walkthrough of the full loop: match → decide → collect → evaluate →
 calibrate → close the loop.
 
-[▶ Play / download the demo video (MP4, 2m15s)](docs/career-loop-demo.mp4)
+[▶ Play / download the demo video (MP4, 2m11s)](docs/career-loop-demo.mp4)
 
 ---
 
