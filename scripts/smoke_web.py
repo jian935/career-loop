@@ -261,6 +261,23 @@ step("导出 Markdown 报告（单 JD 那条链路）", () => {
   return t.slice(0, 60).replace(/\r?\n/g, "\\n");
 });
 
+step("导出 PDF：buildPrintHtml 自检（无 undefined/NaN）", () => {
+  const sample = {
+    daily:false,
+    ranked:[{title:"AI 产品经理", score:"62.0%", due:"2026-11-30", gap:"补强：数据指标设计"}],
+    industries:[{name:"产品", cov:"80%"}],
+    single:{ base:62.0,
+      reqs:[{label:"需求分析",status:"full"},{label:"数据分析",status:"partial"},{label:"项目管理",status:"missing"}],
+      ups:[{label:"数据分析",old:62.0,newScore:71.3,delta:9.3}] }
+  };
+  const h = buildPrintHtml(sample);
+  if(!h || h.length < 80) throw new Error("buildPrintHtml 输出太短：" + (h?h.length:0));
+  if(h.indexOf("undefined") >= 0) throw new Error("打印报告出现 undefined");
+  if(h.indexOf("NaN") >= 0) throw new Error("打印报告出现 NaN");
+  if(h.indexOf("单岗位匹配报告") < 0 || h.indexOf("该投哪些") < 0) throw new Error("缺少关键标题");
+  return "ok " + h.length + " 字符";
+});
+
 // 3) 其余模块
 step("全行业适配 renderScan", () => { renderScan(batchProfileText); return "ok"; });
 step("实习方向推荐 renderInternships", () => { renderInternships(batchProfileText); return "ok"; });

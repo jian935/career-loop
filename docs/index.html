@@ -468,6 +468,37 @@
   .calib-item .del:hover{color:#FCA5A5}
   .calib-tools{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:12px}
 
+
+  .res-actions{margin-top:14px}
+
+  /* 可打印报告（导出 PDF / 打印）：屏幕不显示，仅打印时显现 */
+  #reportPrint{display:none}
+  @media print{
+    body{background:#fff!important}
+    body>*:not(#reportPrint){display:none!important}
+    #reportPrint{display:block!important;padding:24px 28px;color:#1a1a1a;
+      font:14px/1.65 -apple-system,"Segoe UI",Roboto,"Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif}
+    #reportPrint .rp-head{display:flex;justify-content:space-between;align-items:baseline;
+      border-bottom:2px solid #1a1a1a;padding-bottom:8px;margin-bottom:18px}
+    #reportPrint .rp-logo{font-weight:700;font-size:18px;letter-spacing:.5px}
+    #reportPrint .rp-sub{color:#666;font-size:12px}
+    #reportPrint .rp-h1{font-size:20px;margin:18px 0 10px;page-break-after:avoid}
+    #reportPrint h2{font-size:15px;margin:16px 0 6px;border-left:3px solid #8B6BFF;padding-left:8px;page-break-after:avoid}
+    #reportPrint .rp-score{font-size:14px;margin-bottom:8px}
+    #reportPrint .rp-score b{font-size:22px;color:#8B6BFF}
+    #reportPrint .rp-tbl{width:100%;border-collapse:collapse;font-size:13px;page-break-inside:avoid}
+    #reportPrint .rp-tbl th,#reportPrint .rp-tbl td{border:1px solid #ddd;padding:6px 10px;text-align:left}
+    #reportPrint .rp-tbl th{background:#f5f5f7}
+    #reportPrint .rp-ok{color:#0a8a3f;font-weight:600}
+    #reportPrint .rp-part{color:#b8860b;font-weight:600}
+    #reportPrint .rp-miss{color:#c0392b;font-weight:600}
+    #reportPrint .rp-ups,#reportPrint .rp-ind,#reportPrint .rp-rank{margin:6px 0;padding-left:20px;page-break-inside:avoid}
+    #reportPrint .rp-rank li{margin:4px 0}
+    #reportPrint .rp-s{font-weight:700;color:#8B6BFF}
+    #reportPrint .rp-due{color:#2563eb;font-size:12px}
+    #reportPrint .rp-gap{color:#0a8a3f;font-size:12px}
+    #reportPrint .rp-foot{margin-top:24px;padding-top:8px;border-top:1px solid #eee;color:#999;font-size:12px}
+  }
 </style>
 </head>
 <body>
@@ -484,7 +515,7 @@
       <circle cx="23.5" cy="16" r="2.1" fill="#22D3EE"/>
     </svg>
     <span>career-loop</span>
-    <span class="ver">v0.8.28</span>
+    <span class="ver">v0.8.29</span>
   </a>
   <div class="nav-links">
     <a href="#app">Demo</a>
@@ -544,6 +575,7 @@
         <div class="matrix" id="matrix"></div>
         <h3>最划算的补强</h3>
         <ul class="uplift" id="uplift"></ul>
+        <div class="res-actions"><button id="exportPdfTopBtn" class="btn-export">导出 PDF / 打印</button></div>
       </section>
     </div>
   </div>
@@ -568,6 +600,7 @@
       <button id="rankBtn" class="btn-primary">① 排序：该投哪些</button>
       <button id="scanBtn" class="btn-ghost sm">② 看全行业适配</button>
       <button id="exportBtn" class="btn-export">导出 Markdown 报告</button>
+      <button id="exportPdfBtn" class="btn-export">导出 PDF / 打印</button>
       <button id="batchSample" class="btn-ghost sm">载入示例</button>
       <span class="btn-sep"></span>
       <button id="dailyBtn" class="btn-ghost sm">③ 按今日清单排序（先到期先投）</button>
@@ -913,6 +946,8 @@
   <span>MIT · 本地优先 · 匹配分可证伪</span>
   <span><a href="https://github.com/jian935/career-loop">GitHub</a> · <a href="https://github.com/jian935/career-loop/tree/main/docs">方法论</a> · <button type="button" class="linkbtn" onclick="try{navigator.clipboard.writeText(location.href);alert('链接已复制，带上活动话题去分享吧～');}catch(e){alert('请手动复制地址栏链接分享～');}">复制本页链接</button></span>
 </footer>
+
+<div id="reportPrint"></div>
 
 <script>
 /* VOCAB:BEGIN 由 scripts/sync_web_vocab.py 从 career_loop/matching/schema.py 自动生成，勿手改 */
@@ -1854,43 +1889,116 @@ function _txt(node, sel){
   const n = node && node.querySelector && node.querySelector(sel);
   return n ? (n.textContent || "").trim() : "";
 }
-function exportReport(){
-  let md="# career-loop 匹配报告\n\n";
+/** 把当前页面上的报告内容抽成结构化数据：MD 导出与 PDF 打印共用，避免两边漂移。 */
+function getReportData(){
+  const d={daily:false, ranked:[], industries:[], single:null};
   if(el("rankList").children.length){
-    const isDaily = (el("rankHead").textContent||"").indexOf("今日清单") === 0;
-    md+="## "+(isDaily ? "今日投递清单（先到期先投）" : "该投哪些（按匹配分排序）")+"\n\n";
-    [...el("rankList").children].forEach((c,i)=>{
-      const due=_txt(c,".job-due");
-      md+=(i+1)+". **"+_txt(c,".job-title")+"** — "+_txt(c,".job-score")+
-          (due?"　"+due:"")+(_txt(c,".job-gap")?"　"+_txt(c,".job-gap"):"")+"\n";
+    d.daily=(el("rankHead").textContent||"").indexOf("今日清单")===0;
+    [...el("rankList").children].forEach(c=>{
+      d.ranked.push({title:_txt(c,".job-title"), score:_txt(c,".job-score"),
+                     due:_txt(c,".job-due"), gap:_txt(c,".job-gap")});
     });
-    md+="\n";
   }
   if(el("industryList").children.length){
-    md+="## 你的经历适配哪些行业（覆盖度 Top）\n\n";
     [...el("industryList").children].slice(0,10).forEach(c=>{
-      md+="- "+_txt(c,".ind-name")+"："+_txt(c,".ind-cov")+"\n";
+      d.industries.push({name:_txt(c,".ind-name"), cov:_txt(c,".ind-cov")});
     });
-    md+="\n";
   }
   if(lastSingle && !el("rankList").children.length){
-    md+="## 单岗位匹配\n\n- 匹配分："+lastSingle.base.toFixed(1)+"%\n";
-    md+="- 能力项：\n";
-    lastSingle.reqs.slice().sort((a,b)=>b.weight-a.weight).forEach(r=>{
-      const st=lastSingle.matches[r.key].status;
-      md+="  - ["+ST_LABEL[st]+"] "+r.label+"\n";
-    });
-    md+="\n## 最划算的补强\n\n";
-    lastSingle.ups.slice(0,5).forEach(u=>{
-      md+="- "+u.req.label+"："+lastSingle.base.toFixed(1)+"% → "+u.newScore.toFixed(1)+"% (+"+u.delta.toFixed(1)+")\n";
-    });
+    d.single={
+      base:lastSingle.base,
+      reqs:lastSingle.reqs.slice().sort((a,b)=>b.weight-a.weight).map(r=>({
+        label:r.label, status:lastSingle.matches[r.key].status})),
+      ups:lastSingle.ups.slice(0,5).map(u=>({
+        label:u.req.label, old:lastSingle.base, newScore:u.newScore, delta:u.delta}))
+    };
   }
-  md+="\n---\n由 career-loop 生成 · 本地计算 · 匹配分可证伪\n";
+  return d;
+}
+
+function exportReport(){
+  const d=getReportData();
+  const L=[];
+  L.push("# career-loop 匹配报告", "");
+  if(d.ranked.length){
+    L.push("## "+(d.daily?"今日投递清单（先到期先投）":"该投哪些（按匹配分排序）"), "");
+    d.ranked.forEach((c,i)=>{
+      L.push((i+1)+". **"+c.title+"** — "+c.score+(c.due?"　"+c.due:"")+(c.gap?"　"+c.gap:""));
+    });
+    L.push("");
+  }
+  if(d.industries.length){
+    L.push("## 你的经历适配哪些行业（覆盖度 Top）", "");
+    d.industries.forEach(c=>{ L.push("- "+c.name+"："+c.cov); });
+    L.push("");
+  }
+  if(d.single){
+    L.push("## 单岗位匹配", "", "- 匹配分："+d.single.base.toFixed(1)+"%", "- 能力项：");
+    d.single.reqs.forEach(r=>{ L.push("  - ["+ST_LABEL[r.status]+"] "+r.label); });
+    L.push("", "## 最划算的补强");
+    d.single.ups.forEach(u=>{ L.push("- "+u.label+"："+u.old.toFixed(1)+"% → "+u.newScore.toFixed(1)+"% (+"+u.delta.toFixed(1)+")"); });
+  }
+  L.push("", "---", "由 career-loop 生成 · 本地计算 · 匹配分可证伪");
+  const md=L.join("\n");
   const blob=new Blob([md],{type:"text/markdown;charset=utf-8"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob); a.download="career-loop-report.md";
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ===== 导出 PDF / 打印：把报告渲染成一份干净的可打印 HTML =====
+   零依赖：走浏览器原生打印（Ctrl/⌘+P 的「另存为 PDF」），不引入任何 JS 库。
+   屏幕上看不到这份 HTML，仅打印/导出 PDF 时显现（见 @media print）。 */
+function buildPrintHtml(d){
+  const esc=function(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
+  const today=new Date().toLocaleDateString("zh-CN");
+  let h='<div class="rp-head"><div class="rp-logo">career-loop</div>'
+       +'<div class="rp-sub">本地计算 · 匹配分可证伪 · '+esc(today)+'</div></div>';
+  if(d.single){
+    h+='<h1 class="rp-h1">单岗位匹配报告</h1>';
+    h+='<div class="rp-score">加权匹配度 <b>'+d.single.base.toFixed(1)+'%</b></div>';
+    h+='<h2>能力项明细</h2><table class="rp-tbl"><thead><tr><th>能力项</th><th>状态</th></tr></thead><tbody>';
+    d.single.reqs.forEach(function(r){
+      const cls=r.status==="full"?"rp-ok":r.status==="partial"?"rp-part":"rp-miss";
+      h+='<tr><td>'+esc(r.label)+'</td><td class="'+cls+'">'+esc(ST_LABEL[r.status])+'</td></tr>';
+    });
+    h+='</tbody></table>';
+    if(d.single.ups.length){
+      h+='<h2>最划算的补强</h2><ul class="rp-ups">';
+      d.single.ups.forEach(function(u){
+        h+='<li><b>'+esc(u.label)+'</b>：'+u.old.toFixed(1)+'% → '+u.newScore.toFixed(1)+'%（+'+u.delta.toFixed(1)+'）</li>';
+      });
+      h+='</ul>';
+    }
+  }
+  if(d.ranked.length){
+    h+='<h1 class="rp-h1">'+(d.daily?"今日投递清单（先到期先投）":"该投哪些（按匹配分排序）")+'</h1>';
+    h+='<ol class="rp-rank">';
+    d.ranked.forEach(function(c){
+      h+='<li><span class="rp-t">'+esc(c.title)+'</span> <span class="rp-s">'+esc(c.score)+'</span>'
+        +(c.due?' <span class="rp-due">'+esc(c.due)+'</span>':'')
+        +(c.gap?' <span class="rp-gap">'+esc(c.gap)+'</span>':'')+'</li>';
+    });
+    h+='</ol>';
+  }
+  if(d.industries.length){
+    h+='<h2>你的经历适配哪些行业（覆盖度 Top）</h2><ul class="rp-ind">';
+    d.industries.forEach(function(c){ h+='<li><b>'+esc(c.name)+'</b>：'+esc(c.cov)+'</li>'; });
+    h+='</ul>';
+  }
+  h+='<div class="rp-foot">由 career-loop 生成 · 数据不离开浏览器 · 本地计算</div>';
+  return h;
+}
+
+function exportPdf(){
+  const d=getReportData();
+  if(!d.ranked.length && !d.industries.length && !d.single){
+    alert("还没有可打印的内容——先跑一次匹配或排序。");
+    return;
+  }
+  el("reportPrint").innerHTML=buildPrintHtml(d);
+  if(typeof window!=="undefined" && typeof window.print==="function") window.print();
 }
 
 /* ============================================================
@@ -2385,6 +2493,8 @@ el("exportDailyBtn").addEventListener("click",exportDaily);
 renderOccupations();
 el("scanBtn").addEventListener("click",()=>renderScan(el("batchProfile").value));
 el("exportBtn").addEventListener("click",exportReport);
+el("exportPdfBtn").addEventListener("click",exportPdf);
+el("exportPdfTopBtn").addEventListener("click",exportPdf);
 el("batchSample").addEventListener("click",loadBatchSample);
 el("calAdd").addEventListener("click",calAdd);
 el("calDemo").addEventListener("click",calDemo);

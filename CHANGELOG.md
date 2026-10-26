@@ -4,6 +4,26 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.29] - 2026-10-26
+
+### 网页报告可导出 PDF / 打印（C 类可扩展项）
+
+给网页 demo 的报告加了「导出 PDF / 打印」按钮（单岗匹配区 + 批量区各一个）。
+零依赖：走浏览器原生打印（Ctrl/⌘+P 的「另存为 PDF」），不引入任何 JS 库，
+契合项目"零核心依赖"的定位。
+
+实现要点：
+- 抽出一个共享的 `getReportData()`，Markdown 导出与 PDF 打印**共用同一份数据源**，
+  避免两份渲染逻辑漂移（这正是之前"网页 vs CLI 能力差"的教训）。
+- `buildPrintHtml()` 是纯函数，把报告拼成一份干净的、带打印样式（`@media print`）
+  的可打印 HTML——屏幕上看不到，只有打印/导出 PDF 时才显现，且页面其余部分被隐藏。
+- 用户投递内容（JD / 简历）经 `esc()` 转义后再进 HTML，防 XSS（与看板 `<script>`
+  转义同一纪律）。
+- `window.print()` 在 Node 测试桩里做了 `typeof` 防御，不会因测试环境缺 `window` 而崩。
+
+锁：`scripts/smoke_web.py` 新增 `buildPrintHtml` 自测（喂合成数据，断言无 `undefined` /
+`NaN`、含关键标题），网页冒烟 **18 → 19 个入口**全绿；词表同步无漂移。
+
 ## [0.8.28] - 2026-10-26
 
 ### hr 词表文档级语境约束（B1）——把"已知弱点"变成"已修弱点"
