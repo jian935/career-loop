@@ -1294,6 +1294,48 @@ class TestGenericWordContextGuard(unittest.TestCase):
         jd = "需要深入理解某业务场景的痛点与流程。"
         self.assertIn("domain", self._keys(jd))
 
+    # --- hr 族语境约束（v0.8.28，B1）---
+    # 中文 JD 里「培训 / 绩效 / 薪酬 / 激励 / 招聘 / 用工」是全员通用模板词，
+    # 单独出现不能算人力岗；只有伴随岗位专属复合词（培训体系 / 招聘渠道 / 薪酬管理 / …）才算。
+    # 门控后实测：hr 假标签 -68%、检测精确率 2.7%→8.4%、真 HR 召回零损失。
+    def test_hr_perf_generic_word_needs_context(self):
+        # 纯福利模板，无任何人力专属复合词 → 不该判出 hr_perf
+        jd = "入职后提供绩效奖金与薪酬补贴，享受五险一金和带薪年假。"
+        self.assertNotIn("hr_perf", self._keys(jd))
+
+    def test_hr_training_generic_word_needs_context(self):
+        # 「岗前培训」是通用培养话术，无培训体系/内训师等复合词 → 不该判出 hr_training
+        jd = "新员工入职后提供岗前培训与 mentor 导师带教。"
+        self.assertNotIn("hr_training", self._keys(jd))
+
+    def test_hr_recruit_generic_word_needs_context(self):
+        # 「我们正在招聘」是全员模板，无招聘渠道/简历筛选等复合词 → 不该判出 hr_recruit
+        jd = "公司正在招聘一名销售专员，欢迎自荐。"
+        self.assertNotIn("hr_recruit", self._keys(jd))
+
+    def test_hr_detected_with_strong_context(self):
+        # 真 HR 岗：招聘渠道 + 绩效管理 + 薪酬体系 + 员工关系 全在 → 必须判出
+        jd = ("岗位职责：负责招聘渠道维护与面试安排，进行绩效管理和薪酬体系设计，"
+              "建立员工关系与劳动关系。")
+        keys = self._keys(jd)
+        self.assertIn("hr_recruit", keys)
+        self.assertIn("hr_perf", keys)
+
+    def test_hr_training_detected_with_compound(self):
+        # 「培训体系 / 内训师」是培训岗专属复合词 → 必须判出 hr_training
+        jd = "负责公司培训体系搭建与内训师团队管理，输出培训课程。"
+        self.assertIn("hr_training", keys := self._keys(jd))
+
+    def test_hr_labor_detected_with_compound(self):
+        jd = "负责员工劳动关系管理与社保公积金办理，处理劳资纠纷。"
+        keys = self._keys(jd)
+        self.assertIn("hr_labor", keys)
+
+    def test_hr_training_enablement_phrase_detected(self):
+        # P34 边界正例：贸易岗「开展培训赋能」不含培训体系等复合词，靠专属短语命中
+        jd = "负责输出各国家通关手册，为各部门海外通关提供参考依据，开展培训赋能。"
+        self.assertIn("hr_training", self._keys(jd))
+
     def test_context_guard_is_synced_to_webpage(self):
         """语境约束表必须同步到网页，否则两边结果会不一致。"""
         from pathlib import Path
@@ -1305,11 +1347,21 @@ class TestGenericWordContextGuard(unittest.TestCase):
         # 表里不能出现能力项自己的泛词（否则等于没约束）
         from career_loop.matching.schema import CONTEXT_REQUIRED
 
+        # 每个 key 的泛词（被门控的词）都不能出现在它自己的语境表里
+        gated = {
+            "engineering": ("服务", "上线"),
+            "domain": ("业务", "场景", "行业", "流程"),
+            "product_sense": ("需求", "访谈"),
+            "adm_archive": ("证照",),
+            "hr_recruit": ("招聘",),
+            "hr_perf": ("绩效", "薪酬", "激励"),
+            "hr_training": ("培训",),
+            "hr_labor": ("用工",),
+        }
         for key, words in CONTEXT_REQUIRED.items():
-            generic = {"engineering": "服务", "domain": "业务",
-                       "product_sense": "需求", "adm_archive": "证照"}[key]
-            self.assertNotIn(generic, words,
-                             f"{key} 的语境表里不能含自己的泛词 {generic!r}")
+            for generic in gated.get(key, ()):
+                self.assertNotIn(generic, words,
+                                 f"{key} 的语境表里不能含自己的泛词 {generic!r}")
 
 
 class TestRealJDExtractionSet(unittest.TestCase):

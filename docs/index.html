@@ -484,7 +484,7 @@
       <circle cx="23.5" cy="16" r="2.1" fill="#22D3EE"/>
     </svg>
     <span>career-loop</span>
-    <span class="ver">v0.8.27</span>
+    <span class="ver">v0.8.28</span>
   </a>
   <div class="nav-links">
     <a href="#app">Demo</a>
@@ -982,7 +982,7 @@ const DOMAIN_PACKS = {
   hr:{
     hr_recruit:{label:"招聘", kw:["招聘","面试","人才盘点","招聘渠道","recruitment","recruiting","sourcing","talent acquisition","hiring"]},
     hr_perf:{label:"绩效/薪酬", kw:["绩效","薪酬","kpi","okr","激励","performance management","compensation","benefits","payroll","incentive"]},
-    hr_training:{label:"培训/组织", kw:["培训","组织发展","企业文化","员工关系","training","learning and development","organizational development","employee engagement"]},
+    hr_training:{label:"培训/组织", kw:["培训","培训赋能","组织发展","企业文化","员工关系","training","learning and development","organizational development","employee engagement"]},
     hr_labor:{label:"劳动法/社保用工", kw:["劳动法","社保","公积金","用工","劳动关系","入离职","labor law","employment law","employee relations","onboarding","offboarding","hr compliance"]},
   },
   education:{
@@ -1268,6 +1268,10 @@ const CONTEXT_REQUIRED = {
   "adm_archive":["档案","归档","存档","印章","用印","盖章","证照管理","证照年审","资质年检","年检","许可证","营业执照"],
   "domain":["业务场景","行业场景","业务流程","业务痛点","业务模式","业务理解","行业理解","业务分析","行业分析","场景设计","痛点","留存","流失","成本结构","商业模式","梳理","理解"],
   "product_sense":["产品需求","需求文档","需求分析","需求评审","需求梳理","需求调研","用户需求","用户洞察","用户调研","用户访谈","访谈用户","产品设计","产品规划","交互","原型","prd","场景设计"],
+  "hr_recruit":["招聘渠道","人才盘点","面试安排","简历筛选","职位发布","招聘流程","招聘计划","招聘工作","招聘需求","人才招聘","校招","社招","猎头","员工关系","劳动关系","劳资","入离职","社保公积金","薪酬管理","薪酬体系","绩效体系","绩效管理","绩效考核","培训体系","培训管理","内训师","培训平台","培训计划","培训课程","培训需求","组织发展","人力资源","人事管理","hrbp","hr","面试","人才盘点","招聘渠道"],
+  "hr_perf":["招聘渠道","人才盘点","面试安排","简历筛选","职位发布","招聘流程","招聘计划","招聘工作","招聘需求","人才招聘","校招","社招","猎头","员工关系","劳动关系","劳资","入离职","社保公积金","薪酬管理","薪酬体系","绩效体系","绩效管理","绩效考核","培训体系","培训管理","内训师","培训平台","培训计划","培训课程","培训需求","组织发展","人力资源","人事管理","hrbp","hr","kpi","okr"],
+  "hr_training":["招聘渠道","人才盘点","面试安排","简历筛选","职位发布","招聘流程","招聘计划","招聘工作","招聘需求","人才招聘","校招","社招","猎头","员工关系","劳动关系","劳资","入离职","社保公积金","薪酬管理","薪酬体系","绩效体系","绩效管理","绩效考核","培训体系","培训管理","内训师","培训平台","培训计划","培训课程","培训需求","组织发展","人力资源","人事管理","hrbp","hr","组织发展","企业文化","员工关系","培训赋能","培训及考核"],
+  "hr_labor":["招聘渠道","人才盘点","面试安排","简历筛选","职位发布","招聘流程","招聘计划","招聘工作","招聘需求","人才招聘","校招","社招","猎头","员工关系","劳动关系","劳资","入离职","社保公积金","薪酬管理","薪酬体系","绩效体系","绩效管理","绩效考核","培训体系","培训管理","内训师","培训平台","培训计划","培训课程","培训需求","组织发展","人力资源","人事管理","hrbp","hr","劳动法","社保","公积金","劳动关系","入离职"],
 };
 const AI_CORE_KW = ["python","pandas","numpy","fastapi","django","gpt","large language model","llm","transformer","prompt engineering","rag","retrieval augmented","vector database","reranking","agent","multi-agent","orchestration","mlops","fine-tuning","pytorch","tensorflow","langchain","langgraph","nlp","natural language processing","computer vision","object detection","recommender","model deployment","kubernetes","etl","data pipeline","embedding","大模型","微调","智能体","检索增强","提示词","函数调用","多智能体"];
 const BOILERPLATE_PATTERNS = [/(?:该|此)?职位来源于[：:]?[^\s。，,；;！!？?]{2,16}/g, /以[^。；;\n]{0,15}理由索要财物[，,]?[^。；;\n]{0,25}涉嫌违法/g];
