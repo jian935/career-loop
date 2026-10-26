@@ -168,6 +168,7 @@ Career-Loop 的差异化就一句话：**匹配分是可被证伪的**。它能�
 **用途一句话**：把「我适不适合这个岗」和「下一步该做什么」从凭感觉，变成可证伪、可校准的数据。
 
 1. **录入** — `add-jd` / `add-profile` 单条录入，或 `collect --dir` 批量采集一个目录下的原始 JD（自动清招聘站噪声、按标题去重）。
+   简历是 `.docx` 可直接喂给任何命令（``career-loop` parse-resume` 先抽文本给你过目，`--file` 也支持 `.docx` / `.pdf`）。
 2. **匹配** — `match` 把 JD 拆成 14 维能力，逐项与经历比对，输出匹配矩阵 + 加权分 + 缺口清单（每条缺口带 JD 原文证据）。
 3. **决策** — `recommend` 给你的经历对一批 JD 排序；`demand` 跨整批 JD 汇总「哪些能力最被需要、你最该补哪一项」。
 4. **投递** — `apply` 记录一次投递（自动算预测分），`status` 查看全部记录。
@@ -606,7 +607,7 @@ career-loop/
 │   ├── dashboard.py     # Streamlit 看板渲染层（可选依赖，只负责画）
 │   ├── dashdata.py      # 看板数据层：漏斗 / 校准 / 置信区间 / 缺口，零依赖、可单测
 │   ├── daily.py         # 每日投递清单：排序 + 截止日解析 + md/csv/ics 导出
-│   └── tests/           # 238 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / 扫描 / LLM 接线 / benchmark kappa·bootstrap / .env / CLI 路由）
+│   └── tests/           # 247 个单元测试（匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 通用岗位 / 实习 / 扫描 / LLM 接线 / benchmark kappa·bootstrap / 简历 docx 解析 / .env / CLI 路由）
 ├── docs/                # 免安装网页 demo（index.html）＋ 截图 / 动图 / 演示视频，可挂 GitHub Pages
 ├── data/
 │   ├── eval_sample.jsonl        # 60 条控制回归集（回归锁）
@@ -627,7 +628,7 @@ career-loop/
 
 ## 质量与自检
 
-- **238 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 非 AI 岗位泛化 / 实习推荐 / 全行业扫描与职级识别 / LLM 接线与自建能力项 / **LLM 族识别后端（回退、auto/blend 分工、提示词覆盖全部岗位族）** / **benchmark 一致性统计（Cohen's kappa、bootstrap 95% CI、数据卡与共识导出）** / `.env` 解析，以及 CLI 的 `--db` 路由（防止命令串库）。
+- **247 个单元测试**：覆盖匹配 / 校准 / 存储 / 推荐 / 采集 / 反事实 / 非 AI 岗位泛化 / 实习推荐 / 全行业扫描与职级识别 / LLM 接线与自建能力项 / **LLM 族识别后端（回退、auto/blend 分工、提示词覆盖全部岗位族）** / **benchmark 一致性统计（Cohen's kappa、bootstrap 95% CI、数据卡与共识导出）** / **简历文件解析（docx 零依赖、编码回退、拒绝路径）** / `.env` 解析，以及 CLI 的 `--db` 路由（防止命令串库）。
 - **41 条 CLI 端到端自检**：正常闭环 + 边界情况（无效 id、空 JD、样本不足、空库、空目录、重复采集、非法状态、坏截止日、职业分类对账）+ `doctor` + `scan` + `daily` 三种导出都要跑得通且文件非空。
 - **网页端到端冒烟**（`python scripts/smoke_web.py`）：把 `docs/index.html` 里**整段 `<script>`** 在 Node 里跑起来挨个点每个入口（18 个：单 JD 匹配 / 批量排序 / 今日清单 / 三种导出 / 全行业适配 / 实习推荐 / 职业分类对账 / 抽取实验室 / 校准看板）。它补的是纯函数比对看不到的一类坏法——页面印 `undefined`、导出按钮抛异常；带 `--self-test`，四种注入的坏法必须全被抓出来。
 - 一条命令复现：`python -m unittest discover -s career_loop/tests`。

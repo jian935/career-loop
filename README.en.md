@@ -21,7 +21,7 @@
   
   <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">
   
-  <img alt="tests" src="https://img.shields.io/badge/tests-238%20passing-4f46e5.svg">
+  <img alt="tests" src="https://img.shields.io/badge/tests-247%20passing-4f46e5.svg">
   
 </p>
 
@@ -163,6 +163,8 @@ descriptions. This repo is the smallest honest implementation of that idea.
 
 1. **Add** — `add-jd` / `add-profile`, or `collect --dir` to bulk-import raw JDs
    from a folder (strips job-board noise, dedupes by title).
+   Resumes can be `.docx` directly (`career-loop parse-resume` extracts the text for
+   you to eyeball first; `--file` accepts `.docx` / `.pdf` too).
 2. **Match** — `match` splits the JD into capability dimensions and compares each
    against your experience: match matrix + weighted score + gap list, every gap
    quoting the JD's original text.
@@ -635,7 +637,7 @@ career-loop/
 │   ├── dashboard.py     # Streamlit rendering layer (optional dep; draws only)
 │   ├── dashdata.py      # board data layer: funnel / calibration / CI / gaps (zero-dep, tested)
 │   ├── daily.py         # daily list: ranking + due-date parsing + md/csv/ics export
-│   └── tests/           # 238 unit tests
+│   └── tests/           # 247 unit tests
 ├── docs/                # zero-install web demo (index.html) + screenshots / GIF / demo video; also the Pages site root
 ├── data/
 │   ├── eval_sample.jsonl        # 60-row control regression set
@@ -656,7 +658,7 @@ career-loop/
 
 ## Quality & self-checks
 
-- **238 unit tests** — matching, calibration, storage, recommendation, collection,
+- **247 unit tests** — matching, calibration, storage, recommendation, collection,
   counterfactuals, non-AI generalisation, internship ranking, industry scan and
   level detection, LLM wiring and self-created capabilities, the LLM family
   backend (fallback, auto/blend split, prompt covering every family), `.env`

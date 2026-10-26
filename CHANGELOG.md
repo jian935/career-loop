@@ -4,6 +4,49 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [0.8.32] - 2026-10-26
+
+### 简历文件解析：网页零依赖读 .docx，CLI 全命令透明支持
+
+C 类最后一项。此前只能手打或粘贴简历，`--profile` 传 `.docx` 会直接报错。
+
+**网页端（`docs/index.html`）**
+- 经历框旁加「读取简历 .docx/.txt」按钮：`.docx` 用浏览器原生
+  `DecompressionStream('deflate-raw')` 自己解 ZIP（读 EOCD → 中央目录 → local header，
+  含 `word/header*.xml` 页眉），**零第三方库、零 CDN、不上传**——保住"本地计算"定位。
+- **老浏览器退路：自己实现 raw inflate（RFC 1951）**。这是真机上才暴露的坑：
+  这台机器的 Edge 构造 `DecompressionStream('deflate-raw')` 直接抛
+  `Unsupported compression format`（该格式 Chrome 103+ 才有），而 Node 22 支持它
+  —— 冒烟全绿、用户点按钮却报错。想过用 `'deflate'`（zlib 格式，Chrome 80+ 就有）替代，
+  但 zlib 尾部 4 字节是**未压缩数据**的 adler32，解压前算不出来；补假值只会得到
+  `incorrect data check`，且实测校验失败时浏览器一个字节都不返回。所以按规范手写
+  解码器：stored / 固定 Huffman / 动态 Huffman 三种块，最后用 ZIP 目录里的
+  uncompressed size 做长度硬校验（长度不符宁可报错，也不返回半截简历）。
+- `.txt/.md` 直读，`TextDecoder` 带 `gb18030` 回退（老系统导出常是 GBK）。
+- `.pdf / .doc / 其他` **明确拒绝并给下一步**，不假装支持：网页解 PDF 要引 pdf.js
+  + 外网 CDN，与"零依赖"冲突，引导用 CLI 转 txt。
+
+**CLI 端**
+- `career_loop/resume.py`：`.docx` 走标准库 `zipfile` + `ElementTree`；
+  `.pdf` 走可选依赖 `pypdf`（新增 `pip install 'career-loop[resume]'`，核心依赖仍是 `[]`）。
+- `cli._read()` 统一改为走 `resume.extract_text()`，于是 `match / scan / recommend /
+  add-profile / add-jd` 等**十几个命令全部**能直接吃 `.docx`，不必先手工转 txt。
+- 新增 `career-loop parse-resume --file 简历.docx [--out x.txt] [--json] [--head N]`：
+  先把抽出的文本打出来给人过目，确认没乱码再喂引擎。
+- 抽不出文字时**报错而不是返回空串**：扫描件 PDF 若静默返回 `""`，引擎会给整份简历
+  打出「全部缺失」，用户看到的是假低分，比报错危险得多。
+
+**锁**
+- 单测 238 → **247**：docx 零依赖解析（含 tab/br/实体/页眉顺序）、空文档报错、
+  GB18030 回退、`.doc` 与未知后缀的拒绝理由、`cli._read` 透明支持、网页 JS 规则未被删。
+- `smoke_web` 19 → **22 项**：新增「简历格式判断拒绝路径」「**真 Zip 解压与 Python
+  同文**」（期望值由 Python 侧 `resume.extract_text` 真实算出，再让 JS 解同一份 docx
+  比对）与「**手写 inflate 能解 Python zlib 压的数据**」（动态 Huffman + stored 两种块，
+  样本由 zlib 直接产出，与真实 docx 的压缩方式一致）。
+- 教训记一笔：**冒烟在 Node 里全绿不等于浏览器能用**。Node 22 支持 `deflate-raw`，
+  这台机器的 Edge 不支持；只有在真浏览器里跑一遍才暴露。已把这条写进
+  `smoke_web.py` 的注释，避免下次又"对着 Node 的绿灯认为功能好了"。
+
 ## [0.8.31] - 2026-10-26
 
 ### 投稿可交付化：单文件发布 + 材料勘误（1024 造物挑战）

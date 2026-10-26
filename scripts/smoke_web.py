@@ -29,6 +29,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 HTML = ROOT / "docs" / "index.html"
+if str(ROOT) not in sys.path:  # 让 scripts/ 下也能 import career_loop（算 docx 期望值）
+    sys.path.insert(0, str(ROOT))
 
 STUB = r"""
 // ---------- 最小 DOM 桩 ----------
@@ -278,6 +280,23 @@ step("导出 PDF：buildPrintHtml 自检（无 undefined/NaN）", () => {
   return "ok " + h.length + " 字符";
 });
 
+step("简历格式判断：pdf/doc 必须明确拒绝并给出替代路径", () => {
+  const cases = [["a.PDF", "pdf.js"], [".doc", ".docx"], ["x.exe", "只支持"]];
+  for(const [name, mustSay] of cases){
+    let msg = "";
+    try { resumeKind(name); }
+    catch(e) { msg = String(e && e.message || e); }
+    if(!msg) throw new Error(name + " 应该被拒绝却通过了");
+    if(msg.indexOf(mustSay) < 0)
+      throw new Error(name + " 的提示里没有出现「" + mustSay + "」，用户不知道下一步怎么做：" + msg);
+  }
+  if(resumeKind("简历.DOCX") !== "docx") throw new Error(".DOCX 大小写没处理");
+  if(resumeKind("notes.md") !== "text") throw new Error(".md 没走纯文本路径");
+  if(docxXmlToText(dueData.xml_fixture) !== dueData.xml_expected)
+    throw new Error("docxXmlToText 与 Python resume._xml_paragraphs 规则不一致");
+  return "pdf/doc/exe 均拒绝且给了替代路径";
+});
+
 // 3) 其余模块
 step("全行业适配 renderScan", () => { renderScan(batchProfileText); return "ok"; });
 step("实习方向推荐 renderInternships", () => { renderInternships(batchProfileText); return "ok"; });
@@ -346,8 +365,55 @@ step("事件绑定指向的元素 id 都真实存在", () => {
   return [...used].join(", ");
 });
 
-if (__alerts.length) out.alertsNote = __alerts.slice(0, 5);
-process.stdout.write(JSON.stringify(out));
+// 7) 简历 docx 解析：与 Python 侧同一份规则、真 Zip 解压（docxToText 是 async）
+(async () => {
+  const nm = "简历 docx 真解压（含页眉，与 Python resume 同文）";
+  try {
+    const bin = atob(dueData.docx_b64);
+    const u8 = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
+    if(typeof DecompressionStream !== "function")
+      throw new Error("当前 Node 不支持 DecompressionStream，验证不了解压路径");
+    const got = await docxToText(u8.buffer);
+    if(got !== dueData.docx_expected)
+      throw new Error("与 Python resume 抽出不一致\n  网页=" + JSON.stringify(got) +
+                      "\n  Python=" + JSON.stringify(dueData.docx_expected));
+    out.steps.push({name:nm, ok:true, info:got.split("\n").length + " 行一致"});
+  } catch (e) {
+    out.steps.push({name:nm, ok:false, info:String(e && e.message || e)});
+    out.errors.push(nm + "\n    " + String(e && e.stack || e).split("\n").slice(0,3).join("\n    "));
+  }
+  // 8) 老浏览器退路：自己实现的 raw inflate。真机抓到的坑——这台机器的 Edge
+  //    构造 DecompressionStream("deflate-raw") 直接抛 "Unsupported compression
+  //    format"，而 Node 22 支持它，于是冒烟全绿、真浏览器却读不了 docx。
+  //    样本由 Python zlib 生成（真实 docx 就是这么压的），覆盖动态 Huffman 与 stored 块。
+  {
+    const nm2 = "docx 解压退路：手写 inflate 能解 Python zlib 压的数据";
+    try {
+      const cases = [
+        ["动态 Huffman（长中文，多块）", dueData.raw_deflate_dynamic_b64, dueData.raw_plain_long],
+        ["stored 块（不可压缩数据）", dueData.raw_deflate_stored_b64, dueData.raw_plain_short],
+      ];
+      const notes = [];
+      for (const [label, b64, want] of cases) {
+        const bin = atob(b64);
+        const u8 = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+        const got = new TextDecoder().decode(_inflateRawBytes(u8));
+        if (got !== want)
+          throw new Error(label + " 解出来的内容不对：期望 " + want.length +
+                          " 字符，实得 " + got.length + "；开头=" + JSON.stringify(got.slice(0, 40)));
+        notes.push(label + " ✓");
+      }
+      out.steps.push({name:nm2, ok:true, info: notes.join(" · ")});
+    } catch (e) {
+      out.steps.push({name:nm2, ok:false, info:String(e && e.message || e)});
+      out.errors.push(nm2 + "\n    " + String(e && e.stack || e).split("\n").slice(0,3).join("\n    "));
+    }
+  }
+  if (__alerts.length) out.alertsNote = __alerts.slice(0, 5);
+  process.stdout.write(JSON.stringify(out));
+})();
 """
 
 # 单独隔离跑 benchmark/annotate.html（不与 index.html 同进程，避免函数名重定义污染）。
@@ -520,6 +586,54 @@ def _run(quiet: bool = False) -> int:
     js = m.group(1)
 
     with tempfile.TemporaryDirectory() as tmp:
+        # 简历 docx 的跨引擎对照数据：同一份 docx，期望文本用 Python 侧**真实路径**
+        # （resume.extract_text）算出来，再让网页 JS 解一遍比对。两边各写一套规则
+        # 很容易悄悄漂移——网页抽少一段话，引擎就会判出一条不存在的能力缺口。
+        import base64
+        import io
+        import zipfile
+
+        from career_loop import resume as resume_mod
+
+        _W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+        doc_xml = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            f"<w:document {_W}><w:body>"
+            "<w:p><w:r><w:t>张三 &amp; 李四</w:t></w:r></w:p>"
+            "<w:p><w:r><w:t>技能：</w:t></w:r><w:r><w:tab/><w:t>Python</w:t></w:r></w:p>"
+            "<w:p><w:r><w:t>第一行</w:t></w:r><w:r><w:br/></w:r><w:r><w:t>第二行</w:t></w:r></w:p>"
+            "<w:p/>"
+            "</w:body></w:document>"
+        )
+        hdr_xml = f"<w:hdr {_W}><w:p><w:r><w:t>联系方式：a@b.com</w:t></w:r></w:p></w:hdr>"
+
+        zbuf = io.BytesIO()
+        with zipfile.ZipFile(zbuf, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("word/document.xml", doc_xml)
+            zf.writestr("word/header1.xml", hdr_xml)
+        fixture = Path(tmp) / "fixture.docx"
+        fixture.write_bytes(zbuf.getvalue())
+
+        due["docx_b64"] = base64.b64encode(zbuf.getvalue()).decode("ascii")
+        due["docx_expected"] = resume_mod.extract_text(fixture)
+        due["xml_fixture"] = doc_xml
+        due["xml_expected"] = "\n".join(resume_mod._xml_paragraphs(doc_xml.encode("utf-8")))
+
+        # 手写 inflate 的对照样本：用 zlib 直接产 raw deflate（真实 docx 就是这么压的）。
+        # 一个是长中文（动态 Huffman），一个是 level 0（stored 块），两条解码分支都要走到。
+        import zlib
+
+        raw_plain_long = "张三 · 数据分析师 · 负责用户增长分析与留存看板搭建，熟悉 SQL 与 A/B 实验。\n" * 12
+        raw_plain_short = "abc"
+        co = zlib.compressobj(9, zlib.DEFLATED, -15)
+        raw_dynamic = co.compress(raw_plain_long.encode("utf-8")) + co.flush()
+        co0 = zlib.compressobj(0, zlib.DEFLATED, -15)
+        raw_stored = co0.compress(raw_plain_short.encode("utf-8")) + co0.flush()
+        due["raw_plain_long"] = raw_plain_long
+        due["raw_plain_short"] = raw_plain_short
+        due["raw_deflate_dynamic_b64"] = base64.b64encode(raw_dynamic).decode("ascii")
+        due["raw_deflate_stored_b64"] = base64.b64encode(raw_stored).decode("ascii")
+
         due_f = Path(tmp) / "due.json"
         due_f.write_text(json.dumps(due, ensure_ascii=False), encoding="utf-8")
         f = Path(tmp) / "smoke.js"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "career-loop"
-version = "0.8.31"
+version = "0.8.32"
 description = "Job-fit scoring you can falsify: JD x experience -> weighted score + gaps + counterfactual, then calibrate against real outcomes. Works for any role, ships a labeled eval set."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,6 +31,8 @@ dependencies = []
 
 [project.optional-dependencies]
 ui = ["streamlit>=1.30"]
+# 简历解析：只有 .pdf 需要它。.docx / .txt / .md 走标准库，装不装都能用。
+resume = ["pypdf>=4.0"]
 dev = ["pytest>=8", "build>=1.2"]
 
 [project.scripts]

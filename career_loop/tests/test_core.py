@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from career_loop import calibrate, collect, daily, dashdata, explore, internship, matching, recommend, reflow, store
+from career_loop import calibrate, collect, daily, dashdata, explore, internship, matching, recommend, reflow, resume, store
 from career_loop.cli import build_parser
 from career_loop.eval import load_dataset, run_eval
 # 注意：matching 包把 render 函数重导出到同名位置了，
@@ -2498,6 +2498,129 @@ class TestBenchmarkAgreement(unittest.TestCase):
         self.assertEqual(by_id["c1"]["labels"]["fin_tax"]["raw_b"], "partial")
         # c2 两人均 full → 一致 → needs_review=False
         self.assertFalse(by_id["c2"]["labels"]["sales_bd"]["needs_review"])
+
+
+class TestResumeExtraction(unittest.TestCase):
+    """简历文件抽取：.docx 零依赖、编码回退、以及"不许静默出错"的错误路径。
+
+    这一组锁的是设计承诺，不是实现细节：
+    - **核心依赖保持 `[]`** —— .docx 只用标准库（zipfile + ElementTree）；
+    - **抽不出文字时必须报错** —— 扫描件 PDF 若返回空字符串，引擎会给整份简历
+      打出「全部缺失」，用户看到的是假的低分，比报错危险得多；
+    - **不支持就明说** —— .doc / .xlsx 要给"另存为 .docx"这种可执行的下一步。
+    """
+
+    _W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+    ROOT = Path(__file__).resolve().parent.parent.parent
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _docx(self, name: str, body: str, header: str | None = None) -> Path:
+        import zipfile
+
+        doc = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            f"<w:document {self._W}><w:body>{body}</w:body></w:document>"
+        )
+        p = self.tmp / name
+        with zipfile.ZipFile(p, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("word/document.xml", doc)
+            if header is not None:
+                zf.writestr(
+                    "word/header1.xml",
+                    f"<w:hdr {self._W}><w:p><w:r><w:t>{header}</w:t></w:r></w:p></w:hdr>",
+                )
+        return p
+
+    def test_docx_parsed_with_stdlib_only(self):
+        """docx 必须零依赖可解：全文、制表符、换行、实体解码都要对。"""
+        body = (
+            "<w:p><w:r><w:t>张三 &amp; 李四</w:t></w:r></w:p>"
+            "<w:p><w:r><w:t>技能：</w:t></w:r><w:r><w:tab/><w:t>Python</w:t></w:r></w:p>"
+            "<w:p><w:r><w:t>第一行</w:t></w:r><w:r><w:br/></w:r>"
+            "<w:r><w:t>第二行</w:t></w:r></w:p>"
+        )
+        p = self._docx("r.docx", body)
+        text = resume.extract_text(p)
+        self.assertIn("张三 & 李四", text)           # &amp; 要解成 &
+        self.assertIn("技能：\tPython", text)         # w:tab → 制表符
+        self.assertIn("第一行\n第二行", text)          # w:br → 换行
+        # 零依赖断言：不能因为装了 python-docx 才算能跑
+        info = resume.describe(p)
+        self.assertTrue(info["zero_dependency"])
+        self.assertEqual(info["method"], "docx-stdlib")
+
+    def test_docx_header_is_read_but_footer_is_not(self):
+        """页眉常有姓名/联系方式要先读；页脚多是页码，跳过。"""
+        p = self._docx("h.docx", "<w:p><w:r><w:t>正文</w:t></w:r></w:p>", header="联系方式：a@b.com")
+        text = resume.extract_text(p)
+        self.assertLess(text.index("联系方式"), text.index("正文"), "页眉应排在正文之前")
+
+    def test_empty_docx_raises_instead_of_returning_blank(self):
+        """空文档必须报错。返回空串会让引擎打出"全部缺失"的假结论。"""
+        p = self._docx("empty.docx", "<w:p/>")
+        with self.assertRaises(resume.ResumeError):
+            resume.extract_text(p)
+
+    def test_plain_text_encoding_fallback(self):
+        """GB18030 文本要能读——老系统导出的简历常是 GBK，utf-8 直读会炸。"""
+        p = self.tmp / "gbk.txt"
+        p.write_bytes("李四 · 财务专员".encode("gb18030"))
+        self.assertIn("财务专员", resume.extract_text(p))
+
+    def test_legacy_doc_is_rejected_with_actionable_hint(self):
+        """老 .doc 要给"另存为 .docx"，只说"不支持"等于没说。"""
+        p = self.tmp / "old.doc"
+        p.write_bytes(bytes.fromhex("d0cf11e0a1b11ae1") + b"\x00" * 64)
+        with self.assertRaises(resume.UnsupportedFormat) as ctx:
+            resume.extract_text(p)
+        self.assertIn(".docx", str(ctx.exception))
+
+    def test_unknown_suffix_is_rejected(self):
+        p = self.tmp / "x.xlsx"
+        p.write_bytes(b"PK\x03\x04")
+        with self.assertRaises(resume.UnsupportedFormat):
+            resume.extract_text(p)
+
+    def test_missing_file_says_missing_not_crash(self):
+        with self.assertRaises(resume.ResumeError) as ctx:
+            resume.extract_text(self.tmp / "nope.docx")
+        self.assertIn("不存在", str(ctx.exception))
+
+    def test_cli_read_accepts_docx_transparently(self):
+        """CLI 的 _read 是统一入口：传 .docx 就该和传 .txt 一样能用。
+
+        这条特别重要——match / scan / recommend 十几个命令全走 _read，
+        如果只有某个命令支持 docx，用户会在别的命令上莫名其妙地失败。
+        """
+        from career_loop import cli
+
+        p = self._docx("cli.docx", "<w:p><w:r><w:t>熟悉 SQL 与 Python</w:t></w:r></w:p>")
+        self.assertIn("熟悉 SQL", cli._read(str(p)))
+
+    def test_js_docx_rule_matches_python(self):
+        """网页 JS 的 docxXmlToText 与 Python 的 _xml_paragraphs 必须同一套规则。
+
+        网页是手写移植版，两边各自演化就会漂移：同一个简历在网页抽出 3 段、
+        在 CLI 抽出 5 段，匹配分就不一样，而用户完全看不出为什么。
+        """
+        import re
+
+        html = (self.ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("function docxXmlToText", html, "网页端 docx 解析函数被删了？")
+        # 关键规则：w:t 提取、w:tab → \t、w:br → \n、段落按 w:p 切
+        for token in ('<w:tab[^>]*\\/>', '<w:br[^>]*\\/>', "w:p(", "w:t"):
+            self.assertTrue(
+                any(token in line for line in html.splitlines()),
+                f"网页端 docx 规则缺少 {token}，与 Python 侧不再等价",
+            )
+        # 压缩空行的规则也得在
+        self.assertIn("_compressBlankLines", html)
 
 
 if __name__ == "__main__":

@@ -15,13 +15,21 @@ from . import explore as explore_mod
 from . import internship as intern_mod
 from . import matching
 from . import recommend as rec_mod
+from . import resume
 from . import store
 from .eval import load_dataset, run_eval
 from .matching.schema import FAMILY_CN as DOMAIN_CN  # noqa: F401（sync_web_vocab 依赖此名）
 
 
 def _read(path: str) -> str:
-    return Path(path).expanduser().read_text(encoding="utf-8")
+    """读 JD / 简历文本。
+
+    统一走 :func:`career_loop.resume.extract_text`，于是 `.docx`（零依赖）与
+    `.pdf`（可选依赖 pypdf）在所有命令里都能直接用：`match --profile 简历.docx`
+    无需先手工转成 txt。纯文本路径保持原样，只多了 utf-8 → gb18030 的编码回退
+    （老简历导出常是 GBK，以前会直接抛 UnicodeDecodeError）。
+    """
+    return resume.extract_text(path)
 
 
 def _read_jsonl(path: str) -> list[dict]:
@@ -162,6 +170,55 @@ def cmd_add_profile(args) -> int:
     store.init(args.db)
     pid = store.add_profile(args.name, _read(args.file), args.db)
     print(f"已保存候选人 #{pid}：{args.name}")
+    return 0
+
+
+def cmd_parse_resume(args) -> int:
+    """抽简历文本并打印，让人先核对再决定是否喂给引擎。
+
+    为什么不直接入库：抽取失败最坏的情况不是报错，而是**静默输出乱码**——
+    简历里明明写了 Docker，抽成乱码后引擎会判「缺失」，用户看到的是一条
+    错误的能力缺口。所以这一步强制人工过目。
+    """
+    try:
+        info = resume.describe(args.file)
+    except resume.MissingDependency as exc:
+        print(f"缺少可选依赖：{exc}", file=sys.stderr)
+        return 2
+    except resume.ResumeError as exc:
+        print(f"抽取失败：{exc}", file=sys.stderr)
+        return 2
+
+    if args.out:
+        Path(args.out).expanduser().write_text(info["text"], encoding="utf-8")
+        print(f"已写入 {args.out}")
+
+    if args.json:
+        meta = {k: v for k, v in info.items() if k != "text"}
+        meta["preview"] = info["text"][:300]
+        print(json.dumps(meta, ensure_ascii=False, indent=2))
+        return 0
+
+    zero = "是（标准库解析）" if info["zero_dependency"] else "否（用了 pypdf）"
+    print(f"文件     {info['path']}")
+    print(f"方法     {info['method']}　零依赖：{zero}")
+    print(f"规模     {info['chars']} 字符 / {info['lines']} 行")
+    print("-" * 60)
+    text = info["text"]
+    if args.head and args.head > 0:
+        lines = text.split("\n")
+        print("\n".join(lines[: args.head]))
+        if len(lines) > args.head:
+            print(f"...（共 {len(lines)} 行，只显示前 {args.head} 行）")
+    else:
+        print(text)
+    print("-" * 60)
+    if not args.out:
+        print("下一步：确认上面的文字没乱，再用 --out 存成 txt 喂给匹配：")
+        print(f"  career-loop parse-resume --file \"{args.file}\" --out resume.txt")
+        print("  career-loop match --jd jd.md --profile resume.txt")
+    else:
+        print(f"下一步：career-loop match --jd jd.md --profile {args.out}")
     return 0
 
 
@@ -607,6 +664,16 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--file", required=True)
     ap.add_argument("--name", required=True)
 
+    pr = sub.add_parser(
+        "parse-resume",
+        help="从简历文件抽文本（.docx 零依赖 / .pdf 需 pypdf），先看再决定是否入库",
+    )
+    pr.add_argument("--file", required=True, help="简历文件：.docx / .pdf / .txt / .md")
+    pr.add_argument("--out", default=None, help="把抽出的文本存成文件（默认只打印）")
+    pr.add_argument("--json", action="store_true", help="输出元信息 JSON（含 method / chars）")
+    pr.add_argument("--head", type=int, default=0,
+                    help="只打印前 N 行（0=全打印）。长简历建议配合 --out 用")
+
     aj = sub.add_parser("add-jd", help="保存 JD 并抽取能力项")
     aj.add_argument("--file", required=True)
 
@@ -725,6 +792,7 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {
         "init": cmd_init, "doctor": cmd_doctor,
         "add-profile": cmd_add_profile, "add-jd": cmd_add_jd,
+        "parse-resume": cmd_parse_resume,
         "match": cmd_match, "apply": cmd_apply, "status": cmd_status,
         "log": cmd_log, "calibrate": cmd_calibrate, "eval": cmd_eval,
         "reflow": cmd_reflow,
