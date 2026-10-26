@@ -24,3 +24,5 @@ data/cn_eval/
 data/llm_eval/
 # 个人真实投递校准数据（含岗位/公司/渠道，绝不入库；用 scripts/run_calibration.py 跑）
 data/calibration/
+# 截图/出图的中间产物（整页大图等，可由 scripts/ 重跑再生）
+.tmp/
