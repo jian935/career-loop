@@ -16,7 +16,7 @@
 | 05 | 作品介绍（≥30 字） | ✅ 已备 | 见第 5 节，全文约 900 字，远超下限 |
 | 06 | 作品体验链接（必填） | ✅ 已备 | `https://workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE` |
 | 07 | WorkBuddy 创作对话记录 | 🖐 **必须你操作** | 见 0.2——这项我拿不到，只能你从客户端分享 |
-| 08 | 社媒分享链接（选填 +30） | ⏳ 发布后回填 | 发完小红书笔记再填，见 `docs/xhs-post.md` |
+| 08 | 社媒分享链接（选填 +30） | ✅ 已发布 | `https://xhslink.cn/o/8IoDSDFM3jX`（笔记已公开可见，两个必带话题已核验） |
 | 09 | 上传作品的平台（单选） | ✅ 已定 | **小红书** |
 | 10 | 界面截图 或 展示视频 | ✅ 已备（二选一即可） | 截图传 `xhs-cover/xhs-demo/xhs-evidence/xhs-howto` 四张；或传 `docs/career-loop-demo.mp4`（135 秒，716 KB） |
 | 11 | 您的 UserID | ✅ 已备 | 已记在 `.local/submission-filled.md`（含账号标识，**不入仓库**）；已与本机账号目录交叉验证为真实 ID |
