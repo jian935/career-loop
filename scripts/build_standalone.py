@@ -45,11 +45,47 @@ MIME = {
     ".webp": "image/webp",
 }
 
-#: 页面里指向本地文件的链接 → 改写成指向仓库里的公开地址。
-#: 单文件分发时点这些链接会 404，所以给它们一个不依赖托管布局的落点。
-LINK_REWRITES = {
-    "reflow_sample.md": "https://github.com/jian935/career-loop/blob/main/docs/reflow_sample.md",
-}
+#: 页面里指向本地文件的链接 → 目标地址。
+#: 当前只有 reflow 样例，但它唯一的落点是仓库（尚未推送），
+#: 因此不在这里改写成 URL，而是由 STANDALONE_REWRITES 降级成纯文本。
+#: 保留这个映射是为了将来有真正可用的落点时直接加一条即可。
+LINK_REWRITES: dict[str, str] = {}
+
+#: 单文件分发版要去掉的 GitHub 死链。
+#: 仓库尚未推送时，页面上「Star on GitHub / 查看源码 / Benchmark / Docs」点了都是 404，
+#: 投稿评审一旦点开就是负面印象。发布版把它们换成页内锚点或直接移除；
+#: `docs/index.html` 保持原样——等仓库推上去，Pages 版这些链接自然可用。
+STANDALONE_REWRITES: list[tuple[str, str]] = [
+    # 导航里两个指向仓库目录的入口
+    (
+        '    <a href="https://github.com/jian935/career-loop/tree/main/benchmark">Benchmark</a>\n'
+        '    <a href="https://github.com/jian935/career-loop/tree/main/docs">Docs</a>\n',
+        "",
+    ),
+    # 右上角主行动按钮：从「去给仓库点星」改成「看证据墙」（本页就有）
+    (
+        '<a class="star-btn" href="https://github.com/jian935/career-loop" '
+        'target="_blank" rel="noopener">★ Star on GitHub</a>',
+        '<a class="star-btn" href="#evidence">★ 看证据墙</a>',
+    ),
+    # hero 次按钮：查看源码 → 看证据墙
+    (
+        '<a class="btn-ghost" href="https://github.com/jian935/career-loop" '
+        'target="_blank" rel="noopener">查看源码</a>',
+        '<a class="btn-ghost" href="#evidence">看证据墙</a>',
+    ),
+    # 页脚：两个仓库链接去掉，保留「复制本页链接」
+    (
+        '<a href="https://github.com/jian935/career-loop">GitHub</a> · '
+        '<a href="https://github.com/jian935/career-loop/tree/main/docs">方法论</a> · ',
+        "",
+    ),
+    # 证据墙里的脱敏样例报告：仓库未推送前没有公开地址，降级成纯文本，不留死链
+    (
+        '<a href="reflow_sample.md">docs/reflow_sample.md</a>',
+        "<code>docs/reflow_sample.md</code>",
+    ),
+]
 
 BANNER = (
     "<!-- 由 scripts/build_standalone.py 从 docs/index.html 生成，请勿直接编辑；"
@@ -62,7 +98,9 @@ PUBLISH_URL = "https://workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE"
 
 #: 封面图的公网直链（资源库静态域，1200×630）。
 #: 社媒抓取要求 og:image 是绝对 URL —— 相对路径 `og-cover.png` 会导致卡片无图。
-OG_IMAGE_URL = "https://workbuddy-space-static.codebuddy.work/image/yj1WAybxQJLPzXVC8kBIih.png"
+#: 注：实测 workbuddy.link 发布态会覆写 og:image 为平台默认图标，这里的值实际不生效；
+#: 仍然写对是为了平台策略变化时不用回头改，且不影响页面本身的渲染。
+OG_IMAGE_URL = "https://workbuddy-space-static.codebuddy.work/image/YQRodiSCInA07aGtmqhThx.png"
 
 
 def _set_meta(html: str, key: str, value: str) -> str:
@@ -103,6 +141,10 @@ def build(src: Path = SRC) -> str:
     for local, remote in LINK_REWRITES.items():
         html = html.replace(f'href="{local}"', f'href="{remote}"')
 
+    # 2b) 去掉/替换 GitHub 死链（仓库未推送前，发布版不该出现点了 404 的入口）
+    for old, new in STANDALONE_REWRITES:
+        html = html.replace(old, new)
+
     # 3) 修正社媒元信息（单文件分发后页面换了地址，元数据必须跟着换）
     html = _set_meta(html, "og:url", PUBLISH_URL)
     html = _set_meta(html, "og:image", OG_IMAGE_URL)
@@ -119,6 +161,22 @@ def build(src: Path = SRC) -> str:
     return html
 
 
+def _missed_rewrites(src: Path = SRC) -> list[str]:
+    """返回在 index.html 里找不到的 GitHub 死链规则。
+
+    页面结构一旦变动，规则可能悄悄失效——死链就会无声地回到发布版。
+    所以每次构建都报一次，而不是等评审点开发现 404。
+    """
+    raw = src.read_text(encoding="utf-8")
+    return [old.strip().splitlines()[0][:60] for old, _ in STANDALONE_REWRITES if old not in raw]
+
+
+def _leftover_github(html: str) -> list[str]:
+    """发布版里还剩哪些 github.com 链接（应当只剩 reflow_sample 那个公开文档地址）。"""
+    urls = re.findall(r'href="(https://github\.com/[^"]+)"', html)
+    return sorted(set(urls))
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="生成自包含单文件网页（资料库投稿用）")
     ap.add_argument("--check", action="store_true", help="只校验是否最新，不写文件")
@@ -132,6 +190,12 @@ def main(argv: list[str] | None = None) -> int:
         if OUT.read_text(encoding="utf-8") != html:
             print(f"✗ {OUT.relative_to(ROOT)} 已过期，请重新运行 scripts/build_standalone.py")
             return 1
+        missed = _missed_rewrites()
+        if missed:
+            print(f"✗ 有 {len(missed)} 条 GitHub 死链规则没匹配上（页面结构变了？死链会回归）：")
+            for m in missed:
+                print(f"    - {m}")
+            return 1
         print(f"OK {OUT.relative_to(ROOT)} 与 index.html 同步")
         return 0
 
@@ -143,6 +207,15 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  index.html      {src_size / 1024:6.1f} KB")
     print(f"  standalone.html {out_size / 1024:6.1f} KB（图片已内联）")
     print(f"  残留外部图片引用：{leftover or '无'}")
+
+    missed = _missed_rewrites()
+    if missed:
+        print(f"  ⚠️ {len(missed)} 条 GitHub 死链规则未命中（页面结构可能变了）：")
+        for m in missed:
+            print(f"     - {m}")
+    remaining = _leftover_github(html)
+    if remaining:
+        print(f"  发布版保留的 github.com 链接（应只有公开文档）：{remaining}")
     return 0
 
 

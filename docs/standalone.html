@@ -10,7 +10,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="career-loop · 先别投，先看清你差在哪">
   <meta property="og:description" content="粘贴 JD 和经历，10 秒得到可证伪的匹配分、逐项缺口，以及补哪一项分数涨最多。纯前端、数据不上传。">
-  <meta property="og:image" content="https://workbuddy-space-static.codebuddy.work/image/yj1WAybxQJLPzXVC8kBIih.png">
+  <meta property="og:image" content="https://workbuddy-space-static.codebuddy.work/image/YQRodiSCInA07aGtmqhThx.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:url" content="https://workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE">
@@ -18,7 +18,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="career-loop · 先别投，先看清你差在哪">
   <meta name="twitter:description" content="粘贴 JD 和经历，10 秒得到可证伪的匹配分、逐项缺口。纯前端、数据不上传。">
-  <meta name="twitter:image" content="https://workbuddy-space-static.codebuddy.work/image/yj1WAybxQJLPzXVC8kBIih.png">
+  <meta name="twitter:image" content="https://workbuddy-space-static.codebuddy.work/image/YQRodiSCInA07aGtmqhThx.png">
 <style>
 
   :root{
@@ -522,22 +522,20 @@
     <a href="#app">Demo</a>
     <a href="#evidence">证据墙</a>
     <a href="#calibrate">校准</a>
-    <a href="https://github.com/jian935/career-loop/tree/main/benchmark">Benchmark</a>
-    <a href="https://github.com/jian935/career-loop/tree/main/docs">Docs</a>
   </div>
-  <a class="star-btn" href="https://github.com/jian935/career-loop" target="_blank" rel="noopener">★ Star on GitHub</a>
+  <a class="star-btn" href="#evidence">★ 看证据墙</a>
 </nav>
 
 <header class="hero">
-  <div class="pill"><span class="dot"></span>66 个岗位族 · 本地计算 · 零依赖核心</div>
+  <div class="pill"><span class="dot"></span>69 个岗位族 · 本地计算 · 零依赖核心</div>
   <h1>先别投。<br><span class="grad">先看清你到底差在哪。</span></h1>
   <p class="lead">粘贴 JD 和你的经历，10 秒得到加权匹配分、逐项缺口，以及「补哪一项分数涨最多」。数据不离开浏览器。</p>
   <div class="cta">
     <a class="btn-primary" href="#app">开始匹配</a>
-    <a class="btn-ghost" href="https://github.com/jian935/career-loop" target="_blank" rel="noopener">查看源码</a>
+    <a class="btn-ghost" href="#evidence">看证据墙</a>
   </div>
   <div class="stats">
-    <div><b>66</b><span>岗位族</span></div>
+    <div><b>69</b><span>岗位族</span></div>
     <div><b>60</b><span>评测集</span></div>
     <div><b>93.6%</b><span>真实JD族识别</span></div>
     <div><b>0</b><span>核心依赖</span></div>
@@ -612,7 +610,7 @@
       </select>
       <button id="exportDailyBtn" class="btn-export">导出今日清单</button>
     </div>
-    <p class="hint" id="batchHint">排序用「匹配分」给岗位打分并附最划算补强；全行业适配用你经历里的关键词覆盖 66 个岗位族的能力项。<br>
+    <p class="hint" id="batchHint">排序用「匹配分」给岗位打分并附最划算补强；全行业适配用你经历里的关键词覆盖 69 个岗位族的能力项。<br>
       <b>今日清单</b>会再抽出<b>截止日</b>，改成「先到期先投」的顺序，每条写清日期来源（JD 原文 / JD 没给）——<b>猜出来的日期绝不伪装成确定的</b>，所以没抓到就明说没抓到。</p>
     <h3 style="font-size:13px;color:var(--sub);margin:18px 0 10px"><span id="rankHead">该投哪些（按匹配分排序）</span></h3>
     <div class="rank-list" id="rankList"></div>
@@ -790,7 +788,7 @@
         </div>
       </div>
       <p class="rf-foot">
-        完整报告（含逐条明细表、方向对比、边界声明）：<a href="https://github.com/jian935/career-loop/blob/main/docs/reflow_sample.md">docs/reflow_sample.md</a><br>
+        完整报告（含逐条明细表、方向对比、边界声明）：<code>docs/reflow_sample.md</code><br>
         自己也跑一遍：<code>career-loop reflow --records &lt;你的投递记录&gt; --profile &lt;你的经历&gt; --mode terminal</code><br>
         <b>数据定位</b>：样例 / 验证数据（D001–D040 与 D041–D090 同源同格式、时间连续），
         用于展示流水线在真实中文 JD 上的行为，<b>不</b>作为作者真实求职记录对外宣称。
@@ -945,7 +943,7 @@
 
 <footer class="foot">
   <span>MIT · 本地优先 · 匹配分可证伪</span>
-  <span><a href="https://github.com/jian935/career-loop">GitHub</a> · <a href="https://github.com/jian935/career-loop/tree/main/docs">方法论</a> · <button type="button" class="linkbtn" onclick="try{navigator.clipboard.writeText(location.href);alert('链接已复制，带上活动话题去分享吧～');}catch(e){alert('请手动复制地址栏链接分享～');}">复制本页链接</button></span>
+  <span><button type="button" class="linkbtn" onclick="try{navigator.clipboard.writeText(location.href);alert('链接已复制，带上活动话题去分享吧～');}catch(e){alert('请手动复制地址栏链接分享～');}">复制本页链接</button></span>
 </footer>
 
 <div id="reportPrint"></div>
