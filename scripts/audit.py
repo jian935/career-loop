@@ -23,10 +23,14 @@ def run(args: list[str], expect: int = 0, contains: str | list[str] | None = Non
     db = db or DB
     r = subprocess.run(
         [sys.executable, "-m", "career_loop", "--db", db, *args],
-        capture_output=True, text=True, cwd=str(ROOT),
+        # Windows runner 的控制台是 cp1252，而子进程（本项目 CLI）输出 UTF-8 中文。
+        # 不指定 encoding 时 subprocess 按 locale 解码 → UnicodeDecodeError（byte 0x9d），
+        # 且解码失败后 stdout/stderr 会是 None，下一行拼接再抛 TypeError。
+        # 其它脚本（cross_engine_* / smoke_web / test_core）都写了 encoding="utf-8"，这里对齐。
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(ROOT),
         env={**os.environ, "PYTHONPATH": str(ROOT), "CAREER_LOOP_NO_LLM": "1"},
     )
-    out = (r.stdout + r.stderr).strip()
+    out = ((r.stdout or "") + (r.stderr or "")).strip()
     ok = r.returncode == expect
     if contains:
         for c in ([contains] if isinstance(contains, str) else contains):

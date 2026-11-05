@@ -158,8 +158,9 @@
 
 ### 辅助材料
 
-- 源码仓库：`https://github.com/jian935/career-loop`（**尚未推送**：本机到 github.com 不通。
-  活动规则不要求开源仓库，仅作加分项，不阻塞投稿）
+- 源码仓库：`https://github.com/jian935/career-loop`（**已公开**：2026-11-06 推送 `main`
+  并跑通 CI；活动规则不要求开源仓库，仅作加分项）
+- 在线体验：`https://jian935.github.io/career-loop/`（GitHub Pages，从 `main` / `docs` 发布）
 - 演示视频（**2 分 11 秒 / 131 秒**，1280×720，含语音解说与逐词同步字幕）：`docs/career-loop-demo.mp4`
   - 画面是**真实页面按 1280×720 视口截的**（`scripts/shoot_web_shots.mjs` 走 CDP 精确滚动），
     与评委自己打开看到的完全一致，不是画出来的模拟图
