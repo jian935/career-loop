@@ -22,6 +22,7 @@ import csv
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -32,7 +33,19 @@ sys.path.insert(0, ROOT)
 from career_loop.matching.extract import extract_requirements
 from career_loop.matching.schema import detect_domains
 
-NODE = r"C:\Users\llj12\.workbuddy\binaries\node\versions\22.22.2-6\node.exe"
+def _node() -> str:
+    """在 PATH 里找 node。
+
+    原来这里是一行硬编码：
+        NODE = r"C:\\Users\\<user>\\.workbuddy\\binaries\\node\\versions\\...\\node.exe"
+    它只在一台机器上成立——GitHub Actions 的 ubuntu runner 上没有这条路径，
+    于是 `_run_node` 抛 FileNotFoundError，单测直接红。改成查 PATH 后两边都能跑。
+    """
+    found = shutil.which("node")
+    if found:
+        return found
+    print("[error] 找不到 node：请安装 Node.js，或在 CI 里用 actions/setup-node", file=sys.stderr)
+    raise SystemExit(1)
 
 DEFAULT_CSV = os.path.join(ROOT, "data", "calibration", "final_outcomes_202609.csv")
 
@@ -92,7 +105,7 @@ require("fs").writeFileSync(process.argv[3], JSON.stringify(out));
             fh.write(driver)
         with open(in_path, "w", encoding="utf-8") as fh:
             json.dump(texts, fh, ensure_ascii=False)
-        res = subprocess.run([NODE, js_path, in_path, out_path],
+        res = subprocess.run([_node(), js_path, in_path, out_path],
                              capture_output=True, text=True, encoding="utf-8")
         if res.returncode != 0:
             print(res.stdout[-2000:], file=sys.stderr)

@@ -35,13 +35,13 @@ from career_loop.matching.family_llm import (           # noqa: E402
     _normalize, family_system_prompt,
 )
 
-NODE = r"C:\Users\llj12\.workbuddy\binaries\node\versions\22.22.2-6\node.exe"
-
-
 def _node() -> str:
-    """优先用本机托管的 Node；CI 上没有这个路径，退回 PATH 里的 node。"""
-    if os.path.exists(NODE):
-        return NODE
+    """在 PATH 里找 node。
+
+    以前这里硬编码了本机托管路径（本地 user 目录下的 `.workbuddy/binaries/node/.../node.exe`），
+    那条路径只在一台机器上成立：GitHub Actions 的 runner 上必然找不到。
+    改成先查 PATH——runner 自带 node，本机 WorkBuddy 的 node 也在 PATH 里。
+    """
     found = shutil.which("node")
     if found:
         return found

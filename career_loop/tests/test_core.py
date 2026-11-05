@@ -819,12 +819,7 @@ class TestCrossEngineConsistency(unittest.TestCase):
     """
 
     def _require_node(self):
-        """跨引擎比对要靠 node 跑网页 JS；没装就跳过（本机有，CI 也有）。"""
-        from pathlib import Path
-
-        node = r"C:\Users\llj12\.workbuddy\binaries\node\versions\22.22.2-6\node.exe"
-        if Path(node).exists():
-            return node
+        """跨引擎比对要靠 node 跑网页 JS；没装就跳过（CI 的 runner 自带）。"""
         import shutil
 
         found = shutil.which("node")

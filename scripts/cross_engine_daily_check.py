@@ -71,8 +71,7 @@ SAMPLE_DIRS = [ROOT / "examples" / "daily_jds", ROOT / "examples" / "jds"]
 
 
 def _node() -> str:
-    for cand in (r"C:\Users\llj12\.workbuddy\binaries\node\versions\22.22.2-6\node.exe",
-                 shutil.which("node")):
+    for cand in (shutil.which("node"),):
         if cand and Path(cand).exists():
             return str(cand)
     print("[error] 找不到 node", file=sys.stderr)
