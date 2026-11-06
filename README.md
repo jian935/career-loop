@@ -19,11 +19,17 @@
   
   <img alt="core deps" src="https://img.shields.io/badge/core%20deps-0-4f46e5.svg">
   
+  <a href="https://github.com/jian935/career-loop/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/jian935/career-loop/actions/workflows/ci.yml/badge.svg"></a>
+  
 </p>
 
 <p align="center">
   
-  <a href="https://workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE"><b>▶ 在线试用（免安装，浏览器里跑）</b></a>
+  <a href="https://jian935.github.io/career-loop/"><b>▶ 在线试用（GitHub Pages，免安装）</b></a>
+  
+  \&nbsp;·\&nbsp;
+  
+  <a href="https://workbuddy.link/p/Jt3O7bi3SUFYI3SG1iOVDE">旧版分享页</a>
   
   \&nbsp;·\&nbsp;
   

@@ -23,6 +23,8 @@
   
   <img alt="tests" src="https://img.shields.io/badge/tests-247%20passing-4f46e5.svg">
   
+  <a href="https://github.com/jian935/career-loop/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/jian935/career-loop/actions/workflows/ci.yml/badge.svg"></a>
+  
 </p>
 
 <p align="center">
@@ -31,7 +33,7 @@
   
   &nbsp;·&nbsp;
   
-  <a href="docs/index.html">Try it in the browser</a>
+  <a href="https://jian935.github.io/career-loop/">Try it in the browser (GitHub Pages)</a>
   
   &nbsp;·&nbsp;
   
